@@ -8,6 +8,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import { MfaStep } from '@/components/auth/mfa-step';
 import { LoadingScreen } from '@/components/brand/loading-screen';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
@@ -29,6 +30,7 @@ function LoginForm() {
   const next = safeNext(params.get('next'));
   const status = useSession((s) => s.status);
   const [formError, setFormError] = useState<string | null>(null);
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
   useSessionBootstrap();
 
   const schema = z.object({
@@ -47,14 +49,20 @@ function LoginForm() {
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
     try {
-      await civia.auth.login({ ...values, device_label: `Web · ${navigator.platform || 'navegador'}` });
-      await loadMe();
+      const result = await civia.auth.login({
+        ...values,
+        device_label: `Web · ${navigator.platform || 'navegador'}`,
+      });
+      if (result.mfaRequired) setMfaToken(result.mfaToken);
+      else await loadMe();
     } catch (e) {
       setFormError(e instanceof ApiError ? e.message : t('common.error'));
     }
   });
 
   const registered = params.get('registered') === '1';
+
+  if (mfaToken) return <MfaStep mfaToken={mfaToken} onCancel={() => setMfaToken(null)} />;
 
   return (
     <div className="animate-in flex flex-col gap-8">

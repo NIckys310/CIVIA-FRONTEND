@@ -12,6 +12,8 @@ export type Project = Schemas['ProjectOut'];
 export type ProjectInput = Schemas['ProjectIn'];
 export type Session = Schemas['SessionOut'];
 export type TokenResponse = Schemas['TokenOut'];
+export type LoginResponse = Schemas['LoginOut'];
+export type MfaVerifyInput = Schemas['MfaVerifyIn'];
 export type RegisterInput = Schemas['RegisterIn'];
 export type LoginInput = Schemas['LoginIn'];
 

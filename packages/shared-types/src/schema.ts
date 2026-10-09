@@ -47,8 +47,31 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Login */
+        /**
+         * Login
+         * @description Paso 1. Si la cuenta tiene MFA, devuelve `mfa_required` y un `mfa_token` de 5 min.
+         */
         post: operations["login_api_v1_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Mfa
+         * @description Paso 2 del login: código TOTP de 6 dígitos o un código de recuperación.
+         */
+        post: operations["verify_mfa_api_v1_auth_mfa_verify_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -121,6 +144,214 @@ export interface paths {
          * @description Cierre de sesión remoto (p. ej. un celular perdido).
          */
         delete: operations["revoke_session_api_v1_auth_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/mfa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mfa Status */
+        get: operations["mfa_status_api_v1_account_mfa_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/mfa/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mfa Setup
+         * @description Genera la semilla (cifrada en BD). No queda activo hasta confirmar un código.
+         */
+        post: operations["mfa_setup_api_v1_account_mfa_setup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/mfa/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mfa Enable
+         * @description Activa MFA y devuelve los códigos de recuperación UNA sola vez.
+         */
+        post: operations["mfa_enable_api_v1_account_mfa_enable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/mfa/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mfa Disable */
+        post: operations["mfa_disable_api_v1_account_mfa_disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/mfa/recovery-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mfa Recovery Codes */
+        post: operations["mfa_recovery_codes_api_v1_account_mfa_recovery_codes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/email/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resend Verification */
+        post: operations["resend_verification_api_v1_account_email_verification_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/email/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Email
+         * @description Público: se abre desde el enlace del correo (no requiere sesión).
+         */
+        post: operations["verify_email_api_v1_account_email_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/password/forgot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Forgot Password
+         * @description Siempre 202, exista o no la cuenta.
+         */
+        post: operations["forgot_password_api_v1_account_password_forgot_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/password/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Password
+         * @description Cambia la contraseña con el enlace del correo y cierra TODAS las sesiones.
+         */
+        post: operations["reset_password_api_v1_account_password_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/password/change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change Password
+         * @description Cambia la contraseña y cierra las demás sesiones (conserva la actual).
+         */
+        post: operations["change_password_api_v1_account_password_change_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/security-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Security Events
+         * @description Eventos de seguridad del propio usuario (RLS: política `audit_read_own`).
+         */
+        get: operations["security_events_api_v1_account_security_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -217,6 +448,26 @@ export interface components {
             /** Target Id */
             target_id: string | null;
         };
+        /** ChangePasswordIn */
+        ChangePasswordIn: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
+        };
+        /** EmailTokenIn */
+        EmailTokenIn: {
+            /** Token */
+            token: string;
+        };
+        /** ForgotPasswordIn */
+        ForgotPasswordIn: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -233,6 +484,30 @@ export interface components {
             password: string;
             /** Device Label */
             device_label?: string | null;
+        };
+        /**
+         * LoginOut
+         * @description Respuesta del login: tokens, o bien un desafío de segundo factor (`mfa_required`).
+         */
+        LoginOut: {
+            /**
+             * Mfa Required
+             * @default false
+             */
+            mfa_required: boolean;
+            /** Mfa Token */
+            mfa_token?: string | null;
+            /** Access Token */
+            access_token?: string | null;
+            /**
+             * Token Type
+             * @default bearer
+             */
+            token_type: string;
+            /** Expires In */
+            expires_in?: number | null;
+            /** Refresh Token */
+            refresh_token?: string | null;
         };
         /** MeOut */
         MeOut: {
@@ -252,6 +527,43 @@ export interface components {
             /** Country Code */
             country_code: string;
             role: components["schemas"]["Role"];
+        };
+        /** MfaCodeIn */
+        MfaCodeIn: {
+            /** Code */
+            code: string;
+        };
+        /** MfaDisableIn */
+        MfaDisableIn: {
+            /** Password */
+            password: string;
+            /** Code */
+            code?: string | null;
+            /** Recovery Code */
+            recovery_code?: string | null;
+        };
+        /** MfaSetupOut */
+        MfaSetupOut: {
+            /** Secret */
+            secret: string;
+            /** Otpauth Uri */
+            otpauth_uri: string;
+        };
+        /** MfaStatusOut */
+        MfaStatusOut: {
+            /** Enabled */
+            enabled: boolean;
+            /** Recovery Codes Remaining */
+            recovery_codes_remaining: number;
+        };
+        /** MfaVerifyIn */
+        MfaVerifyIn: {
+            /** Mfa Token */
+            mfa_token: string;
+            /** Code */
+            code?: string | null;
+            /** Recovery Code */
+            recovery_code?: string | null;
         };
         /** ProjectIn */
         ProjectIn: {
@@ -294,6 +606,11 @@ export interface components {
              */
             updated_at: string;
         };
+        /** RecoveryCodesOut */
+        RecoveryCodesOut: {
+            /** Codes */
+            codes: string[];
+        };
         /**
          * RefreshIn
          * @description Solo clientes móviles envían el token en el cuerpo; la web usa cookie HttpOnly.
@@ -316,12 +633,33 @@ export interface components {
             /** Organization Name */
             organization_name: string;
         };
+        /** ResetPasswordIn */
+        ResetPasswordIn: {
+            /** Token */
+            token: string;
+            /** Password */
+            password: string;
+        };
         /**
          * Role
          * @description Roles RBAC. El orden refleja privilegio decreciente.
          * @enum {string}
          */
         Role: "admin" | "engineer_in_charge" | "reviewer" | "collaborator" | "viewer";
+        /** SecurityEventOut */
+        SecurityEventOut: {
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Action */
+            action: string;
+            /** Ip Address */
+            ip_address: string | null;
+            /** Device */
+            device: string | null;
+        };
         /** SessionOut */
         SessionOut: {
             /**
@@ -373,6 +711,10 @@ export interface components {
             full_name: string;
             /** Locale */
             locale: string;
+            /** Email Verified */
+            email_verified: boolean;
+            /** Mfa Enabled */
+            mfa_enabled: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -463,6 +805,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LoginIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_mfa_api_v1_auth_mfa_verify_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Client"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaVerifyIn"];
             };
         };
         responses: {
@@ -579,6 +956,320 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mfa_status_api_v1_account_mfa_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MfaStatusOut"];
+                };
+            };
+        };
+    };
+    mfa_setup_api_v1_account_mfa_setup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MfaSetupOut"];
+                };
+            };
+        };
+    };
+    mfa_enable_api_v1_account_mfa_enable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaCodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecoveryCodesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mfa_disable_api_v1_account_mfa_disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaDisableIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mfa_recovery_codes_api_v1_account_mfa_recovery_codes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaCodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecoveryCodesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resend_verification_api_v1_account_email_verification_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    verify_email_api_v1_account_email_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailTokenIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    forgot_password_api_v1_account_password_forgot_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_password_api_v1_account_password_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_password_api_v1_account_password_change_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    security_events_api_v1_account_security_events_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecurityEventOut"][];
+                };
             };
             /** @description Validation Error */
             422: {

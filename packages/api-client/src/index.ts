@@ -10,7 +10,13 @@
  */
 import createClient from 'openapi-fetch';
 
-import type { LoginInput, paths, RegisterInput, TokenResponse } from '@civia/shared-types';
+import type {
+  LoginInput,
+  LoginResponse,
+  paths,
+  RegisterInput,
+  TokenResponse,
+} from '@civia/shared-types';
 
 export type ClientMode = 'web' | 'mobile';
 
@@ -65,7 +71,8 @@ export function createCiviaClient(options: CiviaClientOptions) {
   const modeHeaders = (): Record<string, string> =>
     options.mode === 'mobile' ? { 'X-Client': 'mobile' } : { 'X-Requested-With': 'civia' };
 
-  async function acceptTokens(tokens: TokenResponse): Promise<void> {
+  async function acceptTokens(tokens: TokenResponse | LoginResponse): Promise<void> {
+    if (!tokens.access_token) throw new ApiError(500, 'Respuesta de sesión incompleta.');
     accessToken = tokens.access_token;
     if (options.mode === 'mobile' && tokens.refresh_token) {
       await options.storage!.setRefreshToken(tokens.refresh_token);
@@ -148,8 +155,21 @@ export function createCiviaClient(options: CiviaClientOptions) {
       async register(input: RegisterInput): Promise<void> {
         await post('/api/v1/auth/register', input);
       },
-      async login(input: LoginInput): Promise<void> {
-        await acceptTokens(await post<TokenResponse>('/api/v1/auth/login', input));
+      async login(input: LoginInput): Promise<LoginResult> {
+        const res = await post<LoginResponse>('/api/v1/auth/login', input);
+        if (res.mfa_required && res.mfa_token) return { mfaRequired: true, mfaToken: res.mfa_token };
+        await acceptTokens(res);
+        return { mfaRequired: false };
+      },
+      /** Paso 2: código TOTP de 6 dígitos o código de recuperación. */
+      async verifyMfa(input: { mfaToken: string; code?: string; recoveryCode?: string }): Promise<void> {
+        await acceptTokens(
+          await post<TokenResponse>('/api/v1/auth/mfa/verify', {
+            mfa_token: input.mfaToken,
+            code: input.code ?? null,
+            recovery_code: input.recoveryCode ?? null,
+          }),
+        );
       },
       /** Intenta recuperar la sesión al abrir la app (cookie o almacén seguro). */
       restore: refresh,
@@ -177,3 +197,6 @@ export function createCiviaClient(options: CiviaClientOptions) {
 }
 
 export type CiviaClient = ReturnType<typeof createCiviaClient>;
+
+/** Resultado del paso 1 del login: sesión iniciada o segundo factor pendiente. */
+export type LoginResult = { mfaRequired: false } | { mfaRequired: true; mfaToken: string };
