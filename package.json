@@ -18,7 +18,8 @@
     "test": "turbo run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "contract:sync": "node scripts/sync-contract.mjs"
+    "contract:sync": "node scripts/sync-contract.mjs",
+    "audit:prod": "node scripts/audit.mjs"
   },
   "devDependencies": {
     "prettier": "^3.9.9",
@@ -26,6 +27,7 @@
     "typescript": "~5.9"
   },
   "overrides": {
-    "react-native": "0.86.3"
+    "react-native": "0.86.3",
+    "uuid": "11.1.1"
   }
 }
