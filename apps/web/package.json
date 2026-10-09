@@ -1,0 +1,38 @@
+{
+  "name": "@civia/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@civia/api-client": "*",
+    "@civia/shared-types": "*",
+    "@civia/ui": "*",
+    "@hookform/resolvers": "^5.9.1",
+    "@radix-ui/react-dialog": "^1.2.0",
+    "@radix-ui/react-dropdown-menu": "^2.1.25",
+    "@tanstack/react-query": "^5.104.1",
+    "cmdk": "^1.1.1",
+    "geist": "^1.7.2",
+    "next": "^16.4.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-hook-form": "^7.89.0",
+    "zod": "^4.6.5",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24.19.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.0",
+    "tailwindcss": "^4.3.3"
+  }
+}
