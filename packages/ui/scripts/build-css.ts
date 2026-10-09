@@ -11,15 +11,15 @@ const kebab = (s: string): string => s.replace(/[A-Z]/g, (m) => `-${m.toLowerCas
 
 function vars(theme: Record<string, string>, indent: string): string {
   return Object.entries(theme)
-    .map(([k, v]) => `${indent}--color-${kebab(k)}: ${v};`)
+    .map(([k, v]) => `${indent}--c-${kebab(k)}: ${v};`)
     .join('\n');
 }
 
 export function buildCss(): string {
   const shared = [
-    ...Object.entries(radius).map(([k, v]) => `  --radius-${k}: ${v}px;`),
-    `  --font-sans: ${font.sans};`,
-    `  --font-mono: ${font.mono};`,
+    ...Object.entries(radius).map(([k, v]) => `  --r-${k}: ${v}px;`),
+    `  --f-sans: ${font.sans};`,
+    `  --f-mono: ${font.mono};`,
     `  --motion-fast: ${motion.fast}ms;`,
     `  --motion-base: ${motion.base}ms;`,
     `  --motion-slow: ${motion.slow}ms;`,

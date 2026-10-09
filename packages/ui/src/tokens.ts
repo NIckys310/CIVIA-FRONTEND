@@ -9,6 +9,8 @@
  * - Colores de estado SOLO comunican información, nunca decoran, y siempre van con icono + texto.
  */
 
+import type { IconName } from './icons';
+
 export const palette = {
   light: {
     bg: '#F5F4F0', // blanco hueso
@@ -120,7 +122,7 @@ export const touch = { min: 44, field: 56 } as const;
 export type Status = 'ok' | 'warn' | 'danger' | 'info';
 
 /** Semáforo de revisión. El estado nunca depende solo del color: icono + texto + color. */
-export const statusMeta: Record<Status, { label: string; labelEn: string; icon: string }> = {
+export const statusMeta: Record<Status, { label: string; labelEn: string; icon: IconName }> = {
   ok: { label: 'Correcto', labelEn: 'Correct', icon: 'statusOk' },
   warn: { label: 'Revisar', labelEn: 'Review', icon: 'statusWarn' },
   danger: { label: 'Problema', labelEn: 'Issue', icon: 'statusDanger' },
