@@ -17,7 +17,8 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "contract:sync": "node scripts/sync-contract.mjs"
   },
   "devDependencies": {
     "prettier": "^3.9.9",
