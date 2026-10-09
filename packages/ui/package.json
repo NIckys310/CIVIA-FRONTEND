@@ -17,6 +17,6 @@
   },
   "devDependencies": {
     "@civia/tsconfig": "*",
-    "@types/node": "^24"
+    "@types/node": "^26"
   }
 }
