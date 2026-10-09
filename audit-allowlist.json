@@ -1,0 +1,14 @@
+{
+  "GHSA-vfj7-8cjw-p6xm": {
+    "package": "braces",
+    "reason": "Sin versión corregida (todas las versiones afectadas). Solo lo usa micromatch dentro de Metro/Expo CLI para resolver globs de nuestro propio repo durante el build; no se incluye en el bundle de la app ni en la web.",
+    "reviewed": "2026-10-09",
+    "expires": "2027-01-09"
+  },
+  "GHSA-86w9-cpqp-85rv": {
+    "package": "node-forge",
+    "reason": "Sin versión corregida (<=1.4.0, última publicada). Solo lo usa @expo/cli (firma de código de actualizaciones) en la máquina de desarrollo/CI; no se incluye en el bundle de la app ni en la web. CIVIA no usa expo-updates con firma.",
+    "reviewed": "2026-10-09",
+    "expires": "2027-01-09"
+  }
+}
