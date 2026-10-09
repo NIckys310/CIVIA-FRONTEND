@@ -100,3 +100,29 @@ test('el modo web envía la cabecera anti-CSRF y nunca un refresh token en el cu
   assert.equal(seen?.body, undefined);
   assert.equal(seen?.credentials, 'include');
 });
+
+test('login con MFA devuelve el desafío y no inicia sesión hasta verificar el código', async () => {
+  const storage = memoryStorage();
+  const calls: string[] = [];
+  const client = createCiviaClient({
+    baseUrl: 'http://api',
+    mode: 'mobile',
+    storage,
+    fetch: async (input, init) => {
+      const url = input instanceof Request ? input.url : String(input);
+      calls.push(url);
+      if (url.endsWith('/auth/login')) return json({ mfa_required: true, mfa_token: 'CH' });
+      const body = JSON.parse(String(init?.body)) as { mfa_token: string; code: string };
+      assert.equal(body.mfa_token, 'CH');
+      assert.equal(body.code, '123456');
+      return json({ access_token: 'A', expires_in: 600, refresh_token: 'R' });
+    },
+  });
+  const step1 = await client.auth.login({ email: 'a@b.co', password: 'x' });
+  assert.deepEqual(step1, { mfaRequired: true, mfaToken: 'CH' });
+  assert.equal(client.isAuthenticated, false);
+  await client.auth.verifyMfa({ mfaToken: 'CH', code: '123456' });
+  assert.equal(client.isAuthenticated, true);
+  assert.equal(storage.value, 'R');
+  assert.ok(calls.at(-1)?.endsWith('/auth/mfa/verify'));
+});
