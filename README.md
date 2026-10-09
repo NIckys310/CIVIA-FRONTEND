@@ -1,84 +1,73 @@
-# CIVIA AI
+# CIVIA — Frontend
 
-**El copiloto digital del ingeniero civil.** Planos + IA + normativa + biblioteca técnica +
-motor de cálculo + medición con celular + visualización 2D/3D + reportes.
-
-```
-IA → interpreta
-Motor de ingeniería → calcula (determinista, sin LLM)
-Normativa → establece criterios
-Ingeniero → valida
-```
+Interfaz de **CIVIA AI**, el copiloto digital del ingeniero civil: aplicación web a pantalla
+completa (escritorio, tableta y móvil, instalable como PWA) y app nativa para Android/iOS.
 
 > Toda salida de CIVIA requiere revisión y aprobación del profesional responsable.
 
-**Estado:** Fase 0 — Fundaciones ✔ (auth, RBAC, multi-tenant con RLS, auditoría, web, PWA y app móvil).
+| Repositorio | Contenido |
+|---|---|
+| **CIVIA-FRONTEND** (este) | Web (Next.js, PWA) y app móvil (Expo) |
+| [CIVIA-BACKEND](https://github.com/NIckys310/CIVIA-BACKEND) | API, base de datos, infraestructura |
+| [CIVIA-IA](https://github.com/NIckys310/CIVIA-IA) | Visión, OCR, RAG con citas y LLM |
 
 ## Estructura
 
 ```
-apps/web            Next.js 16 · PWA (escritorio, tableta y móvil)
-apps/mobile         Expo SDK 57 · Android (APK/AAB) e iOS (IPA)
-services/api        FastAPI · PostgreSQL 16 + pgvector · Alembic
-packages/ui         Design tokens + iconos de ingeniería (web y móvil)
-packages/shared-types  Tipos TS generados del OpenAPI
-packages/api-client Cliente tipado con refresco de sesión
-infra/              docker-compose (Postgres, Redis, MinIO, API)
-docs/               Arquitectura, ER, seguridad, ADRs y guías
+apps/web               Next.js 16 · PWA · CSP con nonce
+apps/mobile            Expo SDK 57 · Android (APK/AAB) e iOS (IPA)
+packages/ui            Design tokens (test de contraste WCAG AA) + iconos de ingeniería
+packages/shared-types  Tipos generados del contrato OpenAPI de CIVIA-BACKEND
+packages/api-client    Cliente tipado: refresco de sesión de vuelo único, MFA
 ```
+
+## Diseño
+
+"El cuaderno de obra del siglo XXI": papel de plano, ejes A-B-C / 1-2-3, líneas de cota,
+azul plano para la marca, naranja seguridad solo para la acción principal, datos técnicos en
+monoespaciada (`C-01`, `30×30 cm`, `8Ø16`). Modo claro y oscuro; el estado nunca depende solo
+del color.
 
 ## Requisitos
 
-- Node.js ≥ 22 (probado con 24) y npm
-- Python 3.12 vía [uv](https://docs.astral.sh/uv/) (`pip install uv`)
-- Opcional: Docker Desktop (Postgres/Redis/MinIO). Sin Docker se usa Postgres embebido.
+- Node.js ≥ 22 (probado con 24)
+- La API de [CIVIA-BACKEND](https://github.com/NIckys310/CIVIA-BACKEND) en marcha
 
 ## Puesta en marcha
 
 ```bash
 npm install
-uv sync --python 3.12
-cp .env.example .env        # y reemplaza los valores "change-me"
+cp .env.example apps/web/.env.local      # ajusta NEXT_PUBLIC_API_URL si hace falta
+npm run dev -w @civia/web                # http://localhost:3000
+npm run dev -w @civia/mobile             # Expo Go o development build
 ```
 
-**Opción A — sin Docker (Postgres 16 + pgvector embebido):**
+APK / AAB / IPA: ver [docs/guides/mobile-builds.md](docs/guides/mobile-builds.md).
+
+## Contrato con la API
+
+Después de un cambio en la API (con CIVIA-BACKEND clonado al lado de este repo):
 
 ```bash
-.venv/Scripts/python scripts/dev_api.py      # Windows (Linux/macOS: .venv/bin/python)
-npm run dev -w @civia/web                    # http://localhost:3000
+npm run contract:sync
+# o desde la API en marcha:
+npm run contract:sync -- http://localhost:8000/api/v1/openapi.json
 ```
-
-Si el puerto 8000 está ocupado: `CIVIA_API_PORT=8010` para la API y
-`NEXT_PUBLIC_API_URL=http://localhost:8010` para la web.
-
-**Opción B — con Docker:**
-
-```bash
-docker compose -f infra/docker-compose.yml --env-file .env up -d
-npm run dev -w @civia/web
-```
-
-**App móvil:** `npm run dev -w @civia/mobile` (Expo Go o development build).
-Para generar APK/IPA ver [docs/guides/mobile-builds.md](docs/guides/mobile-builds.md).
 
 ## Calidad
 
 ```bash
-cd services/api && ../../.venv/Scripts/python -m pytest      # API: Postgres real + RLS
-npx turbo run typecheck test                                  # TypeScript + tests de paquetes
-uv run ruff check services/api && uv run mypy services/api/src
+npx turbo run typecheck test
+npm run lint -w @civia/web
+npm run build -w @civia/web
 ```
 
-Contrato: después de cambiar la API, `python scripts/export_openapi.py` y
-`npm run generate -w @civia/shared-types` (CI falla si están desincronizados).
+## Seguridad en el cliente
 
-## Documentación
+- Access token solo en memoria; refresh en cookie `HttpOnly; Secure; SameSite=Strict` (web) o
+  Keychain/Keystore (móvil).
+- Login en dos pasos con TOTP o código de recuperación.
+- CSP estricta con nonce, cabeceras de seguridad, service worker que nunca cachea la API.
+- Móvil: desbloqueo biométrico y bloqueo tras 5 min de inactividad, `allowBackup=false`.
 
-- [Arquitectura](docs/architecture.md) · [Modelo de datos](docs/database/er.md)
-- [Modelo de amenazas](docs/security/threat-model.md) · [Política de seguridad](SECURITY.md)
-- [Decisiones de arquitectura (ADR)](docs/adr/)
-
-## Convenciones
-
-Conventional Commits, commits pequeños y atómicos; `main` ← `develop` ← `feat/<módulo>-<desc>`.
-Nunca se commitean secretos, `.env`, datasets protegidos ni normas con derechos restringidos.
+[Cómo contribuir](CONTRIBUTING.md) · [Seguridad](SECURITY.md) · [ADRs](docs/adr/)
