@@ -3,11 +3,12 @@
  * - Scripts: solo los que llevan el nonce (+ 'strict-dynamic').
  * - Estilos: 'unsafe-inline' es necesario para los atributos style de componentes
  *   accesibles (posicionamiento de menús/diálogos); no permite ejecutar código.
- * - connect-src: solo la propia app y la API configurada.
+ * - connect-src: solo la propia app (la API se sirve en el mismo dominio vía rewrites) y,
+ *   si se configura, un origen externo de API.
  */
 import { NextResponse, type NextRequest } from 'next/server';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
@@ -18,7 +19,7 @@ export function proxy(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' blob: data:",
     "font-src 'self'",
-    `connect-src 'self' ${API_URL}${isDev ? ' ws:' : ''}`,
+    `connect-src 'self'${API_URL ? ` ${API_URL}` : ''}${isDev ? ' ws:' : ''}`,
     "worker-src 'self'",
     "manifest-src 'self'",
     "object-src 'none'",
