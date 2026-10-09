@@ -37,12 +37,13 @@ del color.
 
 ```bash
 npm install
-cp .env.example apps/web/.env.local      # ajusta NEXT_PUBLIC_API_URL si hace falta
+cp .env.example apps/web/.env.local      # API_PROXY_TARGET: dónde corre la API
 npm run dev -w @civia/web                # http://localhost:3000
 npm run dev -w @civia/mobile             # Expo Go o development build
 ```
 
 APK / AAB / IPA: ver [docs/guides/mobile-builds.md](docs/guides/mobile-builds.md).
+Despliegue público en Vercel: [docs/guides/deploy.md](docs/guides/deploy.md).
 
 ## Contrato con la API
 
