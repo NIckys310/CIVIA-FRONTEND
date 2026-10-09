@@ -1,0 +1,22 @@
+{
+  "name": "civia",
+  "private": true,
+  "description": "CIVIA AI — el copiloto digital del ingeniero civil",
+  "packageManager": "npm@12.0.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  }
+}
