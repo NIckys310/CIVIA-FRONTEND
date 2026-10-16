@@ -22,7 +22,7 @@
     "audit:prod": "node scripts/audit.mjs"
   },
   "devDependencies": {
-    "prettier": "^3.9.9",
+    "prettier": "^3.9.10",
     "turbo": "^2.11.7",
     "typescript": "~5.9"
   },
