@@ -5,14 +5,27 @@ URL, p. ej. `https://civia-api-XXXX.onrender.com`.
 
 ## Cómo funciona
 
-La web llama a la API en su **mismo dominio** (`/api/v1/*`) y Next.js la reenvía al backend
-(`rewrites` en `apps/web/next.config.ts`). Ventajas:
+La web llama a la API en su **mismo dominio** (`/api/v1/*`) y una ruta de servidor de Next.js
+(`apps/web/src/app/api/v1/[...path]/route.ts`) la reenvía al backend. No se usan `rewrites`:
+la capa de borde de Vercel rechaza reenviar a dominios `onrender.com`
+(`DNS_HOSTNAME_RESOLVED_PRIVATE`). Ventajas:
 
 - La cookie de sesión (`HttpOnly; Secure; SameSite=Strict`) es de primera parte.
 - No hace falta abrir CORS en la API.
 - La CSP solo permite `connect-src 'self'`.
 
-## Pasos (una vez)
+## Pasos con la CLI (como se hizo el primer despliegue)
+
+```bash
+vercel login
+vercel project add civia
+vercel project update civia --root-directory apps/web --framework nextjs --node-version 24.x --yes
+vercel link --yes --project civia                       # desde la raíz del repo
+printf 'https://civia-api-XXXX.onrender.com' | vercel env add API_PROXY_TARGET production --yes
+vercel deploy --prod --yes                             # desde la raíz del repo
+```
+
+## Pasos desde el panel (alternativa)
 
 1. Entra en <https://vercel.com> con tu cuenta de GitHub y autoriza el repo `CIVIA-FRONTEND`.
 2. **Add New → Project → Import** `CIVIA-FRONTEND`.
