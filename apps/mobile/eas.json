@@ -13,12 +13,12 @@
       "distribution": "internal",
       "android": { "buildType": "apk" },
       "ios": { "simulator": false },
-      "env": { "EXPO_PUBLIC_API_URL": "https://staging-api.civia.example" }
+      "env": { "EXPO_PUBLIC_API_URL": "https://civia-api-jgqt.onrender.com" }
     },
     "production": {
       "autoIncrement": true,
       "android": { "buildType": "app-bundle" },
-      "env": { "EXPO_PUBLIC_API_URL": "https://api.civia.example" }
+      "env": { "EXPO_PUBLIC_API_URL": "https://civia-api-jgqt.onrender.com" }
     }
   },
   "submit": {
