@@ -26,6 +26,9 @@ const MOBILE = [
 const ROUTES = [
   [/^\/login$/, 'auth', { mode: 'login' }, true],
   [/^\/register$/, 'auth', { mode: 'register' }, true],
+  [/^\/forgot$/, 'auth', { mode: 'forgot' }, true],
+  // 'always': el enlace del correo funciona aunque haya una sesión abierta en este navegador.
+  [/^\/reset$/, 'auth', { mode: 'reset' }, 'always'],
   [/^\/?$/, 'dashboard'],
   [/^\/projects$/, 'projects'],
   [/^\/projects\/([\w-]+)(?:\/(\w+))?$/, 'project', (m) => ({ id: m[1], tab: m[2] || 'overview' })],
@@ -191,7 +194,7 @@ async function route() {
     location.hash = '#/login';
     return;
   }
-  if (session.user && match.isPublic) { location.hash = '#/'; return; }
+  if (session.user && match.isPublic === true) { location.hash = '#/'; return; }
 
   if (typeof cleanup === 'function') { try { cleanup(); } catch { /* vista ya desmontada */ } }
   cleanup = null;
