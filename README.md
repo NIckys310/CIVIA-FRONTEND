@@ -1,74 +1,56 @@
 # CIVIA — Frontend
 
-Interfaz de **CIVIA AI**, el copiloto digital del ingeniero civil: aplicación web a pantalla
-completa (escritorio, tableta y móvil, instalable como PWA) y app nativa para Android/iOS.
+Interfaz de **CIVIA AI · Arquitectura inteligente**: aplicación web instalable (PWA) para
+escritorio, tableta y móvil, con estética de lujo derivada del logo (negro profundo, cristal
+cromado, resplandor ámbar y acero azulado).
 
 > Toda salida de CIVIA requiere revisión y aprobación del profesional responsable.
 
-| Repositorio | Contenido |
-|---|---|
-| **CIVIA-FRONTEND** (este) | Web (Next.js, PWA) y app móvil (Expo) |
-| [CIVIA-BACKEND](https://github.com/NIckys310/CIVIA-BACKEND) | API, base de datos, infraestructura |
-| [CIVIA-IA](https://github.com/NIckys310/CIVIA-IA) | Visión, OCR, RAG con citas y LLM |
+| Repositorio | Contenido | Tecnología |
+|---|---|---|
+| [CIVIA-FRONTEND](https://github.com/NIckys310/CIVIA-FRONTEND) | Interfaz web (PWA, escritorio y móvil) y su servidor | HTML/CSS/JS + Three.js · servidor Java 21 |
+| [CIVIA-BACKEND](https://github.com/NIckys310/CIVIA-BACKEND) | API, CIVIA Auth, base de datos, archivos | Java 21 · Spring Boot 3.5 · H2/PostgreSQL |
+| [CIVIA-IA](https://github.com/NIckys310/CIVIA-IA) | Copilot, análisis de planos y modelos 3D, biblioteca | Java 21 · Claude (opcional) + motor local |
+
+## Qué incluye
+
+- **Proyectos:** revisión de la IA ("lo que hace falta"), fases, archivos con versiones y vista
+  previa, kanban de tareas, presupuesto con AIU y exportación CSV, programa de espacios, equipo y bitácora.
+- **Planos:** subida de PDF, DWG, DXF e imágenes; análisis con IA (escala, norte, rótulo, cotas,
+  niveles, ejes, áreas, vanos, escaleras, accesibilidad…).
+- **Modelado 3D (Three.js):** GLB, glTF, OBJ y STL con sombras, medición, notas ancladas, corte de
+  sección, estudio solar, captura, análisis con IA y **volumetría con IA** exportable a GLB.
+- **Cámara:** fotos de obra con ubicación opcional, fotos de planos con análisis inmediato y
+  medición con objeto de referencia.
+- **CIVIA Copilot:** chat con contexto del proyecto y planos adjuntos, fuentes citadas.
+- **Biblioteca:** una sola pregunta → respuesta con citas; 13 categorías, artículos, glosario A–Z, favoritos.
+- **Seguridad de la cuenta:** contraseña sin límite de longitud, verificación en dos pasos, sesiones activas.
 
 ## Estructura
 
 ```
-apps/web               Next.js 16 · PWA · CSP con nonce
-apps/mobile            Expo SDK 57 · Android (APK/AAB) e iOS (IPA)
-packages/ui            Design tokens (test de contraste WCAG AA) + iconos de ingeniería
-packages/shared-types  Tipos generados del contrato OpenAPI de CIVIA-BACKEND
-packages/api-client    Cliente tipado: refresco de sesión de vuelo único, MFA
+web/                 Interfaz (sin paso de compilación)
+  index.html         Shell + splash
+  css/app.css        Sistema visual (temas oscuro/claro)
+  js/app.js          Arranque, sesión, enrutador, navegación
+  js/api.js          Cliente de la API (token en memoria, refresco de vuelo único)
+  js/ui.js           Plantillas seguras (escape automático), íconos, Markdown seguro, modales
+  js/views/*.js      Vistas cargadas bajo demanda
+  vendor/three/      Three.js r170 local (sin CDN)
+  sw.js              Service worker (nunca cachea /api)
+server/CiviaWeb.java Servidor estático + proxy de la API (solo JDK 21)
 ```
-
-## Diseño
-
-"El cuaderno de obra del siglo XXI": papel de plano, ejes A-B-C / 1-2-3, líneas de cota,
-azul plano para la marca, naranja seguridad solo para la acción principal, datos técnicos en
-monoespaciada (`C-01`, `30×30 cm`, `8Ø16`). Modo claro y oscuro; el estado nunca depende solo
-del color.
-
-## Requisitos
-
-- Node.js ≥ 22 (probado con 24)
-- La API de [CIVIA-BACKEND](https://github.com/NIckys310/CIVIA-BACKEND) en marcha
 
 ## Puesta en marcha
 
-```bash
-npm install
-cp .env.example apps/web/.env.local      # API_PROXY_TARGET: dónde corre la API
-npm run dev -w @civia/web                # http://localhost:3000
-npm run dev -w @civia/mobile             # Expo Go o development build
-```
-
-APK / AAB / IPA: ver [docs/guides/mobile-builds.md](docs/guides/mobile-builds.md).
-Despliegue público en Vercel: [docs/guides/deploy.md](docs/guides/deploy.md).
-
-## Contrato con la API
-
-Después de un cambio en la API (con CIVIA-BACKEND clonado al lado de este repo):
+Lo más simple es arrancar [CIVIA-BACKEND](https://github.com/NIckys310/CIVIA-BACKEND), que ya sirve
+esta interfaz en `http://localhost:8080`. Para servirla por separado:
 
 ```bash
-npm run contract:sync
-# o desde la API en marcha:
-npm run contract:sync -- http://localhost:8000/api/v1/openapi.json
+java server/CiviaWeb.java --port 3000 --api http://localhost:8080
 ```
 
-## Calidad
+La cámara necesita HTTPS (o `localhost`) y permiso del navegador.
 
-```bash
-npx turbo run typecheck test
-npm run lint -w @civia/web
-npm run build -w @civia/web
-```
-
-## Seguridad en el cliente
-
-- Access token solo en memoria; refresh en cookie `HttpOnly; Secure; SameSite=Strict` (web) o
-  Keychain/Keystore (móvil).
-- Login en dos pasos con TOTP o código de recuperación.
-- CSP estricta con nonce, cabeceras de seguridad, service worker que nunca cachea la API.
-- Móvil: desbloqueo biométrico y bloqueo tras 5 min de inactividad, `allowBackup=false`.
-
-[Cómo contribuir](CONTRIBUTING.md) · [Seguridad](SECURITY.md) · [ADRs](docs/adr/)
+[Arquitectura](docs/architecture.md) · [Despliegue](docs/guides/deploy.md) ·
+[Cómo contribuir](CONTRIBUTING.md) · [Seguridad](SECURITY.md)

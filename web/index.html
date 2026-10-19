@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CIVIA AI · Arquitectura inteligente</title>
+  <meta name="description" content="CIVIA AI: proyectos, planos, modelos 3D, cámara de obra, copiloto de IA y biblioteca de arquitectura.">
+  <meta name="theme-color" content="#07080b">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/css/app.css?v=1.0.1">
+  <link rel="modulepreload" href="/js/app.js?v=1.0.1">
+  <link rel="modulepreload" href="/js/api.js">
+  <link rel="modulepreload" href="/js/ui.js">
+</head>
+<body>
+  <div id="splash" role="status" aria-label="Cargando CIVIA AI">
+    <div>
+      <img src="/assets/mark-256.png" alt="" width="96" height="96">
+      <div class="bar"></div>
+    </div>
+  </div>
+  <div id="app"></div>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <noscript>CIVIA AI necesita JavaScript activado.</noscript>
+  <script type="module" src="/js/app.js?v=1.0.1"></script>
+</body>
+</html>

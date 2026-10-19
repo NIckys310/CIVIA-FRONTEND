@@ -1,4 +1,4 @@
-# Instalar: uvx pre-commit install
+# Instalar: pipx run pre-commit install   (o: pip install pre-commit && pre-commit install)
 # Versiones fijadas por hash de commit (cadena de suministro).
 repos:
   - repo: https://github.com/gitleaks/gitleaks
@@ -9,16 +9,8 @@ repos:
     rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # v6.0.0
     hooks:
       - id: check-added-large-files
-        args: [--maxkb=1024]
+        args: [--maxkb=2048]
       - id: check-merge-conflict
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: trailing-whitespace
-  - repo: local
-    hooks:
-      - id: tsc
-        name: TypeScript (tipos)
-        entry: npx turbo run typecheck
-        language: system
-        pass_filenames: false
-        files: \.(ts|tsx)$

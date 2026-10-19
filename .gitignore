@@ -1,63 +1,18 @@
-# Dependencies
-node_modules/
-.venv/
-__pycache__/
-*.py[cod]
-
-# Builds
-.next/
+# Compilación del servidor
+*.class
 out/
-dist/
-build/
-.turbo/
-.expo/
-*.tsbuildinfo
-coverage/
-.coverage
-htmlcov/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
 
-# Mobile native outputs
-apps/mobile/android/
-apps/mobile/ios/
-*.apk
-*.aab
-*.ipa
-*.jks
-*.keystore
-*.p8
-*.p12
-*.mobileprovision
-
-# Secrets — never commit
+# Entorno
 .env
 .env.*
 !.env.example
-*.pem
-*.key
-secrets/
 
-# Data that may be protected (plans, norms, datasets)
-data/private/
-datasets/
-
-# OS / editors
+# IDE / SO
+.idea/
+.vscode/
 .DS_Store
 Thumbs.db
-.idea/
-.vscode/*
-!.vscode/extensions.json
+*.log
 
-# Postgres embebido de desarrollo (scripts/dev_api.py)
-.devdb/
-
-# Configuración local del entorno de Claude Code
-.claude/
-
-# Generado por Next.js
-next-env.d.ts
-
+# Enlace local de la CLI de Vercel
 .vercel
-.env*
