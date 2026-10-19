@@ -1,5 +1,4 @@
-# CI del frontend de CIVIA: secretos → SCA → tipos → tests → lint → build.
-# Las acciones están fijadas por hash de commit (cadena de suministro); el comentario indica la versión.
+# CI de CIVIA-FRONTEND: secretos → servidor Java → sintaxis de los módulos JavaScript.
 name: CI
 
 on:
@@ -26,27 +25,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  web-mobile:
-    name: Web, móvil y paquetes (TypeScript)
+  web:
+    name: Interfaz y servidor (Java 21)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Compilar el servidor web
+        run: javac -d /tmp/civia-web server/CiviaWeb.java
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-          cache: npm
-      - run: npm ci
-      - name: Auditoría de dependencias de producción (SCA)
-        run: npm run audit:prod
-      - name: Tipos generados coinciden con el contrato
-        run: |
-          npm run generate -w @civia/shared-types
-          git diff --exit-code packages/shared-types
-      - name: Tipos
-        run: npx turbo run typecheck
-      - name: Tests (tokens, contraste WCAG, cliente API)
-        run: npx turbo run test
-      - name: Lint web
-        run: npm run lint -w @civia/web
-      - name: Build web
-        run: npm run build -w @civia/web
+      - name: Sintaxis de los módulos (ES modules)
+        run: for f in web/js/*.js web/js/views/*.js web/sw.js; do cp "$f" /tmp/check.mjs && node --check /tmp/check.mjs || { echo "Error en $f"; exit 1; }; done

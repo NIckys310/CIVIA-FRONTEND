@@ -1,40 +1,26 @@
-# Despliegue público de la web en Vercel
+# Despliegue público
 
-Requisito: la API ya desplegada en Render (guía en CIVIA-BACKEND `docs/guides/deploy.md`) y su
-URL, p. ej. `https://civia-api-XXXX.onrender.com`.
+CIVIA AI corre como **un solo servicio** (API + interfaz) en un contenedor Docker.
 
-## Cómo funciona
+## Render + PostgreSQL (Neon o Render)
 
-La web llama a la API en su **mismo dominio** (`/api/v1/*`) y Next.js la reenvía al backend
-(`rewrites` en `apps/web/next.config.ts`). Ventajas:
+1. Crea una base PostgreSQL y copia su URL en formato JDBC:
+   `jdbc:postgresql://HOST:5432/civia?sslmode=require`.
+2. En Render, **New → Blueprint** apuntando a CIVIA-BACKEND (usa `render.yaml`).
+3. Define las variables:
+   - `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`
+   - `CIVIA_JWT_SECRET` y `CIVIA_DATA_KEY`: `openssl rand -base64 48` (guárdalas: si cambian se
+     cierran las sesiones y no se pueden leer los datos cifrados).
+   - `ANTHROPIC_API_KEY` (opcional) para Claude.
+4. El Dockerfile compila CIVIA-IA y toma la interfaz de CIVIA-FRONTEND (`CIVIA_REF`, por defecto `main`).
 
-- La cookie de sesión (`HttpOnly; Secure; SameSite=Strict`) es de primera parte.
-- No hace falta abrir CORS en la API.
-- La CSP solo permite `connect-src 'self'`.
+## Almacenamiento de archivos
 
-## Pasos (una vez)
+Los archivos se guardan en `CIVIA_STORAGE_DIR`. En plataformas con disco efímero monta un disco
+persistente en `/app/data`.
 
-1. Entra en <https://vercel.com> con tu cuenta de GitHub y autoriza el repo `CIVIA-FRONTEND`.
-2. **Add New → Project → Import** `CIVIA-FRONTEND`.
-3. Configuración:
-   - **Root Directory:** `apps/web` (Vercel detecta Next.js y los workspaces de npm).
-   - **Environment Variables:** `API_PROXY_TARGET` = `https://civia-api-XXXX.onrender.com`
-     (sin `/` final).
-   - **Production Branch:** `main` (Settings → Git).
-4. **Deploy**. Al terminar tendrás `https://<proyecto>.vercel.app`.
-5. En Render, pon esa URL en `WEB_BASE_URL` (enlaces de los correos).
+## Servidor solo para la interfaz (opcional)
 
-Cada push a `main` despliega producción; cada PR recibe una URL de vista previa.
-
-## App móvil contra la API pública
-
-En `apps/mobile/eas.json`, perfil `preview`/`production`: `EXPO_PUBLIC_API_URL` = URL de Render
-(la app nativa no usa cookies ni CORS: guarda el refresh token en Keychain/Keystore).
-
-## Problemas frecuentes
-
-| Síntoma | Causa |
-|---|---|
-| El login tarda ~1 min la primera vez | El plan gratuito de Render duerme la API; se despierta sola |
-| `502`/`504` en `/api/v1/*` | `API_PROXY_TARGET` mal escrito o la API aún desplegando |
-| Sesión que no se mantiene al recargar | Revisa que la web se abre por `https://` (la cookie es `Secure`) |
+```bash
+java server/CiviaWeb.java --port 3000 --api https://tu-api.example.com
+```

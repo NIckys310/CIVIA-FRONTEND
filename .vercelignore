@@ -1,0 +1,10 @@
+# Artefactos locales que no deben subirse al desplegar con la CLI de Vercel
+node_modules
+**/node_modules
+**/.next
+**/.turbo
+**/.expo
+**/*.tsbuildinfo
+.env
+.env.*
+!.env.example
