@@ -1,12 +1,7 @@
 version: 2
 updates:
-  - package-ecosystem: npm
-    directory: /
-    schedule: { interval: weekly }
-    open-pull-requests-limit: 10
-    groups:
-      minor-and-patch:
-        update-types: [minor, patch]
+  # La interfaz no tiene dependencias de npm (Three.js va incluido en web/vendor) y el
+  # servidor usa solo el JDK; solo hay que vigilar las acciones de CI.
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
