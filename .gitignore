@@ -13,3 +13,6 @@ out/
 .DS_Store
 Thumbs.db
 *.log
+
+# Enlace local de la CLI de Vercel
+.vercel
