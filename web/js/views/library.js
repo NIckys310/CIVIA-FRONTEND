@@ -23,6 +23,7 @@ function askBox(q = '') {
     <p class="muted" style="margin-top:10px;max-width:680px">Estructuras, geotecnia, hidráulica, vías, topografía, puentes, materiales, instalaciones, normativa, seguridad en obra, BIM, gestión, urbanismo, diseño e historia. Las respuestas citan sus fuentes.</p>
     <form class="box" id="ask-form"><input name="q" value="${q}" placeholder="Ej. ¿Cómo se evalúa la licuación de un suelo?" autocomplete="off">
       <button class="btn primary" data-busy="Buscando…">${icon('sparkle')} Preguntar</button></form>
+    <div class="row wrap lib-meta"><span class="hint" id="lib-stats"></span><div class="chips" id="recent"></div></div>
     <div id="answer"></div>
   </div>`;
 }
@@ -69,6 +70,15 @@ export async function render(el, params) {
         <h3>${c.name}</h3><p>${c.description}</p><div class="hint" style="margin-top:12px">${c.articles} artículos</div></a>`)}</div>` : ''}`);
     bindAsk(el);
     $('#new-article', el)?.addEventListener('click', () => newArticle(cats));
+    // Tamaño de la biblioteca y búsquedas recientes de la persona (para retomarlas con un clic).
+    api.get('/library/stats').then((st) => {
+      const t = $('#lib-stats', el);
+      if (t) t.textContent = `${st.articles} artículos · ${st.terms} términos · ${st.categories} categorías`;
+    }).catch(() => {});
+    api.get('/library/recent-searches').then((list) => {
+      const r = $('#recent', el);
+      if (r && list.length) mount(r, html`${list.slice(0, 5).map((q) => html`<a class="chip" href="#/library/s/${encodeURIComponent(q)}">${icon('clock')}${q}</a>`)}`);
+    }).catch(() => {});
     if (view === 'home') {
       // Artículo del día: se carga aparte para no demorar la página.
       api.get('/library/featured').then((a) => {
