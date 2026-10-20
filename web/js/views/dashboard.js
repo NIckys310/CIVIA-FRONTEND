@@ -1,6 +1,7 @@
 // Panel de inicio.
 import { api, session } from '../api.js';
 import { $, coverArt, fmtBytes, fmtNum, html, icon, mount, relTime, STATUS_LABEL } from '../ui.js';
+import { countUp } from '../motion.js';
 
 function greeting() {
   const h = new Date().getHours();
@@ -92,6 +93,7 @@ export async function render(el) {
     </div>
   </div>`);
 
+  el.querySelectorAll('.kpi .val').forEach((v) => countUp(v));
   const ask = (q) => { sessionStorage.setItem('civia-copilot-draft', q); location.hash = '#/copilot'; };
   $('#ask', el).addEventListener('submit', (e) => { e.preventDefault(); const q = e.target.q.value.trim(); if (q) ask(q); });
   el.querySelectorAll('[data-q]').forEach((b) => { b.onclick = () => ask(b.dataset.q); });
