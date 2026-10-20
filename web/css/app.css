@@ -716,3 +716,5 @@ input[type="range"] { accent-color: var(--gold); }
 /* Volver al final del chat: aparece al subir a leer. */
 .chat .thread { position: relative; }
 .to-latest { position: absolute; left: 50%; bottom: 128px; z-index: 3; transform: translateX(-50%); border-radius: 50%; background: var(--panel-2); box-shadow: var(--shadow); animation: pop var(--dur-2) var(--ease-spring); }
+/* Cambio de tema: el nuevo tema se revela en círculo desde el botón (View Transitions). */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
