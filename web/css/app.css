@@ -148,7 +148,7 @@ p { margin: 0; }
 }
 .brand { display: flex; align-items: center; gap: 12px; padding: 4px 10px 22px; }
 .brand img { width: 40px; height: 40px; mix-blend-mode: screen; }
-:root[data-theme="light"] .brand img, :root[data-theme="light"] #splash img, :root[data-theme="light"] .msg .who img, :root[data-theme="light"] .mark-plate { background: #07080b; border-radius: 10px; padding: 2px; }
+:root[data-theme="light"] .brand img, :root[data-theme="light"] .auth .brand-mobile img, :root[data-theme="light"] #splash img, :root[data-theme="light"] .msg .who img, :root[data-theme="light"] .mark-plate { background: #07080b; border-radius: 10px; padding: 2px; }
 .brand .name { font: 400 21px/1 var(--display); letter-spacing: -0.01em; }
 .brand .name b { font-weight: 400; }
 .brand .tag { margin-top: 5px; font-size: 8.5px; letter-spacing: 0.34em; color: var(--text-3); text-transform: uppercase; }
