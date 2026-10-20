@@ -743,3 +743,6 @@ input[type="range"] { accent-color: var(--gold); }
 .alpha button { transition: border-color var(--dur-1), color var(--dur-1), transform var(--dur-1) var(--ease-out); }
 .alpha button:hover { transform: translateY(-2px); }
 .alpha button.active { animation: tab-on var(--dur-2) var(--ease-spring); }
+/* Kanban: la tarjeta que se arrastra se eleva y gira un poco, como papel. */
+.task:active { cursor: grabbing; }
+.task.dragging, .task[aria-grabbed="true"] { transform: rotate(-1.5deg) scale(1.02); box-shadow: 0 24px 50px -20px rgba(0, 0, 0, 0.9); border-color: color-mix(in srgb, var(--gold) 50%, transparent); }
