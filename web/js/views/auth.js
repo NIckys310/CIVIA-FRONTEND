@@ -2,6 +2,7 @@
 import { afterLogin } from '../app.js';
 import { api, login, logout, register, session } from '../api.js';
 import { $, busy, debounce, html, icon, mount, toast } from '../ui.js';
+import { stagger } from '../motion.js';
 
 function strength(pw) {
   if (!pw) return 0;
@@ -41,6 +42,10 @@ function layout(el, panel) {
     </section>
     <section class="panel">${panel}</section>
   </div>`);
+
+  // Los campos del formulario entran uno tras otro.
+  const form = el.querySelector('.panel form, .panel .auth-card');
+  if (form) stagger(form);
 
   el.querySelectorAll('[data-toggle]').forEach((b) => {
     b.onclick = () => {
