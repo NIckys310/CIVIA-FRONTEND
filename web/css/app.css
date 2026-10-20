@@ -726,3 +726,6 @@ input[type="range"] { accent-color: var(--gold); }
 .view-skeleton .sk-title { height: 44px; width: min(420px, 70%); }
 .view-skeleton .sk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
 .view-skeleton .sk-card { height: 150px; border-radius: var(--radius-lg); }
+/* Foco con teclado: el anillo dorado aparece con un pulso breve. */
+:focus-visible { animation: focus-pulse var(--dur-2) var(--ease-out); }
+@keyframes focus-pulse { from { outline-offset: 6px; outline-color: transparent; } }
