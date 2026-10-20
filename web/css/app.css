@@ -673,4 +673,5 @@ input[type="range"] { accent-color: var(--gold); }
     background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--gold) 12%, transparent), transparent 65%);
     transition: opacity var(--dur-2); }
   .card.hover:hover::before { opacity: 1; }
+  .card.hover:not(.featured) > * { position: relative; z-index: 1; }
 }
