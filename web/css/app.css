@@ -439,10 +439,12 @@ input[type="range"] { accent-color: var(--gold); }
 .md th { background: var(--glass); font-weight: 600; }
 .md a { color: var(--gold-2); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--gold) 45%, transparent); text-underline-offset: 3px; }
 .md a:hover { text-decoration-color: var(--gold); }
+.md hr { border: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--line-2), transparent); margin: 1.4em 0; }
 .md .cite { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin: 0 1px; border-radius: 6px; font: 600 10.5px var(--mono); color: var(--gold-2); background: color-mix(in srgb, var(--gold) 14%, transparent); vertical-align: 2px; }
 .md pre.code { position: relative; margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--bg) 75%, transparent); overflow-x: auto; }
 .md pre.code code { padding: 0; background: none; font-size: 12.5px; line-height: 1.6; white-space: pre; }
 .md pre.code[data-lang]::before { content: attr(data-lang); position: absolute; top: 6px; right: 10px; font: 500 9.5px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.md .task-box.done { background: var(--gold); border-color: var(--gold); box-shadow: inset 0 0 0 2px var(--panel); }
 .md .task-box { display: inline-block; width: 13px; height: 13px; border: 1px solid var(--line-2); border-radius: 4px; margin-right: 6px; vertical-align: -1px; }
 
 /* ---------------------------------------------------------------- biblioteca */

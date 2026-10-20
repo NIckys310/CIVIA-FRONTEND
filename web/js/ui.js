@@ -213,13 +213,16 @@ export function markdown(src) {
     }
     closeTable();
     let m;
-    if ((m = t.match(/^(#{1,4})\s+(.*)$/))) {
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(t)) {
+      closeList();
+      out.push('<hr>');
+    } else if ((m = t.match(/^(#{1,4})\s+(.*)$/))) {
       closeList();
       const level = Math.min(4, m[1].length + 1);
       out.push(`<h${level}>${inline(m[2])}</h${level}>`);
     } else if ((m = t.match(/^[-*]\s+\[( |x)\]\s+(.*)$/i))) {
       if (list !== 'ul') { closeList(); out.push('<ul>'); list = 'ul'; }
-      out.push(`<li><span class="task-box"></span>${inline(m[2])}</li>`);
+      out.push(`<li><span class="task-box${m[1].toLowerCase() === 'x' ? ' done' : ''}"></span>${inline(m[2])}</li>`);
     } else if ((m = t.match(/^[-*•]\s+(.*)$/))) {
       if (list !== 'ul') { closeList(); out.push('<ul>'); list = 'ul'; }
       out.push(`<li>${inline(m[1])}</li>`);
