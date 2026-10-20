@@ -186,8 +186,22 @@ export function markdown(src) {
       table = null;
     }
   };
+  let code = null;
   for (const line of lines) {
     const t = line.trim();
+    // Bloques de código ```lenguaje … ``` (el contenido ya viene escapado).
+    if (/^```/.test(t)) {
+      if (code) {
+        out.push(`<pre class="code"${code.lang ? ` data-lang="${code.lang}"` : ''}><code>${code.lines.join('\n')}</code></pre>`);
+        code = null;
+      } else {
+        closeList();
+        closeTable();
+        code = { lang: t.slice(3).trim().replace(/[^\w+#.-]/g, '').slice(0, 20), lines: [] };
+      }
+      continue;
+    }
+    if (code) { code.lines.push(line); continue; }
     if (/^\|.*\|$/.test(t)) {
       closeList();
       const cells = t.slice(1, -1).split('|').map((c) => c.trim());
@@ -220,6 +234,8 @@ export function markdown(src) {
       out.push(`<p>${inline(t)}</p>`);
     }
   }
+  // Un bloque sin cerrar (por ejemplo, mientras llega una respuesta en streaming) se muestra igual.
+  if (code) out.push(`<pre class="code"><code>${code.lines.join('\n')}</code></pre>`);
   closeList();
   closeTable();
   return raw(out.join(''));
