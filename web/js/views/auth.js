@@ -14,13 +14,27 @@ function strength(pw) {
   return Math.min(4, Math.max(1, s));
 }
 
-const passwordField = (id, label, autocomplete, hint) => html`
-  <div class="field">
+/** Campo con ícono a la izquierda, estado (✓ / !) a la derecha y mensaje de validación debajo. */
+const textField = (id, label, { type = 'text', autocomplete = 'off', ic = 'user', placeholder = '', required = false, extra = '' } = {}) => html`
+  <div class="field" data-field="${id}">
     <label for="${id}">${label}</label>
-    <div class="pw">
-      <input class="input" id="${id}" name="${id}" type="password" autocomplete="${autocomplete}" required>
+    <div class="input-wrap">${icon(ic, 'lead')}
+      <input class="input" id="${id}" name="${id}" type="${type}" autocomplete="${autocomplete}" placeholder="${placeholder}" ${required ? 'required' : ''} aria-describedby="${id}-msg">
+      <span class="state" aria-hidden="true"></span>
+    </div>
+    <div class="field-msg" id="${id}-msg" aria-live="polite"></div>
+    ${extra}
+  </div>`;
+
+const passwordField = (id, label, autocomplete, hint) => html`
+  <div class="field" data-field="${id}">
+    <label for="${id}">${label}</label>
+    <div class="input-wrap pw">${icon('lock', 'lead')}
+      <input class="input" id="${id}" name="${id}" type="password" autocomplete="${autocomplete}" required aria-describedby="${id}-msg">
+      <span class="state" aria-hidden="true"></span>
       <button type="button" class="btn ghost icon sm" data-toggle="${id}" aria-label="Mostrar contraseña">${icon('eye')}</button>
     </div>
+    <div class="field-msg" id="${id}-msg" aria-live="polite"></div>
     ${hint}
   </div>`;
 
@@ -97,12 +111,12 @@ function renderLogin(el, isLogin) {
         <p class="muted" style="margin-bottom:28px">${isLogin ? 'Accede a tus proyectos y a CIVIA Copilot.' : 'Tu cuenta queda protegida con Argon2id y sesiones cifradas.'}</p>
         <div class="stack lg">
           ${isLogin ? '' : html`
-          <div class="field"><label for="fullName">Nombre completo</label><input class="input" id="fullName" name="fullName" autocomplete="name" required></div>
+          ${textField('fullName', 'Nombre completo', { autocomplete: 'name', ic: 'user', placeholder: 'Ana María Pérez', required: true })}
           <div class="form-grid">
-            <div class="field"><label for="profession">Profesión</label><input class="input" id="profession" name="profession" placeholder="Arquitecta" autocomplete="organization-title"></div>
-            <div class="field"><label for="organization">Estudio / empresa</label><input class="input" id="organization" name="organization" autocomplete="organization"></div>
+            ${textField('profession', 'Profesión', { autocomplete: 'organization-title', ic: 'ruler', placeholder: 'Ingeniera civil' })}
+            ${textField('organization', 'Estudio / empresa', { autocomplete: 'organization', ic: 'building', placeholder: 'Opcional' })}
           </div>`}
-          <div class="field"><label for="email">Correo electrónico</label><input class="input" id="email" name="email" type="email" autocomplete="email" required></div>
+          ${textField('email', 'Correo electrónico', { type: 'email', autocomplete: 'email', ic: 'mail', placeholder: 'tu@correo.com', required: true })}
           ${passwordField('password', 'Contraseña', isLogin ? 'current-password' : 'new-password',
             isLogin ? html`<a class="forgot" href="#/forgot">¿Olvidaste tu contraseña?</a>` : strengthHint())}
           <div class="field" id="mfa-field" hidden>
@@ -160,7 +174,7 @@ function renderForgot(el) {
         <h1 style="margin:14px 0 8px">¿Olvidaste tu <span class="chrome-text">contraseña</span>?</h1>
         <p class="muted" style="margin-bottom:28px">Escribe el correo de tu cuenta y te enviaremos un enlace para crear una nueva. El enlace vence en 30 minutos.</p>
         <div class="stack lg" id="forgot-body">
-          <div class="field"><label for="email">Correo electrónico</label><input class="input" id="email" name="email" type="email" autocomplete="email" required></div>
+          ${textField('email', 'Correo electrónico', { type: 'email', autocomplete: 'email', ic: 'mail', placeholder: 'tu@correo.com', required: true })}
           <div class="error-text" id="auth-error" role="alert"></div>
           <button class="btn primary lg block" type="submit" data-busy="Enviando…">Enviar enlace ${icon('arrow')}</button>
         </div>

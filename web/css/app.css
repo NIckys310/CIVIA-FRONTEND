@@ -779,3 +779,24 @@ html { scroll-behavior: smooth; }
   .auth .panel { padding: 8px 16px 40px; align-items: start; }
   .auth .auth-card { padding: 26px 20px 22px; border-radius: 22px; }
 }
+/* Campos con ícono y estado de validación. */
+.input-wrap { position: relative; display: flex; align-items: center; }
+.input-wrap .input { padding-left: 40px; padding-right: 38px; }
+.input-wrap.pw .input { padding-right: 76px; }
+.input-wrap svg.lead { position: absolute; left: 13px; width: 17px; height: 17px; color: var(--text-3); pointer-events: none; transition: color var(--dur-2); }
+.input-wrap:focus-within svg.lead { color: var(--gold); }
+.input-wrap .state { position: absolute; right: 12px; width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; font: 700 11px/1 var(--font); opacity: 0; transform: scale(0.4); transition: opacity var(--dur-1), transform var(--dur-2) var(--ease-spring); pointer-events: none; }
+.input-wrap.pw .state { right: 44px; }
+.input-wrap.pw .btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); height: 34px; }
+.field-msg { min-height: 0; font-size: 12px; line-height: 1.4; color: var(--text-3); overflow: hidden; transition: color var(--dur-1); }
+.field-msg:empty { display: none; }
+.field.valid .input { border-color: color-mix(in srgb, var(--ok) 55%, transparent); }
+.field.valid .state { opacity: 1; transform: none; background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.field.valid .state::before { content: "✓"; }
+.field.invalid .input { border-color: color-mix(in srgb, var(--danger) 65%, transparent); }
+.field.invalid .input:focus { box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 16%, transparent); }
+.field.invalid .state { opacity: 1; transform: none; background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+.field.invalid .state::before { content: "!"; }
+.field.invalid .field-msg { color: var(--danger); animation: shake 0.32s var(--ease-out); }
+.field.warn .field-msg { color: var(--warn); }
+@keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
