@@ -1,6 +1,7 @@
 // Biblioteca de ingeniería civil y arquitectura: una pregunta → respuesta con fuentes; categorías,
 // artículos, glosario y artículos propios.
 import { api } from '../api.js';
+import { revealOnScroll } from '../motion.js';
 import { $, busy, confirmDialog, formData, html, icon, markdown, modal, mount, on, toast } from '../ui.js';
 
 let categoriesCache = null;
@@ -128,6 +129,8 @@ export async function render(el, params) {
             ${a.related.map((r) => html`<a class="row between" href="#/library/a/${r.slug}" style="padding:6px 0"><span>${r.title}</span>${icon('chevron')}</a>`)}</div></div>` : ''}
         </div>
       </div>`);
+    // Las secciones del artículo aparecen a medida que se lee.
+    const stopReveal = revealOnScroll(el, '.article .md > *');
     let fav = a.favorite;
     $('#fav', el).onclick = async (e) => {
       fav = !fav;
@@ -147,7 +150,7 @@ export async function render(el, params) {
       sessionStorage.setItem('civia-copilot-draft', `Explícame más sobre «${a.title}» y cómo aplicarlo en un proyecto.`);
       location.hash = '#/copilot';
     };
-    return;
+    return stopReveal;
   }
 
   if (view === 'favorites') {
