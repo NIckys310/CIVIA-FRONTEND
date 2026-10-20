@@ -252,7 +252,7 @@ async function route() {
     $('#retry-view', target)?.addEventListener('click', route);
   }
   clearTimeout(skeleton);
-  window.scrollTo({ top: 0 });
+  window.scrollTo({ top: 0, behavior: 'instant' }); // una sección nueva empieza arriba, sin desplazamiento animado
   hideSplash();
 }
 
