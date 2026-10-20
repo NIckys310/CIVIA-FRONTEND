@@ -153,19 +153,23 @@ export async function render(el, params) {
     const letters = [...new Set(terms.map((t) => t.term[0].toUpperCase().normalize('NFD').replace(/\p{M}/gu, '')))].sort();
     let filter = '';
     let letter = '';
-    mount(el, html`${nav('glossary')}<div class="page-head"><div><div class="eyebrow gold">Biblioteca</div><h1>Glosario de arquitectura</h1>
+    let category = '';
+    const used = cats.filter((c) => terms.some((t) => t.category === c.id));
+    mount(el, html`${nav('glossary')}<div class="page-head"><div><div class="eyebrow gold">Biblioteca</div><h1>Glosario de ingeniería y arquitectura</h1>
       <p class="muted">${terms.length} términos.</p></div>
       <label class="search" style="max-width:320px">${icon('search')}<input id="g-filter" placeholder="Buscar término"></label></div>
+      <div class="chips cat-filter" style="margin-bottom:14px"><button class="chip active" data-cat="">Todas las áreas</button>${used.map((c) => html`<button class="chip" data-cat="${c.id}">${icon(c.icon)}${c.name}</button>`)}</div>
       <div class="alpha" style="margin-bottom:18px"><button class="active" data-l="">Todos</button>${letters.map((l) => html`<button data-l="${l}">${l}</button>`)}</div>
       <div class="card pad" id="g-list"></div>`);
     const draw = () => {
-      const list = terms.filter((t) => (!letter || t.term.normalize('NFD').replace(/\p{M}/gu, '').toUpperCase().startsWith(letter))
+      const list = terms.filter((t) => (!category || t.category === category) && (!letter || t.term.normalize('NFD').replace(/\p{M}/gu, '').toUpperCase().startsWith(letter))
         && (!filter || `${t.term} ${t.definition}`.toLowerCase().includes(filter)));
       mount($('#g-list', el), list.length ? html`${list.map((t) => html`<div class="term"><div class="row between"><b>${t.term}</b><span class="pill">${catName(cats, t.category)}</span></div><p>${t.definition}</p></div>`)}`
         : html`<p class="faint">Sin resultados.</p>`);
     };
     draw();
     $('#g-filter', el).addEventListener('input', (e) => { filter = e.target.value.toLowerCase(); draw(); });
+    on(el, 'click', '[data-cat]', (e, b) => { category = b.dataset.cat; el.querySelectorAll('[data-cat]').forEach((x) => x.classList.toggle('active', x === b)); draw(); });
     on(el, 'click', '[data-l]', (e, b) => { letter = b.dataset.l; el.querySelectorAll('[data-l]').forEach((x) => x.classList.toggle('active', x === b)); draw(); });
   }
 }
