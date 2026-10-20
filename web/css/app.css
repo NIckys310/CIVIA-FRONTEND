@@ -754,3 +754,5 @@ html { scroll-behavior: smooth; }
 /* Aparición al desplazarse: el contenido largo se revela a medida que llega a la pantalla. */
 .reveal { opacity: 0; transform: translateY(14px); transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out); }
 .reveal.shown { opacity: 1; transform: none; }
+/* Perfil: resumen de uso del Copilot. */
+.usage .usage-val { margin-top: 8px; font: 300 26px/1 var(--display); letter-spacing: -0.02em; }

@@ -2,6 +2,7 @@
 import { adoptTokens, api, setUser } from '../api.js';
 import { applyTheme } from '../app.js';
 import { $, avatar, busy, confirmDialog, fmtDate, fmtDateTime, formData, html, icon, modal, mount, toast } from '../ui.js';
+import { countUp } from '../motion.js';
 
 const EVENT_LABEL = {
   register: 'Cuenta creada', login: 'Inicio de sesión', locked: 'Bloqueo temporal', 'password-changed': 'Contraseña cambiada',
@@ -68,6 +69,11 @@ export async function render(el) {
           <span class="pill ${u.mfaEnabled ? 'ok' : 'warn'}"><span class="dot"></span>${u.mfaEnabled ? 'Protegida' : 'Recomendada'}</span></div>
         <p class="muted" style="font-size:13px;margin:10px 0 16px">Pide un código de tu app de autenticación (Google Authenticator, Authy, 1Password…) al iniciar sesión.</p>
         <button class="btn ${u.mfaEnabled ? 'danger' : 'primary'} block" id="mfa">${icon('shield')} ${u.mfaEnabled ? 'Desactivar' : 'Activar verificación en dos pasos'}</button>
+      </div>
+
+      <div class="card" id="copilot-usage" hidden>
+        <div class="card-head"><h3>Tu uso del Copilot</h3><a class="btn sm ghost" href="#/copilot">${icon('sparkle')} Abrir</a></div>
+        <div class="card-body grid g2 usage" id="usage-body"></div>
       </div>
 
       <div class="card">
@@ -182,4 +188,15 @@ export async function render(el) {
       } catch (x) { toast(x.message, 'error'); }
     });
   };
+
+  // Resumen del uso del Copilot (se carga aparte; si falla, la tarjeta queda oculta).
+  api.get('/ai/usage').then((u2) => {
+    const card = $('#copilot-usage', el);
+    if (!card) return;
+    const item = (label, value) => html`<div><div class="eyebrow">${label}</div><div class="usage-val">${value}</div></div>`;
+    mount($('#usage-body', el), html`${item('Conversaciones', u2.conversations)}${item('Preguntas', u2.questions)}
+      ${item('Respuestas útiles', u2.useful)}${item('Motor', u2.engine)}`);
+    card.hidden = false;
+    card.querySelectorAll('.usage-val').forEach((v) => countUp(v));
+  }).catch(() => {});
 }
