@@ -206,6 +206,9 @@ export async function render(el, { conversationId, query }) {
 
   const drawAttached = () => mount($('#attached', el), html`${attached.map((d) => html`<span class="chip">${icon('blueprint')}${d.name}<button class="btn ghost icon sm" data-detach="${d.id}" style="width:20px;height:20px">${icon('x')}</button></span>`)}`);
 
+  // Solo se sigue el final si la persona no subió a leer algo anterior.
+  const nearBottom = () => box.scrollHeight - box.scrollTop - box.clientHeight < 140;
+
   /** Respuesta en vivo: el texto aparece a medida que Claude lo escribe, con un cursor. */
   function liveReply() {
     const node = document.createElement('div');
@@ -222,13 +225,14 @@ export async function render(el, { conversationId, query }) {
         text += delta;
         frame ||= requestAnimationFrame(() => {
           frame = 0;
+          const follow = nearBottom();
           target.innerHTML = markdown(text).s;
           // El cursor va al final del último bloque (párrafo, ítem o código), no en una línea aparte.
           let tail = target.lastElementChild;
           while (tail?.lastElementChild && /^(UL|OL|LI|PRE|TABLE|TBODY|TR|BLOCKQUOTE)$/.test(tail.lastElementChild.tagName)) tail = tail.lastElementChild;
           if (tail?.tagName === 'PRE') tail = tail.firstElementChild;
           (tail || target).insertAdjacentHTML('beforeend', '<span class="caret" aria-hidden="true"></span>');
-          box.scrollTop = box.scrollHeight;
+          if (follow) box.scrollTop = box.scrollHeight;
         });
       },
       get text() { return text; },
