@@ -675,3 +675,6 @@ input[type="range"] { accent-color: var(--gold); }
   .card.hover:hover::before { opacity: 1; }
   .card.hover:not(.featured) > * { position: relative; z-index: 1; }
 }
+/* Barras de progreso: crecen desde la izquierda al aparecer. */
+.progress > i { transform-origin: left center; animation: bar-grow 0.9s var(--ease-out) both; animation-delay: 0.15s; }
+@keyframes bar-grow { from { transform: scaleX(0); } }
