@@ -249,6 +249,18 @@ export function afterLogin() {
   location.hash = next && !next.includes('login') ? next : '#/';
 }
 
+// Copiar bloques de código de cualquier respuesta o artículo.
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-code-copy]');
+  if (!b) return;
+  try {
+    await navigator.clipboard.writeText(b.parentElement.querySelector('code')?.innerText || '');
+    b.textContent = 'Copiado';
+    b.classList.add('done');
+    setTimeout(() => { b.textContent = 'Copiar'; b.classList.remove('done'); }, 1500);
+  } catch { toast('No se pudo copiar el código.', 'error'); }
+});
+
 // ------------------------------------------------------------------ arranque
 window.addEventListener('hashchange', route);
 window.addEventListener('unhandledrejection', (e) => {

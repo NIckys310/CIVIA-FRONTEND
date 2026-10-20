@@ -194,7 +194,7 @@ export function markdown(src) {
     // Bloques de código ```lenguaje … ``` (el contenido ya viene escapado: ` es &#96;).
     if (t.startsWith('&#96;&#96;&#96;')) {
       if (code) {
-        out.push(`<pre class="code"${code.lang ? ` data-lang="${code.lang}"` : ''}><code>${code.lines.join('\n')}</code></pre>`);
+        out.push(`<pre class="code"${code.lang ? ` data-lang="${code.lang}"` : ''}><button type="button" class="code-copy" data-code-copy aria-label="Copiar código">Copiar</button><code>${code.lines.join('\n')}</code></pre>`);
         code = null;
       } else {
         closeList();
