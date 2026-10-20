@@ -109,6 +109,7 @@ const P = {
   sparkle: '<path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
   flash: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   switch: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
   helmet: '<path d="M4 16a8 8 0 0 1 16 0"/><path d="M2 16h20v2H2z"/><path d="M10 8.3V5h4v3.3"/>',
   bridge: '<path d="M2 17h20M2 12h20"/><path d="M4 12c3-5 13-5 16 0"/><path d="M6 12v5M10 9.5V17M14 9.5V17M18 12v5"/>',
   target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
