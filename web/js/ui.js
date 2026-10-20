@@ -271,7 +271,15 @@ export function modal({ title, eyebrow, body, foot, wide = false, onClose }) {
     <button class="btn ghost icon sm" data-close aria-label="Cerrar">${icon('x')}</button></div>
     <div class="card-body">${body instanceof Raw ? body.s : esc(body)}</div>
     ${foot ? `<div class="modal-foot">${foot instanceof Raw ? foot.s : esc(foot)}</div>` : ''}</div>`;
-  const close = () => { back.remove(); document.removeEventListener('keydown', key); onClose?.(); };
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    document.removeEventListener('keydown', key);
+    back.classList.add('closing');
+    setTimeout(() => back.remove(), 260);
+    onClose?.();
+  };
   const key = (e) => { if (e.key === 'Escape') close(); };
   back.addEventListener('mousedown', (e) => { if (e.target === back) close(); });
   back.querySelector('[data-close]').addEventListener('click', close);
