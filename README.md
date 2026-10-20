@@ -22,8 +22,12 @@ cromado, resplandor ámbar y acero azulado).
   sección, estudio solar, captura, análisis con IA y **volumetría con IA** exportable a GLB.
 - **Cámara:** fotos de obra con ubicación opcional, fotos de planos con análisis inmediato y
   medición con objeto de referencia.
-- **CIVIA Copilot:** chat con contexto del proyecto y planos adjuntos, fuentes citadas.
-- **Biblioteca:** una sola pregunta → respuesta con citas; 13 categorías, artículos, glosario A–Z, favoritos.
+- **CIVIA Copilot:** responde en tiempo real (streaming) como un experto en ingeniería civil, con
+  contexto del proyecto, planos adjuntos y fuentes citadas. Detener, regenerar, copiar y valorar
+  respuestas; historial con búsqueda, fijadas, renombrar, exportar a Markdown y borrar.
+- **Biblioteca de ingeniería civil:** una sola pregunta → respuesta con citas; 19 categorías
+  (geotecnia, hidráulica, vías, topografía, puentes, seguridad en obra…), 144 artículos, 265
+  términos, artículo del día, búsquedas recientes, glosario por área y artículos propios editables.
 - **Seguridad de la cuenta:** contraseña sin límite de longitud, verificación en dos pasos, sesiones activas.
 
 ## Estructura
