@@ -109,6 +109,7 @@ const P = {
   sparkle: '<path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
   flash: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   switch: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  history: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/><path d="M12 7v5l3 2"/>',
   bookmark: '<path d="M6 3h12v18l-6-4.5L6 21z"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
   thumbdown: '<path d="M7 14V4H4v10z"/><path d="M7 14l4 7c1.6 0 2.5-1 2.2-2.6L12.6 15H19a2 2 0 0 0 2-2.3l-1.2-7A2 2 0 0 0 17.8 4H7"/>',
