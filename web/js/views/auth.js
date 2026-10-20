@@ -81,7 +81,12 @@ export function render(el, params) {
 
 function renderLogin(el, isLogin) {
   layout(el, html`
-      <form id="auth-form" novalidate>
+      <form id="auth-form" class="auth-card" novalidate>
+        <nav class="seg" aria-label="Acceso">
+          <a href="#/login" class="${isLogin ? 'active' : ''}" aria-current="${isLogin ? 'page' : 'false'}">Iniciar sesión</a>
+          <a href="#/register" class="${isLogin ? '' : 'active'}" aria-current="${isLogin ? 'false' : 'page'}">Crear cuenta</a>
+          <i class="seg-pill ${isLogin ? '' : 'right'}" aria-hidden="true"></i>
+        </nav>
         <div class="eyebrow gold">${isLogin ? 'Bienvenido(a) de nuevo' : 'Crea tu estudio'}</div>
         <h1 style="margin:14px 0 8px">${isLogin ? html`Inicia <span class="chrome-text">sesión</span>` : html`Diseña con <span class="chrome-text">inteligencia</span>`}</h1>
         <p class="muted" style="margin-bottom:28px">${isLogin ? 'Accede a tus proyectos y a CIVIA Copilot.' : 'Tu cuenta queda protegida con Argon2id y sesiones cifradas.'}</p>
@@ -144,7 +149,7 @@ function renderLogin(el, isLogin) {
 /** "¿Olvidaste tu contraseña?": pide el enlace. El servidor responde igual exista o no la cuenta. */
 function renderForgot(el) {
   layout(el, html`
-      <form id="forgot-form" novalidate>
+      <form id="forgot-form" class="auth-card" novalidate>
         <div class="eyebrow gold">Recupera tu cuenta</div>
         <h1 style="margin:14px 0 8px">¿Olvidaste tu <span class="chrome-text">contraseña</span>?</h1>
         <p class="muted" style="margin-bottom:28px">Escribe el correo de tu cuenta y te enviaremos un enlace para crear una nueva. El enlace vence en 30 minutos.</p>
@@ -205,7 +210,7 @@ function renderReset(el, query) {
   }
 
   layout(el, html`
-      <form id="reset-form" novalidate>
+      <form id="reset-form" class="auth-card" novalidate>
         <div class="eyebrow gold">Recupera tu cuenta</div>
         <h1 style="margin:14px 0 8px">Crea una <span class="chrome-text">nueva contraseña</span></h1>
         <p class="muted" style="margin-bottom:28px">Al guardarla se cerrarán todas tus sesiones abiertas.</p>
