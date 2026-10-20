@@ -648,3 +648,5 @@ input[type="range"] { accent-color: var(--gold); }
 /* Entrada escalonada: cada tarjeta llega un instante después de la anterior. */
 .enter { animation: enter var(--dur-3) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 45ms); }
 @keyframes enter { from { opacity: 0; transform: translateY(12px) scale(0.985); } }
+/* Cambio de sección: la vista anterior se desvanece hacia arriba antes de que entre la nueva. */
+.content.leaving { opacity: 0; transform: translateY(-6px); filter: blur(2px); transition: opacity var(--dur-1) ease, transform var(--dur-1) ease, filter var(--dur-1) ease; }
