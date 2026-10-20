@@ -1,7 +1,7 @@
 // CIVIA AI — arranque, sesión, enrutador y estructura de la aplicación.
 import { api, hasSessionHint, logout, refresh, session } from './api.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
-import { autoStagger, enableRipples, leave } from './motion.js';
+import { autoStagger, enableRipples, leave, moveNavPill } from './motion.js';
 
 const NAV = [
   { section: 'Estudio' },
@@ -218,6 +218,7 @@ async function route() {
     target = $('#view');
     target.classList.remove('leaving');
     $$('[data-nav]').forEach((a) => a.classList.toggle('active', new RegExp(a.dataset.nav).test(hash)));
+    moveNavPill($('.sidebar .nav'));
     target.style.animation = 'none';
     void target.offsetWidth;
     target.style.animation = '';

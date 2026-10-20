@@ -59,3 +59,24 @@ export function leave(view) {
   view.classList.add('leaving');
   return new Promise((done) => setTimeout(done, 140));
 }
+
+/** Mueve el indicador del menú hasta el enlace activo (se crea la primera vez). */
+export function moveNavPill(nav) {
+  if (!nav) return;
+  const active = nav.querySelector('a.active');
+  let pill = nav.querySelector('.nav-pill');
+  if (!pill) {
+    pill = document.createElement('span');
+    pill.className = 'nav-pill';
+    pill.setAttribute('aria-hidden', 'true');
+    nav.prepend(pill);
+    nav.classList.add('has-pill');
+    // La primera vez aparece en su sitio, sin deslizarse desde arriba.
+    pill.style.transition = 'none';
+    requestAnimationFrame(() => requestAnimationFrame(() => { pill.style.transition = ''; }));
+  }
+  if (!active) { pill.style.opacity = '0'; return; }
+  pill.style.opacity = '1';
+  pill.style.height = `${active.offsetHeight}px`;
+  pill.style.transform = `translateY(${active.offsetTop}px)`;
+}
