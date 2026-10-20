@@ -112,3 +112,19 @@ export function countUp(el, duration = 900) {
   };
   requestAnimationFrame(tick);
 }
+
+/** Aplica `change` (p. ej. cambiar el tema) revelándolo en círculo desde `origin`. */
+export function circularReveal(origin, change) {
+  if (reducedMotion() || !document.startViewTransition || !origin) { change(); return; }
+  const r = origin.getBoundingClientRect();
+  const x = r.left + r.width / 2;
+  const y = r.top + r.height / 2;
+  const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+  const transition = document.startViewTransition(change);
+  transition.ready.then(() => {
+    document.documentElement.animate(
+      { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+      { duration: 520, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', pseudoElement: '::view-transition-new(root)' },
+    );
+  }).catch(() => {});
+}

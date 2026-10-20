@@ -1,7 +1,7 @@
 // CIVIA AI — arranque, sesión, enrutador y estructura de la aplicación.
 import { api, hasSessionHint, logout, refresh, session } from './api.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
-import { autoStagger, enableRipples, enableSpotlight, leave, moveNavPill } from './motion.js';
+import { autoStagger, circularReveal, enableRipples, enableSpotlight, leave, moveNavPill } from './motion.js';
 
 const NAV = [
   { section: 'Estudio' },
@@ -106,8 +106,10 @@ function renderShell() {
   $('#logout').onclick = async () => { await logout(); location.hash = '#/login'; };
   $('#theme-toggle').onclick = () => {
     const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-    applyTheme(next);
-    $('#theme-toggle').innerHTML = icon(next === 'light' ? 'moon' : 'sun').s;
+    circularReveal($('#theme-toggle'), () => {
+      applyTheme(next);
+      $('#theme-toggle').innerHTML = icon(next === 'light' ? 'moon' : 'sun').s;
+    });
     api.patch('/auth/user', { preferences: { theme: next } }).catch(() => {});
   };
   const search = $('#global-search');
