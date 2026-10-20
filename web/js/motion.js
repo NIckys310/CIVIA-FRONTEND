@@ -92,3 +92,23 @@ export function enableSpotlight(root = document) {
     card.style.setProperty('--my', `${e.clientY - r.top}px`);
   }, { passive: true });
 }
+
+/** Cuenta desde 0 hasta el número que muestra el elemento (conserva el texto que lo rodea, p. ej. "m²"). */
+export function countUp(el, duration = 900) {
+  const text = el.textContent;
+  const m = text.match(/\d[\d.,]*/);
+  if (reducedMotion() || !m) return;
+  const target = Number(m[0].replace(/\./g, '').replace(',', '.'));
+  if (!Number.isFinite(target) || target === 0) return;
+  const [before, after] = [text.slice(0, m.index), text.slice(m.index + m[0].length)];
+  const decimals = (m[0].split(',')[1] || '').length;
+  const start = performance.now();
+  const tick = (now) => {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - (1 - t) ** 3;
+    el.textContent = `${before}${(target * eased).toLocaleString('es', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${after}`;
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = text;
+  };
+  requestAnimationFrame(tick);
+}
