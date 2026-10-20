@@ -1,7 +1,7 @@
 // CIVIA Copilot: chat con la IA de ingeniería civil y arquitectura, en tiempo real, con contexto de
 // proyecto y archivos adjuntos.
 import { api, stream } from '../api.js';
-import { $, debounce, html, icon, markdown, mount, on, relTime, toast } from '../ui.js';
+import { $, debounce, html, icon, markdown, modal, mount, on, relTime, toast } from '../ui.js';
 
 export async function render(el, { conversationId, query }) {
   const [conversations, projects, status] = await Promise.all([
@@ -89,8 +89,23 @@ export async function render(el, { conversationId, query }) {
       closeMenu();
       try {
         if (item.dataset.act === 'rename') {
-          const title = prompt('Nuevo nombre de la conversación', c.title);
-          if (title && title.trim() && title.trim() !== c.title) await updateConversation(id, { title: title.trim() });
+          const m = modal({
+            title: 'Renombrar conversación',
+            body: html`<form id="rename-form"><div class="field"><label for="conv-title">Nombre</label>
+              <input class="input" id="conv-title" name="title" maxlength="120" value="${c.title}" required></div></form>`,
+            foot: html`<button class="btn ghost" data-cancel>Cancelar</button><button class="btn primary" data-save>Guardar</button>`,
+          });
+          const save = async (ev2) => {
+            ev2?.preventDefault();
+            const title = $('#conv-title', m.el).value.trim();
+            if (!title) return;
+            m.close();
+            if (title !== c.title) await updateConversation(id, { title });
+          };
+          m.el.querySelector('[data-cancel]').onclick = m.close;
+          m.el.querySelector('[data-save]').onclick = save;
+          $('#rename-form', m.el).addEventListener('submit', save);
+          setTimeout(() => $('#conv-title', m.el)?.select(), 60);
         } else if (item.dataset.act === 'pin') {
           await updateConversation(id, { pinned: !c.pinned });
         }
