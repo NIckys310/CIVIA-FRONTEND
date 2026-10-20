@@ -667,3 +667,10 @@ input[type="range"] { accent-color: var(--gold); }
 .card.hover:active { transform: translateY(0) scale(0.992); transition-duration: var(--dur-1); }
 .chip:active { transform: scale(0.96); }
 .chip { transition: color 0.15s, border-color 0.15s, transform var(--dur-1) var(--ease-out), background 0.15s; }
+/* Brillo que sigue al cursor en las tarjetas clicables (solo con ratón). */
+@media (hover: hover) {
+  .card.hover:not(.featured)::before { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--gold) 12%, transparent), transparent 65%);
+    transition: opacity var(--dur-2); }
+  .card.hover:hover::before { opacity: 1; }
+}
