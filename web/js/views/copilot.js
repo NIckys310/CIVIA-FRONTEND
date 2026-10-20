@@ -64,7 +64,13 @@ export async function render(el, { conversationId, query }) {
   drawList();
   /** Menú de una conversación: renombrar y fijar. */
   let menu = null;
-  const closeMenu = () => { menu?.remove(); menu = null; };
+  const closeMenu = () => {
+    if (!menu) return;
+    const m = menu;
+    menu = null;
+    m.classList.add('closing');
+    setTimeout(() => m.remove(), 160);
+  };
   const updateConversation = async (id, change) => {
     const updated = await api.patch(`/ai/conversations/${id}`, change);
     const fresh = await api.get('/ai/conversations');
