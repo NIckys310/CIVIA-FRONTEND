@@ -645,3 +645,6 @@ input[type="range"] { accent-color: var(--gold); }
   animation: ripple var(--dur-3) var(--ease-out) forwards; }
 .btn.primary .ripple { background: radial-gradient(circle, rgba(255, 255, 255, 0.65) 0%, transparent 70%); }
 @keyframes ripple { to { transform: scale(1); opacity: 0; } }
+/* Entrada escalonada: cada tarjeta llega un instante después de la anterior. */
+.enter { animation: enter var(--dur-3) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes enter { from { opacity: 0; transform: translateY(12px) scale(0.985); } }
