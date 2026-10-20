@@ -27,18 +27,26 @@ Navegador (PWA)                      CIVIA-BACKEND (Spring Boot, Java 21)       
 | `#/projects/:id/(overview·files·tasks·budget·spaces·team·log)` | Proyecto: revisión IA, archivos y versiones, kanban, presupuesto con AIU, programa, equipo, bitácora |
 | `#/viewer/:doc` · `#/massing/:project` | Visor 3D (GLB/glTF/OBJ/STL): medir, notas, sección, sol, análisis IA · volumetría con IA exportable a GLB |
 | `#/camera/:project` | Cámara: foto de obra, foto de plano (con análisis), medición con referencia |
-| `#/copilot/:conv` | Chat con contexto de proyecto y planos adjuntos |
-| `#/library/…` | Biblioteca: pregunta única, categorías, artículos, glosario, favoritos |
+| `#/copilot/:conv` | Chat en tiempo real (SSE) con contexto de proyecto y planos adjuntos; historial con búsqueda, fijadas, exportar, valorar y regenerar |
+| `#/library/…` | Biblioteca de ingeniería civil: pregunta única, artículo del día, 19 categorías, artículos propios, glosario por área, favoritos |
 | `#/profile` | Perfil, contraseña, verificación en dos pasos, sesiones, historial |
 
 ## Rendimiento al entrar
 
-- Sin framework ni paso de compilación: 3 módulos pequeños precargados (`modulepreload`), vistas y
-  Three.js cargados bajo demanda.
+- Sin framework ni paso de compilación: 4 módulos pequeños precargados (`modulepreload`, incluido
+  `motion.js`), vistas y Three.js cargados bajo demanda.
 - Service worker: la interfaz abre desde caché y se actualiza en segundo plano (nunca cachea `/api`).
 - Restauración de sesión en una sola petición, y solo si hubo sesión antes en ese navegador.
 - Compresión gzip/HTTP2, `Cache-Control` largo para librerías e imágenes y revalidación (304) para el código.
 - Medido en local: panel de proyecto completo (sesión + datos + recomendaciones IA) en ≈ 0,2 s.
+
+## Copilot en tiempo real
+
+`api.stream()` hace un `POST` a `/api/v1/ai/chat/stream` con `fetch` y lee el cuerpo como
+Server-Sent Events (`start`, `delta`, `done`, `error`). El Markdown se vuelve a pintar en cada
+cuadro de animación con un cursor al final; si el streaming no llega a empezar (por ejemplo, un
+proxy que no lo soporta), la vista usa `POST /api/v1/ai/chat`. Detener aborta la lectura; el
+servidor termina y guarda la respuesta igual.
 
 ## Seguridad
 

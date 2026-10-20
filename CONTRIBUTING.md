@@ -29,6 +29,15 @@ CIVIA AI está dividido en tres repositorios que se clonan lado a lado:
 - Si cambias un endpoint de **CIVIA-BACKEND**, actualiza el cliente en `CIVIA-FRONTEND/web/js`.
   El contrato vivo está en `http://localhost:8080/api/docs` (OpenAPI).
 
+## Movimiento y efectos (interfaz)
+
+- Usa los tokens `--dur-1/2/3`, `--ease-out` y `--ease-spring`; nada de duraciones sueltas.
+- Efectos cortos y discretos: acompañan, no distraen (entradas de ≤ 0,6 s, sin rebotes largos).
+- Todo efecto en JS pasa por `js/motion.js` y consulta `reducedMotion()`; en CSS, la regla global
+  de `prefers-reduced-motion` ya los anula.
+- Anima `transform` y `opacity` (no `width`, `top` ni sombras pesadas en bucle).
+- Pruébalo en escritorio y a 375 px, con tema claro y oscuro.
+
 ## Calidad
 
 - **IA:** `./mvnw verify` (pruebas de seguridad del LLM, biblioteca, planos y modelos).

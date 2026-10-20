@@ -1,6 +1,7 @@
 // Cámara de obra: fotos, fotos de planos (con análisis IA) y medición con objeto de referencia.
 import { api, fileUrl, upload } from '../api.js';
 import { $, busy, fmtNum, html, icon, mount, on, relTime, toast } from '../ui.js';
+import { haptic } from '../motion.js';
 import { showAnalysis } from './project.js';
 
 const REFERENCES = [
@@ -120,7 +121,7 @@ export async function render(el, { projectId }) {
     shot.toBlob((b) => { captured = b; }, 'image/jpeg', 0.92);
   }
 
-  $('#shutter', el).onclick = capture;
+  $('#shutter', el).onclick = () => { haptic([8, 40, 8]); capture(); };
   $('#flip', el).onclick = () => { facing = facing === 'environment' ? 'user' : 'environment'; start(); };
   $('#gallery', el).addEventListener('change', (e) => {
     const file = e.target.files[0];
