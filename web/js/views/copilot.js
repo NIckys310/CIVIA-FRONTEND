@@ -1,6 +1,7 @@
 // CIVIA Copilot: chat con la IA de ingeniería civil y arquitectura, en tiempo real, con contexto de
 // proyecto y archivos adjuntos.
 import { api, downloadPath, stream } from '../api.js';
+import { haptic } from '../motion.js';
 import { $, confirmDialog, debounce, html, icon, markdown, modal, mount, on, relTime, toast } from '../ui.js';
 
 export async function render(el, { conversationId, query }) {
@@ -269,6 +270,7 @@ export async function render(el, { conversationId, query }) {
     box.insertAdjacentHTML('beforeend', msgHtml({ role: 'user', content: message }).s);
     box.scrollTop = box.scrollHeight;
     const body = { conversationId: activeId, projectId: projectId || null, message, documentIds: attached.map((d) => d.id) };
+    haptic();
     const live = liveReply();
     let started = false;
     let saved = null;
