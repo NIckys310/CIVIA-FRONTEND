@@ -109,6 +109,7 @@ const P = {
   sparkle: '<path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
   flash: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   switch: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  mountain: '<path d="m2 20 7-12 4 6 3-4 6 10z"/><path d="m9 8 2 3.5"/>',
 };
 
 export function icon(name, cls = '') {
