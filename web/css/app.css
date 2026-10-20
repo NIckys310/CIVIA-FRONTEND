@@ -638,3 +638,10 @@ input[type="range"] { accent-color: var(--gold); }
 }
 
 /* ---------------------------------------------------------------- movimiento */
+/* Onda al pulsar: nace donde se toca y se desvanece. */
+.btn, .chip, .nav a, .mobile-nav a, .tabs a, .tabs button { position: relative; overflow: hidden; isolation: isolate; }
+.ripple { position: absolute; z-index: -1; border-radius: 50%; pointer-events: none; transform: scale(0); opacity: 0.55;
+  background: radial-gradient(circle, color-mix(in srgb, var(--gold-2) 55%, transparent) 0%, transparent 70%);
+  animation: ripple var(--dur-3) var(--ease-out) forwards; }
+.btn.primary .ripple { background: radial-gradient(circle, rgba(255, 255, 255, 0.65) 0%, transparent 70%); }
+@keyframes ripple { to { transform: scale(1); opacity: 0; } }
