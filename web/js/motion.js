@@ -23,3 +23,32 @@ export function enableRipples(root = document) {
     dot.addEventListener('animationend', () => dot.remove(), { once: true });
   }, { passive: true });
 }
+
+/** Hace entrar los hijos de `container` uno tras otro (máximo 14 escalones). */
+export function stagger(container) {
+  if (reducedMotion() || !container || container.dataset.staggered) return;
+  container.dataset.staggered = '1';
+  [...container.children].forEach((child, i) => {
+    child.style.setProperty('--i', Math.min(i, 14));
+    child.classList.add('enter');
+    child.addEventListener('animationend', () => child.classList.remove('enter'), { once: true });
+  });
+}
+
+const STAGGERED = '.grid, .kpi-grid, .cat-filter, .chips#suggested';
+
+/** Aplica la entrada escalonada a cada cuadrícula que aparece dentro de `root` (vistas que cargan datos después). */
+export function autoStagger(root) {
+  root.querySelectorAll(STAGGERED).forEach(stagger);
+  const observer = new MutationObserver((records) => {
+    for (const r of records) {
+      r.addedNodes.forEach((n) => {
+        if (n.nodeType !== 1) return;
+        if (n.matches(STAGGERED)) stagger(n);
+        n.querySelectorAll?.(STAGGERED).forEach(stagger);
+      });
+    }
+  });
+  observer.observe(root, { childList: true, subtree: true });
+  return () => observer.disconnect();
+}
