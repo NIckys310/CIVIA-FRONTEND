@@ -234,8 +234,14 @@ async function route() {
     void target.offsetWidth;
     target.style.animation = '';
   }
+  // Si la sección tarda, se muestra un esqueleto en lugar de una pantalla vacía.
+  const skeleton = match.isPublic ? 0 : setTimeout(() => {
+    if (seq === navSeq) mount(target, html`<div class="view-skeleton" aria-busy="true"><div class="skeleton sk-title"></div>
+      <div class="sk-row">${Array.from({ length: 4 }, () => html`<div class="skeleton sk-card"></div>`)}</div></div>`);
+  }, 160);
   try {
     const mod = await loadView(match.view);
+    clearTimeout(skeleton); // la vista ya puede pintarse: el esqueleto no debe pisarla
     if (target === $('#view') || match.isPublic) {
       cleanup = await mod.render(target, match.params, { refreshNotifications, aiStatus: () => aiStatus });
     }
@@ -245,6 +251,7 @@ async function route() {
       <button class="btn" id="retry-view">Reintentar</button></div>`);
     $('#retry-view', target)?.addEventListener('click', route);
   }
+  clearTimeout(skeleton);
   window.scrollTo({ top: 0 });
   hideSplash();
 }
