@@ -36,6 +36,7 @@ const passwordField = (id, label, autocomplete, hint) => html`
       <button type="button" class="btn ghost icon sm" data-toggle="${id}" aria-label="Mostrar contraseña">${icon('eye')}</button>
     </div>
     <div class="field-msg" id="${id}-msg" aria-live="polite"></div>
+    <div class="caps" id="${id}-caps" hidden>${icon('alert')} Bloq Mayús está activado</div>
     ${hint}
   </div>`;
 
@@ -64,6 +65,15 @@ function layout(el, panel) {
   // Los campos del formulario entran uno tras otro.
   const form = el.querySelector('.panel form, .panel .auth-card');
   if (form) stagger(form);
+
+  // Aviso de Bloq Mayús mientras se escribe una contraseña.
+  el.querySelectorAll('input[type=password]').forEach((input) => {
+    const warn = $(`#${input.id}-caps`, el);
+    const update = (e) => { if (warn && e.getModifierState) warn.hidden = !e.getModifierState('CapsLock'); };
+    input.addEventListener('keydown', update);
+    input.addEventListener('keyup', update);
+    input.addEventListener('blur', () => { if (warn) warn.hidden = true; });
+  });
 
   el.querySelectorAll('[data-toggle]').forEach((b) => {
     b.onclick = () => {
