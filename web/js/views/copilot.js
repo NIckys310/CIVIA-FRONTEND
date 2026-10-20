@@ -53,10 +53,53 @@ export async function render(el, { conversationId, query }) {
   let shown = conversations;
   let searching = '';
   const drawList = () => mount(list, shown.length
-    ? html`${shown.map((c) => html`<a class="conv ${c.id === activeId ? 'active' : ''}" href="#/copilot/${c.id}" title="${c.title}">
-        ${c.title}<div class="hint" style="font-size:11px">${c.projectName ? `${c.projectName} · ` : ''}${relTime(c.updatedAt)}</div></a>`)}`
+    ? html`${shown.map((c) => html`<div class="conv-row ${c.pinned ? 'pinned' : ''}">
+        <a class="conv ${c.id === activeId ? 'active' : ''}" href="#/copilot/${c.id}" title="${c.title}">
+        ${c.pinned ? icon('bookmark', 'pin-ico') : ''}${c.title}<div class="hint" style="font-size:11px">${c.projectName ? `${c.projectName} · ` : ''}${relTime(c.updatedAt)}</div></a>
+        <button class="btn ghost icon sm conv-more" data-conv-menu="${c.id}" aria-label="Opciones de la conversación">${icon('sliders')}</button></div>`)}`
     : html`<p class="hint" style="padding:12px">${searching ? 'Ninguna conversación coincide.' : 'Tus conversaciones aparecerán aquí.'}</p>`);
   drawList();
+  /** Menú de una conversación: renombrar y fijar. */
+  let menu = null;
+  const closeMenu = () => { menu?.remove(); menu = null; };
+  const updateConversation = async (id, change) => {
+    const updated = await api.patch(`/ai/conversations/${id}`, change);
+    const fresh = await api.get('/ai/conversations');
+    conversations.splice(0, conversations.length, ...fresh);
+    if (!searching) shown = conversations;
+    else shown = shown.map((c) => (c.id === id ? updated : c));
+    drawList();
+  };
+  on(list, 'click', '[data-conv-menu]', (e, b) => {
+    e.preventDefault();
+    const id = b.dataset.convMenu;
+    const c = shown.find((x) => x.id === id);
+    if (!c) return;
+    closeMenu();
+    menu = document.createElement('div');
+    menu.className = 'card menu';
+    menu.setAttribute('role', 'menu');
+    mount(menu, html`<button role="menuitem" data-act="rename">${icon('edit')} Renombrar</button>
+      <button role="menuitem" data-act="pin">${icon('bookmark')} ${c.pinned ? 'Quitar de fijadas' : 'Fijar arriba'}</button>`);
+    document.body.appendChild(menu);
+    const r = b.getBoundingClientRect();
+    menu.style.top = `${Math.min(r.bottom + 6, innerHeight - menu.offsetHeight - 12)}px`;
+    menu.style.left = `${Math.max(12, r.right - menu.offsetWidth)}px`;
+    on(menu, 'click', '[data-act]', async (ev, item) => {
+      closeMenu();
+      try {
+        if (item.dataset.act === 'rename') {
+          const title = prompt('Nuevo nombre de la conversación', c.title);
+          if (title && title.trim() && title.trim() !== c.title) await updateConversation(id, { title: title.trim() });
+        } else if (item.dataset.act === 'pin') {
+          await updateConversation(id, { pinned: !c.pinned });
+        }
+      } catch (err) { toast(err.message, 'error'); }
+    });
+  });
+  const outside = (e) => { if (menu && !menu.contains(e.target) && !e.target.closest('[data-conv-menu]')) closeMenu(); };
+  document.addEventListener('mousedown', outside);
+
   $('#conv-q', el).addEventListener('input', debounce(async (e) => {
     searching = e.target.value.trim();
     shown = searching ? await api.get(`/ai/conversations?q=${encodeURIComponent(searching)}`) : conversations;
@@ -302,5 +345,10 @@ export async function render(el, { conversationId, query }) {
   await loadConversation();
   const draft = sessionStorage.getItem('civia-copilot-draft');
   if (draft) { sessionStorage.removeItem('civia-copilot-draft'); send(draft); }
-  return () => { document.removeEventListener('keydown', onEscape); controller?.abort(); };
+  return () => {
+    document.removeEventListener('keydown', onEscape);
+    document.removeEventListener('mousedown', outside);
+    closeMenu();
+    controller?.abort();
+  };
 }
