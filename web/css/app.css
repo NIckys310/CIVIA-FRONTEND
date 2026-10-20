@@ -729,3 +729,7 @@ input[type="range"] { accent-color: var(--gold); }
 /* Foco con teclado: el anillo dorado aparece con un pulso breve. */
 :focus-visible { animation: focus-pulse var(--dur-2) var(--ease-out); }
 @keyframes focus-pulse { from { outline-offset: 6px; outline-color: transparent; } }
+/* Pestañas: la activa cambia con un fundido suave y un leve escalado. */
+.tabs button, .tabs a { transition: background var(--dur-2) var(--ease-out), color var(--dur-1), box-shadow var(--dur-2), transform var(--dur-1); }
+.tabs .active { animation: tab-on var(--dur-2) var(--ease-out); }
+@keyframes tab-on { from { transform: scale(0.96); } }
