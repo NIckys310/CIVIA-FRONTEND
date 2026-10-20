@@ -16,7 +16,8 @@ export async function render(el, { conversationId, query }) {
   <div class="chat">
     <div class="card list-card" style="display:flex;flex-direction:column;min-height:0">
       <div class="card-head" style="padding:16px"><span class="eyebrow gold">Conversaciones</span>
-        <a class="btn sm primary" href="#/copilot">${icon('plus')} Nueva</a></div>
+        <div class="row" style="gap:4px"><button class="btn ghost icon sm" id="clear-all" title="Borrar todo el historial" aria-label="Borrar todo el historial">${icon('trash')}</button>
+        <a class="btn sm primary" href="#/copilot">${icon('plus')} Nueva</a></div></div>
       <label class="search conv-search" for="conv-q">${icon('search')}<input id="conv-q" placeholder="Buscar en el historial" autocomplete="off"></label>
       <div class="list" id="conv-list"></div>
     </div>
@@ -127,6 +128,17 @@ export async function render(el, { conversationId, query }) {
   });
   const outside = (e) => { if (menu && !menu.contains(e.target) && !e.target.closest('[data-conv-menu]')) closeMenu(); };
   document.addEventListener('mousedown', outside);
+
+  $('#clear-all', el).onclick = async () => {
+    if (!conversations.length) return;
+    if (!(await confirmDialog('Borrar todo el historial', `Se borrarán tus ${conversations.length} conversaciones con el Copilot. No se puede deshacer.`, 'Borrar todo', true))) return;
+    const r = await api.del('/ai/conversations');
+    conversations.splice(0);
+    shown = conversations;
+    drawList();
+    toast(`${r.deleted} conversaciones borradas`);
+    if (activeId) location.hash = '#/copilot';
+  };
 
   $('#conv-q', el).addEventListener('input', debounce(async (e) => {
     searching = e.target.value.trim();
