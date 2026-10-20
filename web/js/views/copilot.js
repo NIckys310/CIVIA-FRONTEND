@@ -1,7 +1,7 @@
 // CIVIA Copilot: chat con la IA de ingeniería civil y arquitectura, en tiempo real, con contexto de
 // proyecto y archivos adjuntos.
 import { api, stream } from '../api.js';
-import { $, html, icon, markdown, mount, on, relTime } from '../ui.js';
+import { $, html, icon, markdown, mount, on, relTime, toast } from '../ui.js';
 
 export async function render(el, { conversationId, query }) {
   const [conversations, projects, status] = await Promise.all([
@@ -61,11 +61,14 @@ export async function render(el, { conversationId, query }) {
 
   const msgHtml = (m) => (m.role === 'user'
     ? html`<div class="msg user"><div class="bubble">${m.content}</div></div>`
-    : html`<div class="msg"><div class="who"><img src="/assets/mark-96.png" alt=""></div><div>
+    : html`<div class="msg ai" data-mid="${m.id || ''}"><div class="who"><img src="/assets/mark-96.png" alt=""></div><div>
         <div class="md">${markdown(m.content)}</div>
         ${sourcesHtml(m.sources)}
         ${m.suggestions?.length ? html`<div class="chips" style="margin-top:12px">${m.suggestions.map((s) => html`<button class="chip" data-suggest="${s}">${icon('sparkle')}${s}</button>`)}</div>` : ''}
-        <div class="hint" style="margin-top:8px">${m.engine || ''}</div></div></div>`);
+        <div class="msg-actions">
+          <button class="btn ghost icon sm" data-copy title="Copiar respuesta" aria-label="Copiar respuesta">${icon('copy')}</button>
+          <span class="hint engine-tag">${m.engine || ''}</span>
+        </div></div></div>`);
 
   const welcome = () => mount(box, html`<div class="empty" style="margin:auto">
       <img src="/assets/mark-256.png" alt="" width="120" height="120">
@@ -204,6 +207,15 @@ export async function render(el, { conversationId, query }) {
   document.addEventListener('keydown', onEscape);
   input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = `${Math.min(220, input.scrollHeight)}px`; });
   on(el, 'click', '[data-suggest]', (e, b) => send(b.dataset.suggest));
+  on(el, 'click', '[data-copy]', async (e, b) => {
+    const text = b.closest('.msg')?.querySelector('.md')?.innerText || '';
+    try {
+      await navigator.clipboard.writeText(text);
+      b.classList.add('done');
+      b.innerHTML = icon('check').s;
+      setTimeout(() => { b.classList.remove('done'); b.innerHTML = icon('copy').s; }, 1600);
+    } catch { toast('No se pudo copiar. Selecciona el texto y cópialo a mano.', 'error'); }
+  });
   on(el, 'click', '[data-detach]', (e, b) => { attached = attached.filter((d) => d.id !== b.dataset.detach); drawAttached(); });
   $('#ctx-project', el).addEventListener('change', async (e) => { projectId = e.target.value || null; attached = []; drawAttached(); await loadDocs(); });
   $('#attach', el).onclick = async () => {
