@@ -69,6 +69,7 @@ export async function render(el, { conversationId, query }) {
           <button class="btn ghost icon sm" data-copy title="Copiar respuesta" aria-label="Copiar respuesta">${icon('copy')}</button>
           ${m.id ? html`<button class="btn ghost icon sm ${m.feedback === 1 ? 'on' : ''}" data-rate="up" title="Respuesta útil" aria-label="Respuesta útil" aria-pressed="${m.feedback === 1}">${icon('thumbup')}</button>
           <button class="btn ghost icon sm ${m.feedback === -1 ? 'on' : ''}" data-rate="down" title="No fue útil" aria-label="No fue útil" aria-pressed="${m.feedback === -1}">${icon('thumbdown')}</button>` : ''}
+          ${m.id ? html`<button class="btn ghost icon sm regen" data-regen title="Responder de nuevo" aria-label="Responder de nuevo">${icon('refresh')}</button>` : ''}
           <span class="hint engine-tag">${m.engine || ''}</span>
         </div></div></div>`);
 
@@ -198,6 +199,40 @@ export async function render(el, { conversationId, query }) {
       setStreaming(false);
     }
   }
+
+  /** Nueva respuesta para la última pregunta (reemplaza la última respuesta). */
+  async function regenerate() {
+    if (!activeId || controller) return;
+    [...box.querySelectorAll('.msg.ai')].pop()?.remove();
+    const live = liveReply();
+    let saved = null;
+    let failure = null;
+    controller = new AbortController();
+    setStreaming(true);
+    try {
+      await stream(`/ai/conversations/${activeId}/regenerate`, {}, {
+        signal: controller.signal,
+        onEvent: (name, data) => {
+          if (name === 'delta') live.append(data.text);
+          else if (name === 'done') saved = data;
+          else if (name === 'error') failure = data.message;
+        },
+      });
+      if (failure) throw new Error(failure);
+      live.node.remove();
+      if (saved) box.insertAdjacentHTML('beforeend', msgHtml(saved.message).s);
+      else await loadConversation();
+      box.scrollTop = box.scrollHeight;
+    } catch (e) {
+      if (e.name === 'AbortError') { live.node.classList.add('stopped'); live.node.querySelector('.caret')?.remove(); return; }
+      live.node.remove();
+      box.insertAdjacentHTML('beforeend', html`<div class="msg"><div class="who">${icon('alert')}</div><div class="error-text">${e.message}</div></div>`.s);
+    } finally {
+      controller = null;
+      setStreaming(false);
+    }
+  }
+  on(el, 'click', '[data-regen]', () => regenerate());
 
   $('#composer', el).addEventListener('submit', (e) => {
     e.preventDefault();
