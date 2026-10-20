@@ -1,7 +1,7 @@
 // Biblioteca de ingeniería civil y arquitectura: una pregunta → respuesta con fuentes; categorías,
 // artículos, glosario y artículos propios.
 import { api } from '../api.js';
-import { $, busy, formData, html, icon, markdown, modal, mount, on, toast } from '../ui.js';
+import { $, busy, confirmDialog, formData, html, icon, markdown, modal, mount, on, toast } from '../ui.js';
 
 let categoriesCache = null;
 const categories = async () => (categoriesCache ||= await api.get('/library/categories'));
@@ -121,6 +121,8 @@ export async function render(el, params) {
           <div class="card pad stack">
             <button class="btn ${a.favorite ? 'primary' : ''}" id="fav">${icon('star')} ${a.favorite ? 'En favoritos' : 'Guardar en favoritos'}</button>
             <button class="btn" id="ask-about">${icon('sparkle')} Preguntar a Copilot sobre esto</button>
+            ${a.mine ? html`<div class="row"><button class="btn sm" id="edit-article">${icon('edit')} Editar</button>
+              <button class="btn sm danger right" id="delete-article">${icon('trash')} Borrar</button></div>` : ''}
           </div>
           ${a.related.length ? html`<div class="card"><div class="card-head"><h3>Relacionados</h3></div><div class="card-body stack">
             ${a.related.map((r) => html`<a class="row between" href="#/library/a/${r.slug}" style="padding:6px 0"><span>${r.title}</span>${icon('chevron')}</a>`)}</div></div>` : ''}
@@ -133,6 +135,14 @@ export async function render(el, params) {
       e.currentTarget.classList.toggle('primary', fav);
       e.currentTarget.lastChild.textContent = fav ? ' En favoritos' : ' Guardar en favoritos';
     };
+    $('#edit-article', el)?.addEventListener('click', () => newArticle(cats, a));
+    $('#delete-article', el)?.addEventListener('click', async () => {
+      if (!(await confirmDialog('Borrar artículo', `Se borrará «${a.title}» de la biblioteca del estudio.`, 'Borrar', true))) return;
+      await api.del(`/library/articles/${a.slug}`);
+      categoriesCache = null;
+      toast('Artículo borrado');
+      location.hash = `#/library/c/${a.category}`;
+    });
     $('#ask-about', el).onclick = () => {
       sessionStorage.setItem('civia-copilot-draft', `Explícame más sobre «${a.title}» y cómo aplicarlo en un proyecto.`);
       location.hash = '#/copilot';
@@ -174,26 +184,30 @@ export async function render(el, params) {
   }
 }
 
-function newArticle(cats) {
+/** Crear un artículo o, si se pasa `existing`, editar uno propio. */
+function newArticle(cats, existing = null) {
+  const v = existing || { title: '', category: cats[0]?.id, tags: [], summary: '', body: '' };
   const m = modal({
-    title: 'Aportar un artículo', eyebrow: 'Biblioteca del estudio', wide: true,
+    title: existing ? 'Editar artículo' : 'Aportar un artículo', eyebrow: 'Biblioteca del estudio', wide: true,
     body: html`<form id="art-form" class="form-grid">
-      <div class="field full"><label>Título</label><input class="input" name="title" required></div>
-      <div class="field"><label>Categoría</label><select class="input" name="category">${cats.map((c) => html`<option value="${c.id}">${c.name}</option>`)}</select></div>
-      <div class="field"><label>Etiquetas (separadas por coma)</label><input class="input" name="tags" placeholder="fachada, vidrio"></div>
-      <div class="field full"><label>Resumen</label><input class="input" name="summary"></div>
-      <div class="field full"><label>Contenido (admite ## títulos, listas y **negrita**)</label><textarea class="input" name="body" style="min-height:220px" required></textarea></div>
+      <div class="field full"><label>Título</label><input class="input" name="title" value="${v.title}" required></div>
+      <div class="field"><label>Categoría</label><select class="input" name="category">${cats.map((c) => html`<option value="${c.id}" ${c.id === v.category ? 'selected' : ''}>${c.name}</option>`)}</select></div>
+      <div class="field"><label>Etiquetas (separadas por coma)</label><input class="input" name="tags" value="${v.tags.join(', ')}" placeholder="talud, drenaje"></div>
+      <div class="field full"><label>Resumen</label><input class="input" name="summary" value="${v.summary}"></div>
+      <div class="field full"><label>Contenido (admite ## títulos, listas y **negrita**)</label><textarea class="input" name="body" style="min-height:220px" required>${v.body}</textarea></div>
     </form>`,
-    foot: html`<button class="btn ghost" data-cancel>Cancelar</button><button class="btn primary" data-save>Publicar</button>`,
+    foot: html`<button class="btn ghost" data-cancel>Cancelar</button><button class="btn primary" data-save>${existing ? 'Guardar cambios' : 'Publicar'}</button>`,
   });
   m.el.querySelector('[data-cancel]').onclick = m.close;
   m.el.querySelector('[data-save]').onclick = async () => {
     const d = formData($('#art-form', m.el));
     if (!d.title.trim() || !d.body.trim()) return;
-    const a = await api.post('/library/articles', { ...d, tags: d.tags.split(',').map((t) => t.trim()).filter(Boolean) });
+    const payload = { ...d, tags: d.tags.split(',').map((t) => t.trim()).filter(Boolean) };
+    const a = existing ? await api.put(`/library/articles/${existing.slug}`, payload) : await api.post('/library/articles', payload);
     categoriesCache = null;
     m.close();
-    toast('Artículo publicado en la biblioteca');
-    location.hash = `#/library/a/${a.slug}`;
+    toast(existing ? 'Artículo actualizado' : 'Artículo publicado en la biblioteca');
+    if (existing) window.dispatchEvent(new HashChangeEvent('hashchange'));
+    else location.hash = `#/library/a/${a.slug}`;
   };
 }
