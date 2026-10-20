@@ -36,7 +36,7 @@ function layout(el, panel) {
     <section class="hero" aria-hidden="true">
       <img src="/assets/logo-original.png" alt="" fetchpriority="high">
       <div class="caption">
-        <p>Proyectos, planos, modelos 3D, cámara de obra y un copiloto de IA experto en arquitectura, en un solo lugar.</p>
+        <p>Proyectos, planos, modelos 3D, cámara de obra y un copiloto de IA experto en ingeniería civil y arquitectura, en un solo lugar.</p>
       </div>
     </section>
     <section class="panel">${panel}</section>
