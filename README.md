@@ -22,9 +22,27 @@ cromado, resplandor ámbar y acero azulado).
   sección, estudio solar, captura, análisis con IA y **volumetría con IA** exportable a GLB.
 - **Cámara:** fotos de obra con ubicación opcional, fotos de planos con análisis inmediato y
   medición con objeto de referencia.
-- **CIVIA Copilot:** chat con contexto del proyecto y planos adjuntos, fuentes citadas.
-- **Biblioteca:** una sola pregunta → respuesta con citas; 13 categorías, artículos, glosario A–Z, favoritos.
+- **CIVIA Copilot:** responde en tiempo real (streaming) como un experto en ingeniería civil, con
+  contexto del proyecto, planos adjuntos y fuentes citadas. Detener, regenerar, copiar y valorar
+  respuestas; historial con búsqueda, fijadas, renombrar, exportar a Markdown y borrar.
+- **Biblioteca de ingeniería civil:** una sola pregunta → respuesta con citas; 19 categorías
+  (geotecnia, hidráulica, vías, topografía, puentes, seguridad en obra…), 144 artículos, 265
+  términos, artículo del día, búsquedas recientes, glosario por área y artículos propios editables.
 - **Seguridad de la cuenta:** contraseña sin límite de longitud, verificación en dos pasos, sesiones activas.
+
+## Movimiento y efectos
+
+Discretos y coherentes con la marca (líneas de plano, brillo dorado), en `js/motion.js` y la
+sección *movimiento* de `css/app.css`:
+
+- Entrada escalonada de tarjetas, transición entre secciones e indicador deslizante del menú.
+- Onda dorada al pulsar, brillo que sigue al cursor en las tarjetas y hundimiento al presionar.
+- Portadas de proyecto que se dibujan trazo a trazo, cifras que cuentan desde cero, barras y
+  anillos que se llenan.
+- Chat con cursor de escritura, mensajes que entran desde su lado y botón para volver al final.
+- Avisos con cuenta regresiva, diálogos y paneles con animación de salida, cambio de tema en
+  círculo y vibración corta en el móvil.
+- Todo se desactiva con "reducir movimiento" del sistema operativo.
 
 ## Estructura
 
@@ -35,6 +53,7 @@ web/                 Interfaz (sin paso de compilación)
   js/app.js          Arranque, sesión, enrutador, navegación
   js/api.js          Cliente de la API (token en memoria, refresco de vuelo único)
   js/ui.js           Plantillas seguras (escape automático), íconos, Markdown seguro, modales
+  js/motion.js       Efectos de movimiento (respetan "reducir movimiento")
   js/views/*.js      Vistas cargadas bajo demanda
   vendor/three/      Three.js r170 local (sin CDN)
   sw.js              Service worker (nunca cachea /api)

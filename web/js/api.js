@@ -89,6 +89,57 @@ export const api = {
   del: (p) => request('DELETE', p),
 };
 
+// ------------------------------------------------------------------ streaming (Server-Sent Events)
+
+/**
+ * POST que responde `text/event-stream`. Llama a `onEvent(nombre, datos)` por cada evento.
+ * Se usa fetch (no EventSource) porque hace falta POST y la cabecera Authorization.
+ */
+export async function stream(path, body, { onEvent, signal } = {}) {
+  const run = () => fetch(BASE + path, {
+    method: 'POST',
+    signal,
+    credentials: 'same-origin',
+    headers: {
+      Accept: 'text/event-stream',
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(body ?? {}),
+  });
+  let res = await run();
+  if (res.status === 401 && (await refresh())) res = await run();
+  if (!res.ok || !res.body) return parse(res);
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  const dispatch = (chunk) => {
+    let name = 'message';
+    const data = [];
+    for (const line of chunk.split('\n')) {
+      if (line.startsWith('event:')) name = line.slice(6).trim();
+      else if (line.startsWith('data:')) data.push(line.slice(5).replace(/^ /, ''));
+    }
+    if (!data.length) return;
+    let value = data.join('\n');
+    try { value = JSON.parse(value); } catch { /* texto plano */ }
+    onEvent?.(name, value);
+  };
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+    let cut;
+    while ((cut = buffer.indexOf('\n\n')) >= 0) {
+      dispatch(buffer.slice(0, cut));
+      buffer = buffer.slice(cut + 2);
+    }
+  }
+  if (buffer.trim()) dispatch(buffer);
+  return true;
+}
+
 // ------------------------------------------------------------------ CIVIA Auth
 
 export async function login(email, password, mfaCode) {

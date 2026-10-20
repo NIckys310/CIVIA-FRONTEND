@@ -109,6 +109,18 @@ const P = {
   sparkle: '<path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
   flash: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   switch: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  history: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/><path d="M12 7v5l3 2"/>',
+  bookmark: '<path d="M6 3h12v18l-6-4.5L6 21z"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+  thumbdown: '<path d="M7 14V4H4v10z"/><path d="M7 14l4 7c1.6 0 2.5-1 2.2-2.6L12.6 15H19a2 2 0 0 0 2-2.3l-1.2-7A2 2 0 0 0 17.8 4H7"/>',
+  thumbup: '<path d="M7 10v10H4V10z"/><path d="M7 10l4-7c1.6 0 2.5 1 2.2 2.6L12.6 9H19a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.8 20H7"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+  helmet: '<path d="M4 16a8 8 0 0 1 16 0"/><path d="M2 16h20v2H2z"/><path d="M10 8.3V5h4v3.3"/>',
+  bridge: '<path d="M2 17h20M2 12h20"/><path d="M4 12c3-5 13-5 16 0"/><path d="M6 12v5M10 9.5V17M14 9.5V17M18 12v5"/>',
+  target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
+  road: '<path d="M8 3 4 21M16 3l4 18"/><path d="M12 4v3M12 10.5v3M12 17v3"/>',
+  drop: '<path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z"/><path d="M9 15a3 3 0 0 0 3 3"/>',
+  mountain: '<path d="m2 20 7-12 4 6 3-4 6 10z"/><path d="m9 8 2 3.5"/>',
 };
 
 export function icon(name, cls = '') {
@@ -161,10 +173,12 @@ export function markdown(src) {
   let list = null;
   let table = null;
   const inline = (t) => t
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/&#96;((?:(?!&#96;).)+)&#96;/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/(^|[\s(])_([^_]+)_(?=[\s).,;:]|$)/g, '$1<em>$2</em>')
     .replace(/(^|[\s(])\*([^*\s][^*]*)\*(?=[\s).,;:]|$)/g, '$1<em>$2</em>')
+    // Enlaces solo http(s), abiertos aparte y sin pasar el origen.
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)"]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
     .replace(/\[(\d{1,3})\]/g, '<span class="cite">$1</span>');
   const closeList = () => { if (list) { out.push(`</${list}>`); list = null; } };
   const closeTable = () => {
@@ -174,8 +188,22 @@ export function markdown(src) {
       table = null;
     }
   };
+  let code = null;
   for (const line of lines) {
     const t = line.trim();
+    // Bloques de código ```lenguaje … ``` (el contenido ya viene escapado: ` es &#96;).
+    if (t.startsWith('&#96;&#96;&#96;')) {
+      if (code) {
+        out.push(`<pre class="code"${code.lang ? ` data-lang="${code.lang}"` : ''}><button type="button" class="code-copy" data-code-copy aria-label="Copiar código">Copiar</button><code>${code.lines.join('\n')}</code></pre>`);
+        code = null;
+      } else {
+        closeList();
+        closeTable();
+        code = { lang: t.slice(15).trim().replace(/[^\w+#.-]/g, '').slice(0, 20), lines: [] };
+      }
+      continue;
+    }
+    if (code) { code.lines.push(line); continue; }
     if (/^\|.*\|$/.test(t)) {
       closeList();
       const cells = t.slice(1, -1).split('|').map((c) => c.trim());
@@ -185,13 +213,16 @@ export function markdown(src) {
     }
     closeTable();
     let m;
-    if ((m = t.match(/^(#{1,4})\s+(.*)$/))) {
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(t)) {
+      closeList();
+      out.push('<hr>');
+    } else if ((m = t.match(/^(#{1,4})\s+(.*)$/))) {
       closeList();
       const level = Math.min(4, m[1].length + 1);
       out.push(`<h${level}>${inline(m[2])}</h${level}>`);
     } else if ((m = t.match(/^[-*]\s+\[( |x)\]\s+(.*)$/i))) {
       if (list !== 'ul') { closeList(); out.push('<ul>'); list = 'ul'; }
-      out.push(`<li><span class="task-box"></span>${inline(m[2])}</li>`);
+      out.push(`<li><span class="task-box${m[1].toLowerCase() === 'x' ? ' done' : ''}"></span>${inline(m[2])}</li>`);
     } else if ((m = t.match(/^[-*•]\s+(.*)$/))) {
       if (list !== 'ul') { closeList(); out.push('<ul>'); list = 'ul'; }
       out.push(`<li>${inline(m[1])}</li>`);
@@ -208,6 +239,8 @@ export function markdown(src) {
       out.push(`<p>${inline(t)}</p>`);
     }
   }
+  // Un bloque sin cerrar (por ejemplo, mientras llega una respuesta en streaming) se muestra igual.
+  if (code) out.push(`<pre class="code"><code>${code.lines.join('\n')}</code></pre>`);
   closeList();
   closeTable();
   return raw(out.join(''));
@@ -218,9 +251,15 @@ export function toast(message, type = 'ok') {
   const box = document.getElementById('toasts');
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.innerHTML = `${icon(type === 'error' ? 'alert' : type === 'info' ? 'info' : 'check')}<span>${esc(message)}</span>`;
+  const ms = type === 'error' ? 6000 : 3600;
+  el.innerHTML = `${icon(type === 'error' ? 'alert' : type === 'info' ? 'info' : 'check')}<span>${esc(message)}</span><i class="toast-timer" style="animation-duration:${ms}ms"></i>`;
   box.appendChild(el);
-  setTimeout(() => { el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 320); }, type === 'error' ? 6000 : 3600);
+  const dismiss = () => {
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 340);
+  };
+  setTimeout(dismiss, ms);
+  el.addEventListener('click', dismiss, { once: true });
 }
 
 /** Abre un modal. `body` es html``; devuelve { el, close }. */
@@ -232,7 +271,15 @@ export function modal({ title, eyebrow, body, foot, wide = false, onClose }) {
     <button class="btn ghost icon sm" data-close aria-label="Cerrar">${icon('x')}</button></div>
     <div class="card-body">${body instanceof Raw ? body.s : esc(body)}</div>
     ${foot ? `<div class="modal-foot">${foot instanceof Raw ? foot.s : esc(foot)}</div>` : ''}</div>`;
-  const close = () => { back.remove(); document.removeEventListener('keydown', key); onClose?.(); };
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    document.removeEventListener('keydown', key);
+    back.classList.add('closing');
+    setTimeout(() => back.remove(), 260);
+    onClose?.();
+  };
   const key = (e) => { if (e.key === 'Escape') close(); };
   back.addEventListener('mousedown', (e) => { if (e.target === back) close(); });
   back.querySelector('[data-close]').addEventListener('click', close);
@@ -285,14 +332,15 @@ export function coverArt(seed, color = '#C9A46A') {
   const x0 = 300 - w / 2 + (rnd() - 0.5) * 80;
   const base = 170;
   let lines = '';
-  for (let f = 0; f <= floors; f++) lines += `<path d="M${x0} ${base - f * fh}H${x0 + w}"/>`;
-  for (let b = 0; b <= bays; b++) lines += `<path d="M${x0 + (b * w) / bays} ${base}V${base - floors * fh}"/>`;
-  const cant = rnd() > 0.5 ? `<path d="M${x0 + w * 0.55} ${base - floors * fh}h${w * 0.65}v${fh}h-${w * 0.65}"/>` : '';
+  // pathLength="1" permite "dibujar" cada trazo con CSS (stroke-dashoffset de 1 a 0).
+  for (let f = 0; f <= floors; f++) lines += `<path pathLength="1" style="--d:${f}" d="M${x0} ${base - f * fh}H${x0 + w}"/>`;
+  for (let b = 0; b <= bays; b++) lines += `<path pathLength="1" style="--d:${b}" d="M${x0 + (b * w) / bays} ${base}V${base - floors * fh}"/>`;
+  const cant = rnd() > 0.5 ? `<path pathLength="1" style="--d:${floors}" d="M${x0 + w * 0.55} ${base - floors * fh}h${w * 0.65}v${fh}h-${w * 0.65}"/>` : '';
   return raw(`<svg viewBox="0 0 600 180" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs><radialGradient id="g${Math.abs(h % 1e6)}" cx="70%" cy="10%" r="80%"><stop offset="0" stop-color="${c}" stop-opacity=".28"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient></defs>
     <rect width="600" height="180" fill="#0a0c10"/><rect width="600" height="180" fill="url(#g${Math.abs(h % 1e6)})"/>
     <g stroke="rgba(255,255,255,.05)">${Array.from({ length: 13 }, (_, i) => `<path d="M${i * 50} 0V180"/>`).join('')}${Array.from({ length: 4 }, (_, i) => `<path d="M0 ${i * 50}H600"/>`).join('')}</g>
-    <g fill="none" stroke="${c}" stroke-opacity=".75" stroke-width="1">${lines}${cant}</g>
+    <g class="lines" fill="none" stroke="${c}" stroke-opacity=".75" stroke-width="1">${lines}${cant}</g>
     <path d="M0 ${base}H600" stroke="rgba(255,255,255,.25)"/></svg>`);
 }
 

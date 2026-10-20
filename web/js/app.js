@@ -1,6 +1,7 @@
 // CIVIA AI — arranque, sesión, enrutador y estructura de la aplicación.
 import { api, hasSessionHint, logout, refresh, session } from './api.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
+import { autoStagger, circularReveal, elevateOnScroll, enableRipples, enableSpotlight, leave, moveNavPill } from './motion.js';
 
 const NAV = [
   { section: 'Estudio' },
@@ -87,7 +88,7 @@ function renderShell() {
     <div class="main">
       <header class="topbar">
         <label class="search" for="global-search">${icon('search')}
-          <input id="global-search" placeholder="Busca en la biblioteca o pregunta algo de arquitectura…" autocomplete="off">
+          <input id="global-search" placeholder="Busca en la biblioteca o pregunta algo de ingeniería…" autocomplete="off">
           <kbd>/</kbd></label>
         <div class="spacer"></div>
         <button class="btn ghost icon" id="theme-toggle" aria-label="Cambiar tema">${icon(document.documentElement.dataset.theme === 'light' ? 'moon' : 'sun')}</button>
@@ -105,8 +106,10 @@ function renderShell() {
   $('#logout').onclick = async () => { await logout(); location.hash = '#/login'; };
   $('#theme-toggle').onclick = () => {
     const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-    applyTheme(next);
-    $('#theme-toggle').innerHTML = icon(next === 'light' ? 'moon' : 'sun').s;
+    circularReveal($('#theme-toggle'), () => {
+      applyTheme(next);
+      $('#theme-toggle').innerHTML = icon(next === 'light' ? 'moon' : 'sun').s;
+    });
     api.patch('/auth/user', { preferences: { theme: next } }).catch(() => {});
   };
   const search = $('#global-search');
@@ -124,6 +127,8 @@ function renderShell() {
   });
   $('#notif-btn').onclick = toggleNotifications;
   shellReady = true;
+  autoStagger($('#view'));
+  elevateOnScroll($('.topbar'));
   loadEngine();
   refreshNotifications();
 }
@@ -146,8 +151,16 @@ async function refreshNotifications() {
 }
 
 let drawer = null;
+/** Cierra el panel de notificaciones con su animación de salida. */
+function closeDrawer() {
+  if (!drawer) return;
+  const d = drawer;
+  drawer = null;
+  d.classList.add('closing');
+  setTimeout(() => d.remove(), 180);
+}
 async function toggleNotifications() {
-  if (drawer) { drawer.remove(); drawer = null; return; }
+  if (drawer) { closeDrawer(); return; }
   drawer = document.createElement('div');
   drawer.className = 'card drawer';
   drawer.innerHTML = '<div class="card-body"><div class="skeleton" style="height:120px"></div></div>';
@@ -167,14 +180,17 @@ async function toggleNotifications() {
   $('#read-all', drawer).onclick = async () => { await api.post('/notifications/read-all'); drawer?.remove(); drawer = null; refreshNotifications(); };
 }
 document.addEventListener('mousedown', (e) => {
-  if (drawer && !drawer.contains(e.target) && !e.target.closest('#notif-btn')) { drawer.remove(); drawer = null; }
+  if (drawer && !drawer.contains(e.target) && !e.target.closest('#notif-btn')) closeDrawer();
 });
 
 // ------------------------------------------------------------------ enrutador
 const viewModules = {};
 const loadView = (name) => (viewModules[name] ||= import(`./views/${name}.js`));
 
+let navSeq = 0;
+
 async function route() {
+  const seq = ++navSeq;
   const hash = location.hash || '#/';
   const [path, queryString] = (hash.slice(1) || '/').split('?');
   let match = null;
@@ -205,15 +221,27 @@ async function route() {
     shellReady = false;
     target = app;
   } else {
-    if (!shellReady) renderShell();
+    if (shellReady) {
+      await leave($('#view'));
+      // Si mientras tanto se pidió otra sección, esta navegación ya no aplica.
+      if (seq !== navSeq) return;
+    } else renderShell();
     target = $('#view');
+    target.classList.remove('leaving');
     $$('[data-nav]').forEach((a) => a.classList.toggle('active', new RegExp(a.dataset.nav).test(hash)));
+    moveNavPill($('.sidebar .nav'));
     target.style.animation = 'none';
     void target.offsetWidth;
     target.style.animation = '';
   }
+  // Si la sección tarda, se muestra un esqueleto en lugar de una pantalla vacía.
+  const skeleton = match.isPublic ? 0 : setTimeout(() => {
+    if (seq === navSeq) mount(target, html`<div class="view-skeleton" aria-busy="true"><div class="skeleton sk-title"></div>
+      <div class="sk-row">${Array.from({ length: 4 }, () => html`<div class="skeleton sk-card"></div>`)}</div></div>`);
+  }, 160);
   try {
     const mod = await loadView(match.view);
+    clearTimeout(skeleton); // la vista ya puede pintarse: el esqueleto no debe pisarla
     if (target === $('#view') || match.isPublic) {
       cleanup = await mod.render(target, match.params, { refreshNotifications, aiStatus: () => aiStatus });
     }
@@ -223,7 +251,8 @@ async function route() {
       <button class="btn" id="retry-view">Reintentar</button></div>`);
     $('#retry-view', target)?.addEventListener('click', route);
   }
-  window.scrollTo({ top: 0 });
+  clearTimeout(skeleton);
+  window.scrollTo({ top: 0, behavior: 'instant' }); // una sección nueva empieza arriba, sin desplazamiento animado
   hideSplash();
 }
 
@@ -249,7 +278,21 @@ export function afterLogin() {
   location.hash = next && !next.includes('login') ? next : '#/';
 }
 
+// Copiar bloques de código de cualquier respuesta o artículo.
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-code-copy]');
+  if (!b) return;
+  try {
+    await navigator.clipboard.writeText(b.parentElement.querySelector('code')?.innerText || '');
+    b.textContent = 'Copiado';
+    b.classList.add('done');
+    setTimeout(() => { b.textContent = 'Copiar'; b.classList.remove('done'); }, 1500);
+  } catch { toast('No se pudo copiar el código.', 'error'); }
+});
+
 // ------------------------------------------------------------------ arranque
+enableRipples();
+enableSpotlight();
 window.addEventListener('hashchange', route);
 window.addEventListener('unhandledrejection', (e) => {
   if (e.reason?.status && e.reason.status !== 401) toast(e.reason.message, 'error');
