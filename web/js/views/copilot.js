@@ -27,7 +27,7 @@ export async function render(el, { conversationId, query }) {
           <button class="btn ghost icon sm history-toggle" id="history-toggle" aria-label="Ver conversaciones" aria-expanded="false">${icon('history')}</button>
           <img src="/assets/mark-96.png" alt="" width="30" height="30" style="mix-blend-mode:screen;border-radius:8px">
           <div><div style="font:500 15px var(--display)">CIVIA <span class="ai-text">Copilot</span></div>
-          <div class="hint">${status.llm ? status.engine : 'Motor local · biblioteca con citas'}</div></div>
+          <div class="hint">${status.llm ? `${status.engine} · respuestas en tiempo real` : 'Motor local · biblioteca con citas'}</div></div>
         </div>
         <div class="row">
           <select class="input" id="ctx-project" style="width:auto;min-height:34px;padding:5px 32px 5px 10px;font-size:13px">
@@ -40,7 +40,7 @@ export async function render(el, { conversationId, query }) {
         <div class="chips" id="attached" style="margin-bottom:8px"></div>
         <form class="box" id="composer">
           <button type="button" class="btn ghost icon sm" id="attach" title="Adjuntar planos del proyecto" aria-label="Adjuntar">${icon('clip')}</button>
-          <textarea id="input" rows="1" placeholder="Pregunta sobre arquitectura, tu proyecto, un plano o un modelo 3D…"></textarea>
+          <textarea id="input" rows="1" placeholder="Pregunta lo que necesites: ingeniería civil, tu proyecto, un plano o un modelo 3D…"></textarea>
           <button class="btn primary icon" id="send" aria-label="Enviar">${icon('send')}</button>
         </form>
         <div class="hint counter" id="counter" hidden></div>
