@@ -36,7 +36,7 @@ export async function render(el, { conversationId, query }) {
           </select>
         </div>
       </div>
-      <div class="messages" id="messages"></div>
+      <div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversación con CIVIA Copilot"></div>
       <button class="btn icon sm to-latest" id="to-latest" hidden aria-label="Ir al último mensaje">${icon('download')}</button>
       <div class="composer">
         <div class="chips" id="attached" style="margin-bottom:8px"></div>
@@ -225,6 +225,7 @@ export async function render(el, { conversationId, query }) {
   function liveReply() {
     const node = document.createElement('div');
     node.className = 'msg live';
+    node.setAttribute('aria-busy', 'true'); // los lectores de pantalla leen la respuesta cuando termina
     node.innerHTML = html`<div class="who"><img src="/assets/mark-96.png" alt=""></div>
       <div><div class="md"><div class="typing"><i></i><i></i><i></i></div></div></div>`.s;
     box.appendChild(node);
