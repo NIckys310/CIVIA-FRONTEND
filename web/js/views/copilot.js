@@ -437,6 +437,8 @@ export async function render(el, { conversationId, query }) {
 
   if (projectId) await loadDocs();
   await loadConversation();
+  // En escritorio el cursor queda listo para escribir; en el móvil no, para no abrir el teclado solo.
+  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) input.focus({ preventScroll: true });
   const draft = sessionStorage.getItem('civia-copilot-draft');
   if (draft) { sessionStorage.removeItem('civia-copilot-draft'); send(draft); }
   return () => {
