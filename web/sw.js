@@ -1,8 +1,8 @@
 /* CIVIA AI — service worker: la interfaz abre al instante desde caché y se actualiza en segundo plano.
    Nunca se cachea la API (/api/): datos y archivos privados siempre van a la red. */
-const VERSION = 'civia-1.0.2';
+const VERSION = 'civia-1.1.0';
 const SHELL = [
-  '/', '/index.html', '/css/app.css?v=1.0.1', '/js/app.js?v=1.0.1', '/js/api.js', '/js/ui.js',
+  '/', '/index.html', '/css/app.css?v=1.1.0', '/js/app.js?v=1.1.0', '/js/api.js', '/js/ui.js', '/js/motion.js',
   '/assets/mark-96.png', '/assets/mark-256.png', '/assets/favicon.png', '/manifest.webmanifest',
 ];
 
