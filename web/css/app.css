@@ -535,9 +535,9 @@ input[type="range"] { accent-color: var(--gold); }
 .auth { position: relative; z-index: 1; display: grid; grid-template-columns: 1.1fr 1fr; min-height: 100vh; }
 .auth .hero { position: relative; overflow: hidden; border-right: 1px solid var(--line); background: #000; }
 .auth .hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; opacity: 0.95; }
-.auth .hero::after { content: ""; position: absolute; inset: auto 0 0 0; height: 34%; background: linear-gradient(transparent, rgba(0, 0, 0, 0.92)); }
-.auth .hero .caption { position: absolute; z-index: 1; left: 48px; right: 48px; bottom: 40px; }
-.auth .hero .caption p { color: rgba(255, 255, 255, 0.62); max-width: 460px; margin-top: 12px; }
+/* La imagen ya trae el logotipo: sin textos encima, solo un fundido hacia el panel. */
+.auth .hero::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent 70%, var(--bg)), linear-gradient(transparent 80%, rgba(0, 0, 0, 0.6)); }
+.auth .brand-mobile { display: none; }
 .auth .panel { display: grid; place-items: center; padding: 48px 24px; }
 .auth form { width: 100%; max-width: 400px; }
 .auth .switch { margin-top: 22px; text-align: center; font-size: 13.5px; color: var(--text-2); }
@@ -605,8 +605,14 @@ input[type="range"] { accent-color: var(--gold); }
   .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .chat { grid-template-columns: 1fr; height: calc(100vh - 64px - 22px - 110px); }
   .auth { grid-template-columns: 1fr; }
-  .auth .hero { min-height: 280px; border-right: 0; border-bottom: 1px solid var(--line); }
-  .auth .hero .caption { left: 24px; bottom: 22px; }
+  /* Móvil: en lugar de recortar la imagen (y sus letras), una cabecera de marca limpia. */
+  .auth .hero { min-height: 0; padding: 44px 24px 30px; border-right: 0; border-bottom: 0; background: radial-gradient(60% 80% at 50% 30%, rgba(214, 164, 108, 0.12), transparent 70%), var(--bg); }
+  .auth .hero > img { display: none; }
+  .auth .hero::after { background: linear-gradient(var(--line), var(--line)) bottom / 60% 1px no-repeat; left: 20%; right: 20%; }
+  .auth .brand-mobile { display: grid; justify-items: center; gap: 10px; text-align: center; }
+  .auth .brand-mobile img { width: 84px; height: 84px; mix-blend-mode: screen; filter: drop-shadow(0 0 24px rgba(214, 164, 108, 0.35)); animation: splash-reveal 0.9s var(--ease-out) both; }
+  .auth .brand-mobile .wordmark { font: 300 34px/1 var(--display); letter-spacing: -0.02em; }
+  .auth .brand-mobile .eyebrow { font-size: 9px; letter-spacing: 0.34em; }
   .mobile-nav {
     position: fixed; z-index: 40; left: 12px; right: 12px; bottom: 12px;
     display: grid; grid-template-columns: repeat(5, 1fr);

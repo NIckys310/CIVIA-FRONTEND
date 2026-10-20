@@ -36,8 +36,10 @@ function layout(el, panel) {
   <div class="auth">
     <section class="hero" aria-hidden="true">
       <img src="/assets/logo-original.png" alt="" fetchpriority="high">
-      <div class="caption">
-        <p>Proyectos, planos, modelos 3D, cámara de obra y un copiloto de IA experto en ingeniería civil y arquitectura, en un solo lugar.</p>
+      <div class="brand-mobile">
+        <img src="/assets/mark-256.png" alt="" width="84" height="84">
+        <div class="wordmark chrome-text">Civia <span class="ai-text">AI</span></div>
+        <div class="eyebrow">Ingeniería y arquitectura inteligente</div>
       </div>
     </section>
     <section class="panel">${panel}</section>
