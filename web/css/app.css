@@ -736,3 +736,6 @@ input[type="range"] { accent-color: var(--gold); }
 /* Estados vacíos: el ícono flota despacio para que la pantalla no se sienta muerta. */
 .empty svg.big, .empty.welcome img { animation: float 5s ease-in-out infinite; }
 @keyframes float { 50% { transform: translateY(-6px); } }
+/* Campos: el borde dorado y el halo aparecen con transición. */
+.input, select.input, textarea.input { transition: border-color var(--dur-2), box-shadow var(--dur-2), background var(--dur-2); }
+.input:focus { background: color-mix(in srgb, var(--bg) 45%, transparent); }
