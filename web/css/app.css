@@ -800,3 +800,5 @@ html { scroll-behavior: smooth; }
 .field.invalid .field-msg { color: var(--danger); animation: shake 0.32s var(--ease-out); }
 .field.warn .field-msg { color: var(--warn); }
 @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+.link-btn { padding: 0; border: 0; background: none; color: var(--gold-2); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.field-msg a { color: var(--gold-2); text-decoration: underline; }

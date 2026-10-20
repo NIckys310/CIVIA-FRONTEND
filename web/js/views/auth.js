@@ -3,6 +3,7 @@ import { afterLogin } from '../app.js';
 import { api, login, logout, register, session } from '../api.js';
 import { $, busy, debounce, html, icon, mount, toast } from '../ui.js';
 import { stagger } from '../motion.js';
+import { live, rules, validateAll } from '../validate.js';
 
 function strength(pw) {
   if (!pw) return 0;
@@ -93,6 +94,24 @@ export function render(el, params) {
   return renderLogin(el, params.mode === 'login');
 }
 
+/** Correo con validación en vivo y sugerencia clicable si el dominio parece mal escrito. */
+function wireEmail(el) {
+  const input = $('#email', el);
+  const ctl = live(input, rules.email, {
+    onResult: (r) => {
+      if (!r.suggestion) return;
+      const msg = $('#email-msg', el);
+      const fix = document.createElement('button');
+      fix.type = 'button';
+      fix.className = 'link-btn';
+      fix.textContent = r.suggestion;
+      fix.onclick = () => { input.value = r.suggestion; ctl.refresh(); input.focus(); };
+      msg.replaceChildren('¿Quisiste decir ', fix, '?');
+    },
+  });
+  return ctl;
+}
+
 /** Modo de la pantalla anterior: el selector se desliza desde ahí en vez de aparecer ya en su sitio. */
 let lastMode = null;
 
@@ -137,9 +156,21 @@ function renderLogin(el, isLogin) {
 
   if (!isLogin) watchStrength(el, () => $('#email', el).value);
 
+  // Validación en tiempo real de cada campo.
+  const fields = [[$('#email', el), wireEmail(el)]];
+  if (isLogin) {
+    fields.push([$('#password', el), live($('#password', el), rules.loginPassword)]);
+  } else {
+    fields.unshift([$('#fullName', el), live($('#fullName', el), rules.fullName)]);
+  }
+  const mfaInput = $('#mfa', el);
+  const mfaCtl = live(mfaInput, rules.mfa);
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     errorBox.textContent = '';
+    const toCheck = $('#mfa-field', el).hidden ? fields : [...fields, [mfaInput, mfaCtl]];
+    if (!validateAll(toCheck)) return;
     const data = Object.fromEntries(new FormData(form).entries());
     const button = form.querySelector('[type=submit]');
     await busy(button, async () => {
@@ -160,7 +191,15 @@ function renderLogin(el, isLogin) {
           afterLogin();
         }
       } catch (err) {
-        errorBox.textContent = err.message;
+        // Si el error es de un campo concreto, se muestra junto a ese campo.
+        if (err.status === 409) {
+          const f = $('[data-field="email"]', el);
+          f.classList.add('invalid');
+          $('#email-msg', el).replaceChildren(err.message, ' ', Object.assign(document.createElement('a'), { href: '#/login', textContent: 'Inicia sesión' }));
+          $('#email', el).focus();
+        } else {
+          errorBox.textContent = err.message;
+        }
       }
     });
   });
