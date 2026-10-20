@@ -173,7 +173,7 @@ export function markdown(src) {
   let list = null;
   let table = null;
   const inline = (t) => t
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/&#96;((?:(?!&#96;).)+)&#96;/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/(^|[\s(])_([^_]+)_(?=[\s).,;:]|$)/g, '$1<em>$2</em>')
     .replace(/(^|[\s(])\*([^*\s][^*]*)\*(?=[\s).,;:]|$)/g, '$1<em>$2</em>')
@@ -189,15 +189,15 @@ export function markdown(src) {
   let code = null;
   for (const line of lines) {
     const t = line.trim();
-    // Bloques de código ```lenguaje … ``` (el contenido ya viene escapado).
-    if (/^```/.test(t)) {
+    // Bloques de código ```lenguaje … ``` (el contenido ya viene escapado: ` es &#96;).
+    if (t.startsWith('&#96;&#96;&#96;')) {
       if (code) {
         out.push(`<pre class="code"${code.lang ? ` data-lang="${code.lang}"` : ''}><code>${code.lines.join('\n')}</code></pre>`);
         code = null;
       } else {
         closeList();
         closeTable();
-        code = { lang: t.slice(3).trim().replace(/[^\w+#.-]/g, '').slice(0, 20), lines: [] };
+        code = { lang: t.slice(15).trim().replace(/[^\w+#.-]/g, '').slice(0, 20), lines: [] };
       }
       continue;
     }
