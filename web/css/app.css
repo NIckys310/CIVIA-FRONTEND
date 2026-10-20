@@ -696,3 +696,7 @@ input[type="range"] { accent-color: var(--gold); }
 .drawer.closing, .menu.closing { animation: pop-out var(--dur-1) ease forwards; }
 @keyframes fade-out { to { opacity: 0; } }
 @keyframes pop-out { to { opacity: 0; transform: translateY(8px) scale(0.98); } }
+/* Pantalla de carga: el logo se revela de abajo hacia arriba con un destello dorado. */
+#splash img { animation: splash-reveal 0.9s var(--ease-out) both, breathe 2.4s var(--ease) 0.9s infinite; }
+@keyframes splash-reveal { from { clip-path: inset(100% 0 0 0); filter: drop-shadow(0 0 0 transparent) brightness(1.6); transform: translateY(8px); } }
+#splash.out img { transform: scale(1.08); transition: transform 0.45s var(--ease); }
