@@ -690,3 +690,9 @@ input[type="range"] { accent-color: var(--gold); }
 @keyframes toast-in { from { opacity: 0; transform: translateX(24px) scale(0.98); } }
 @keyframes toast-out { to { opacity: 0; transform: translateX(24px); } }
 @keyframes toast-timer { to { transform: scaleX(0); } }
+/* Diálogos y paneles: también se van con animación, no desaparecen de golpe. */
+.modal-back.closing { animation: fade-out var(--dur-2) ease forwards; }
+.modal-back.closing .modal { animation: pop-out var(--dur-2) ease forwards; }
+.drawer.closing, .menu.closing { animation: pop-out var(--dur-1) ease forwards; }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes pop-out { to { opacity: 0; transform: translateY(8px) scale(0.98); } }
