@@ -43,6 +43,7 @@ export async function render(el, { conversationId, query }) {
           <textarea id="input" rows="1" placeholder="Pregunta sobre arquitectura, tu proyecto, un plano o un modelo 3D…"></textarea>
           <button class="btn primary icon" id="send" aria-label="Enviar">${icon('send')}</button>
         </form>
+        <div class="hint counter" id="counter" hidden></div>
         <div class="hint" style="margin-top:8px;text-align:center">CIVIA puede equivocarse. Requiere revisión y aprobación del profesional responsable.</div>
       </div>
     </div>
@@ -356,7 +357,17 @@ export async function render(el, { conversationId, query }) {
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input.value); } });
   const onEscape = (e) => { if (e.key === 'Escape' && controller) controller.abort(); };
   document.addEventListener('keydown', onEscape);
-  input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = `${Math.min(220, input.scrollHeight)}px`; });
+  const MAX = 12000;
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = `${Math.min(220, input.scrollHeight)}px`;
+    // Contador solo cerca del límite que acepta el servidor.
+    const counter = $('#counter', el);
+    const n = input.value.length;
+    counter.hidden = n < MAX * 0.8;
+    counter.textContent = `${n.toLocaleString('es')} / ${MAX.toLocaleString('es')}`;
+    counter.classList.toggle('over', n > MAX);
+  });
   on(el, 'click', '[data-suggest]', (e, b) => send(b.dataset.suggest));
   on(el, 'click', '[data-rate]', async (e, b) => {
     const msg = b.closest('.msg');
