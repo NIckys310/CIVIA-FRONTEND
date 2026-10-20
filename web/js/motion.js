@@ -52,3 +52,10 @@ export function autoStagger(root) {
   observer.observe(root, { childList: true, subtree: true });
   return () => observer.disconnect();
 }
+
+/** Desvanece la vista actual antes de cambiar de sección. */
+export function leave(view) {
+  if (reducedMotion() || !view || !view.childElementCount) return Promise.resolve();
+  view.classList.add('leaving');
+  return new Promise((done) => setTimeout(done, 140));
+}
