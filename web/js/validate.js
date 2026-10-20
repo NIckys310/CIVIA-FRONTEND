@@ -78,9 +78,9 @@ export function passwordChecks(pw, min = 8, email = '') {
 }
 
 /**
- * Conecta un campo: valida mientras se escribe (con una pausa) y al salir de él.
- * Los errores se muestran después de la primera salida del campo o de un envío; el ✓ aparece
- * apenas el valor es válido.
+ * Conecta un campo: valida mientras se escribe y al salir de él. El ✓ aparece apenas el valor es
+ * válido; los errores, cuando la persona hace una pausa al escribir (no a cada tecla), al salir del
+ * campo o al enviar.
  */
 export function live(input, rule, { onResult, delay = 350 } = {}) {
   const field = input.closest('.field');
@@ -103,7 +103,7 @@ export function live(input, rule, { onResult, delay = 350 } = {}) {
     // El ✓ aparece al instante; los errores esperan a que la persona haga una pausa.
     const quick = rule(input.value);
     if (quick.ok) apply(false);
-    else timer = setTimeout(() => apply(false), delay);
+    else timer = setTimeout(() => apply(input.value.length > 0), delay + 350);
   });
   input.addEventListener('blur', () => { if (input.value) touched = true; apply(false); });
   // Autocompletado del navegador o del gestor de contraseñas.
