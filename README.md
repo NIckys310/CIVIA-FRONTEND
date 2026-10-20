@@ -30,6 +30,20 @@ cromado, resplandor ámbar y acero azulado).
   términos, artículo del día, búsquedas recientes, glosario por área y artículos propios editables.
 - **Seguridad de la cuenta:** contraseña sin límite de longitud, verificación en dos pasos, sesiones activas.
 
+## Movimiento y efectos
+
+Discretos y coherentes con la marca (líneas de plano, brillo dorado), en `js/motion.js` y la
+sección *movimiento* de `css/app.css`:
+
+- Entrada escalonada de tarjetas, transición entre secciones e indicador deslizante del menú.
+- Onda dorada al pulsar, brillo que sigue al cursor en las tarjetas y hundimiento al presionar.
+- Portadas de proyecto que se dibujan trazo a trazo, cifras que cuentan desde cero, barras y
+  anillos que se llenan.
+- Chat con cursor de escritura, mensajes que entran desde su lado y botón para volver al final.
+- Avisos con cuenta regresiva, diálogos y paneles con animación de salida, cambio de tema en
+  círculo y vibración corta en el móvil.
+- Todo se desactiva con "reducir movimiento" del sistema operativo.
+
 ## Estructura
 
 ```
@@ -39,6 +53,7 @@ web/                 Interfaz (sin paso de compilación)
   js/app.js          Arranque, sesión, enrutador, navegación
   js/api.js          Cliente de la API (token en memoria, refresco de vuelo único)
   js/ui.js           Plantillas seguras (escape automático), íconos, Markdown seguro, modales
+  js/motion.js       Efectos de movimiento (respetan "reducir movimiento")
   js/views/*.js      Vistas cargadas bajo demanda
   vendor/three/      Three.js r170 local (sin CDN)
   sw.js              Service worker (nunca cachea /api)
