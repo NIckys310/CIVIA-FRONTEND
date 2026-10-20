@@ -148,7 +148,7 @@ p { margin: 0; }
 }
 .brand { display: flex; align-items: center; gap: 12px; padding: 4px 10px 22px; }
 .brand img { width: 40px; height: 40px; mix-blend-mode: screen; }
-:root[data-theme="light"] .brand img, :root[data-theme="light"] #splash img, :root[data-theme="light"] .msg .who img, :root[data-theme="light"] .mark-plate { background: #07080b; border-radius: 10px; padding: 2px; }
+:root[data-theme="light"] .brand img, :root[data-theme="light"] .auth .brand-mobile img, :root[data-theme="light"] #splash img, :root[data-theme="light"] .msg .who img, :root[data-theme="light"] .mark-plate { background: #07080b; border-radius: 10px; padding: 2px; }
 .brand .name { font: 400 21px/1 var(--display); letter-spacing: -0.01em; }
 .brand .name b { font-weight: 400; }
 .brand .tag { margin-top: 5px; font-size: 8.5px; letter-spacing: 0.34em; color: var(--text-3); text-transform: uppercase; }
@@ -535,9 +535,9 @@ input[type="range"] { accent-color: var(--gold); }
 .auth { position: relative; z-index: 1; display: grid; grid-template-columns: 1.1fr 1fr; min-height: 100vh; }
 .auth .hero { position: relative; overflow: hidden; border-right: 1px solid var(--line); background: #000; }
 .auth .hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; opacity: 0.95; }
-.auth .hero::after { content: ""; position: absolute; inset: auto 0 0 0; height: 34%; background: linear-gradient(transparent, rgba(0, 0, 0, 0.92)); }
-.auth .hero .caption { position: absolute; z-index: 1; left: 48px; right: 48px; bottom: 40px; }
-.auth .hero .caption p { color: rgba(255, 255, 255, 0.62); max-width: 460px; margin-top: 12px; }
+/* La imagen ya trae el logotipo: sin textos encima, solo un fundido hacia el panel. */
+.auth .hero::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent 70%, var(--bg)), linear-gradient(transparent 80%, rgba(0, 0, 0, 0.6)); }
+.auth .brand-mobile { display: none; }
 .auth .panel { display: grid; place-items: center; padding: 48px 24px; }
 .auth form { width: 100%; max-width: 400px; }
 .auth .switch { margin-top: 22px; text-align: center; font-size: 13.5px; color: var(--text-2); }
@@ -605,8 +605,14 @@ input[type="range"] { accent-color: var(--gold); }
   .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .chat { grid-template-columns: 1fr; height: calc(100vh - 64px - 22px - 110px); }
   .auth { grid-template-columns: 1fr; }
-  .auth .hero { min-height: 280px; border-right: 0; border-bottom: 1px solid var(--line); }
-  .auth .hero .caption { left: 24px; bottom: 22px; }
+  /* Móvil: en lugar de recortar la imagen (y sus letras), una cabecera de marca limpia. */
+  .auth .hero { min-height: 0; padding: 44px 24px 30px; border-right: 0; border-bottom: 0; background: radial-gradient(60% 80% at 50% 30%, rgba(214, 164, 108, 0.12), transparent 70%), var(--bg); }
+  .auth .hero > img { display: none; }
+  .auth .hero::after { background: linear-gradient(var(--line), var(--line)) bottom / 60% 1px no-repeat; left: 20%; right: 20%; }
+  .auth .brand-mobile { display: grid; justify-items: center; gap: 10px; text-align: center; }
+  .auth .hero .brand-mobile img { position: static; inset: auto; object-fit: contain; opacity: 1; width: 84px; height: 84px; mix-blend-mode: screen; filter: drop-shadow(0 0 24px rgba(214, 164, 108, 0.35)); animation: splash-reveal 0.9s var(--ease-out) both; }
+  .auth .brand-mobile .wordmark { font: 300 34px/1 var(--display); letter-spacing: -0.02em; }
+  .auth .brand-mobile .eyebrow { font-size: 9px; letter-spacing: 0.34em; }
   .mobile-nav {
     position: fixed; z-index: 40; left: 12px; right: 12px; bottom: 12px;
     display: grid; grid-template-columns: repeat(5, 1fr);
@@ -756,3 +762,52 @@ html { scroll-behavior: smooth; }
 .reveal.shown { opacity: 1; transform: none; }
 /* Perfil: resumen de uso del Copilot. */
 .usage .usage-val { margin-top: 8px; font: 300 26px/1 var(--display); letter-spacing: -0.02em; }
+
+/* ---------------------------------------------------------------- acceso (rediseño) */
+.auth .panel { position: relative; background: radial-gradient(70% 50% at 50% 0%, rgba(214, 164, 108, 0.06), transparent 70%); }
+.auth .auth-card { position: relative; width: 100%; max-width: 440px; padding: 34px 32px 28px; border-radius: 26px; border: 1px solid var(--line-2);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)), color-mix(in srgb, var(--panel) 88%, transparent);
+  backdrop-filter: blur(18px); box-shadow: 0 40px 100px -40px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.05); }
+.auth .auth-card::before { content: ""; position: absolute; top: -1px; left: 18%; right: 18%; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: 0.8; }
+.auth .auth-card h1 { font-size: clamp(28px, 3vw, 36px); }
+.seg { position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 4px; margin-bottom: 26px; border-radius: 13px; border: 1px solid var(--line); background: var(--glass); }
+.seg a { position: relative; z-index: 1; height: 36px; display: grid; place-items: center; border-radius: 10px; font-size: 13px; font-weight: 500; color: var(--text-2); transition: color var(--dur-2); }
+.seg a.active { color: var(--text); }
+.seg-pill { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 10px; background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line-2), 0 6px 16px -8px rgba(0, 0, 0, 0.8); transition: transform var(--dur-2) var(--ease-out); }
+.seg-pill.right { transform: translateX(100%); }
+@media (max-width: 960px) {
+  .auth .panel { padding: 8px 16px 40px; align-items: start; }
+  .auth .auth-card { padding: 26px 20px 22px; border-radius: 22px; }
+}
+/* Campos con ícono y estado de validación. */
+.input-wrap { position: relative; display: flex; align-items: center; }
+.input-wrap .input { padding-left: 40px; padding-right: 38px; }
+.input-wrap.pw .input { padding-right: 76px; }
+.input-wrap svg.lead { position: absolute; left: 13px; width: 17px; height: 17px; color: var(--text-3); pointer-events: none; transition: color var(--dur-2); }
+.input-wrap:focus-within svg.lead { color: var(--gold); }
+.input-wrap .state { position: absolute; right: 12px; width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; font: 700 11px/1 var(--font); opacity: 0; transform: scale(0.4); transition: opacity var(--dur-1), transform var(--dur-2) var(--ease-spring); pointer-events: none; }
+.input-wrap.pw .state { right: 44px; }
+.input-wrap.pw .btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); height: 34px; }
+.field-msg { min-height: 0; font-size: 12px; line-height: 1.4; color: var(--text-3); overflow: hidden; transition: color var(--dur-1); }
+.field-msg:empty { display: none; }
+.field.valid .input { border-color: color-mix(in srgb, var(--ok) 55%, transparent); }
+.field.valid .state { opacity: 1; transform: none; background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.field.valid .state::before { content: "✓"; }
+.field.invalid .input { border-color: color-mix(in srgb, var(--danger) 65%, transparent); }
+.field.invalid .input:focus { box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 16%, transparent); }
+.field.invalid .state { opacity: 1; transform: none; background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+.field.invalid .state::before { content: "!"; }
+.field.invalid .field-msg { color: var(--danger); animation: shake 0.32s var(--ease-out); }
+.field.warn .field-msg { color: var(--warn); }
+@keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+.link-btn { padding: 0; border: 0; background: none; color: var(--gold-2); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.field-msg a { color: var(--gold-2); text-decoration: underline; }
+/* Requisitos de la contraseña: se marcan en vivo. */
+.pw-checks { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; font-size: 12px; color: var(--text-3); }
+.pw-checks li { display: flex; align-items: center; gap: 8px; transition: color var(--dur-2); }
+.pw-checks li::before { content: ""; width: 14px; height: 14px; flex: none; border-radius: 50%; border: 1px solid var(--line-2); transition: background var(--dur-2), border-color var(--dur-2), transform var(--dur-2) var(--ease-spring); }
+.pw-checks li.ok { color: var(--text-2); }
+.pw-checks li.ok::before { border-color: var(--ok); transform: scale(1.05); background: var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23101317' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center / 10px no-repeat; }
+.caps { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--warn); animation: enter var(--dur-2) var(--ease-out); }
+.caps[hidden] { display: none; }
+.caps svg { width: 13px; height: 13px; }
