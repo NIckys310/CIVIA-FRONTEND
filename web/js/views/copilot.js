@@ -174,14 +174,22 @@ export async function render(el, { conversationId, query }) {
           <span class="hint engine-tag">${m.engine || ''}</span>
         </div></div></div>`);
 
-  const welcome = () => mount(box, html`<div class="empty" style="margin:auto">
+  const FALLBACK = ['¿Qué le falta a mi proyecto?', '¿Cómo predimensiono una viga de concreto?', 'Explícame la licuación de suelos',
+    'Caudal de diseño con el método racional', 'Diferencias entre pavimento rígido y flexible'];
+  const welcome = () => {
+    mount(box, html`<div class="empty welcome" style="margin:auto">
       <img src="/assets/mark-256.png" alt="" width="120" height="120">
-      <h2 class="display" style="font-size:30px">¿En qué <span class="chrome-text">diseñamos</span> hoy?</h2>
-      <p>Pregunta sobre normativa, dimensiones, materiales, estructuras o sostenibilidad. Elige un proyecto para que CIVIA conozca su contexto y te diga qué le falta.</p>
-      <div class="chips" style="justify-content:center">
-        ${['¿Qué le falta a mi proyecto?', '¿Cómo calculo una escalera?', 'Dimensiones mínimas de un baño accesible', 'Diferencia entre índice de ocupación y de construcción', '¿Qué formato 3D es mejor para la web?']
-          .map((s) => html`<button class="chip" data-suggest="${s}">${s}</button>`)}
+      <h2 class="display" style="font-size:30px">¿En qué <span class="chrome-text">trabajamos</span> hoy?</h2>
+      <p>Pregunta lo que necesites: estructuras, geotecnia, hidráulica, vías, presupuestos, normativa o cualquier otro tema. Elige un proyecto para que CIVIA conozca su contexto y te diga qué le falta.</p>
+      <div class="chips" id="suggested" style="justify-content:center">
+        ${FALLBACK.map((s) => html`<button class="chip" data-suggest="${s}">${s}</button>`)}
       </div></div>`);
+    // Sugerencias según el estado del proyecto elegido (si la API no responde, quedan las generales).
+    api.get(`/ai/suggestions${projectId ? `?projectId=${projectId}` : ''}`).then((list) => {
+      const target = $('#suggested', box);
+      if (target && list?.length) mount(target, html`${list.map((s) => html`<button class="chip" data-suggest="${s}">${s}</button>`)}`);
+    }).catch(() => {});
+  };
 
   async function loadConversation() {
     if (!activeId) { welcome(); return; }
@@ -369,7 +377,13 @@ export async function render(el, { conversationId, query }) {
     } catch { toast('No se pudo copiar. Selecciona el texto y cópialo a mano.', 'error'); }
   });
   on(el, 'click', '[data-detach]', (e, b) => { attached = attached.filter((d) => d.id !== b.dataset.detach); drawAttached(); });
-  $('#ctx-project', el).addEventListener('change', async (e) => { projectId = e.target.value || null; attached = []; drawAttached(); await loadDocs(); });
+  $('#ctx-project', el).addEventListener('change', async (e) => {
+    projectId = e.target.value || null;
+    attached = [];
+    drawAttached();
+    if (!activeId) welcome();
+    await loadDocs();
+  });
   $('#attach', el).onclick = async () => {
     if (!projectId) { alertBox('Elige primero un proyecto para adjuntar sus planos o fotos.'); return; }
     await loadDocs();
