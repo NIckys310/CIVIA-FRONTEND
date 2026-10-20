@@ -36,6 +36,7 @@ export async function render(el, { conversationId, query }) {
         </div>
       </div>
       <div class="messages" id="messages"></div>
+      <button class="btn icon sm to-latest" id="to-latest" hidden aria-label="Ir al último mensaje">${icon('download')}</button>
       <div class="composer">
         <div class="chips" id="attached" style="margin-bottom:8px"></div>
         <form class="box" id="composer">
@@ -215,6 +216,9 @@ export async function render(el, { conversationId, query }) {
 
   // Solo se sigue el final si la persona no subió a leer algo anterior.
   const nearBottom = () => box.scrollHeight - box.scrollTop - box.clientHeight < 140;
+  const toLatest = $('#to-latest', el);
+  box.addEventListener('scroll', () => { toLatest.hidden = nearBottom(); }, { passive: true });
+  toLatest.onclick = () => box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
 
   /** Respuesta en vivo: el texto aparece a medida que Claude lo escribe, con un cursor. */
   function liveReply() {
