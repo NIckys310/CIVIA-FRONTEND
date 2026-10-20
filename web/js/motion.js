@@ -142,3 +142,18 @@ export function haptic(pattern = 12) {
   if (reducedMotion() || !navigator.vibrate) return;
   try { navigator.vibrate(pattern); } catch { /* algunos navegadores lo bloquean sin interacción */ }
 }
+
+/** Revela los elementos de `selector` dentro de `root` cuando entran en pantalla. Devuelve una función para limpiar. */
+export function revealOnScroll(root, selector) {
+  const items = [...root.querySelectorAll(selector)];
+  if (reducedMotion() || !('IntersectionObserver' in window) || !items.length) return () => {};
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('shown');
+      observer.unobserve(e.target);
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+  items.forEach((el) => { el.classList.add('reveal'); observer.observe(el); });
+  return () => observer.disconnect();
+}
