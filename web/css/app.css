@@ -733,3 +733,6 @@ input[type="range"] { accent-color: var(--gold); }
 .tabs button, .tabs a { transition: background var(--dur-2) var(--ease-out), color var(--dur-1), box-shadow var(--dur-2), transform var(--dur-1); }
 .tabs .active { animation: tab-on var(--dur-2) var(--ease-out); }
 @keyframes tab-on { from { transform: scale(0.96); } }
+/* Estados vacíos: el ícono flota despacio para que la pantalla no se sienta muerta. */
+.empty svg.big, .empty.welcome img { animation: float 5s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-6px); } }
