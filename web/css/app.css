@@ -610,7 +610,7 @@ input[type="range"] { accent-color: var(--gold); }
   .auth .hero > img { display: none; }
   .auth .hero::after { background: linear-gradient(var(--line), var(--line)) bottom / 60% 1px no-repeat; left: 20%; right: 20%; }
   .auth .brand-mobile { display: grid; justify-items: center; gap: 10px; text-align: center; }
-  .auth .brand-mobile img { width: 84px; height: 84px; mix-blend-mode: screen; filter: drop-shadow(0 0 24px rgba(214, 164, 108, 0.35)); animation: splash-reveal 0.9s var(--ease-out) both; }
+  .auth .hero .brand-mobile img { position: static; inset: auto; object-fit: contain; opacity: 1; width: 84px; height: 84px; mix-blend-mode: screen; filter: drop-shadow(0 0 24px rgba(214, 164, 108, 0.35)); animation: splash-reveal 0.9s var(--ease-out) both; }
   .auth .brand-mobile .wordmark { font: 300 34px/1 var(--display); letter-spacing: -0.02em; }
   .auth .brand-mobile .eyebrow { font-size: 9px; letter-spacing: 0.34em; }
   .mobile-nav {
