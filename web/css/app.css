@@ -704,3 +704,8 @@ input[type="range"] { accent-color: var(--gold); }
 .auth .hero img { animation: hero-drift 18s ease-in-out infinite alternate; transform-origin: 50% 40%; }
 @keyframes hero-drift { from { transform: scale(1); } to { transform: scale(1.06) translateY(-1%); } }
 .auth .panel > * { animation: enter var(--dur-3) var(--ease-out) both; }
+/* Chat: tus mensajes entran desde la derecha y los de CIVIA desde la izquierda. */
+.msg.user { animation: msg-right var(--dur-2) var(--ease-out); }
+.msg.ai, .msg.live { animation: msg-left var(--dur-2) var(--ease-out); }
+@keyframes msg-right { from { opacity: 0; transform: translateX(14px); } }
+@keyframes msg-left { from { opacity: 0; transform: translateX(-10px); } }
