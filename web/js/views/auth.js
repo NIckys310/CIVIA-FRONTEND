@@ -138,9 +138,13 @@ function renderLogin(el, isLogin) {
           ${textField('email', 'Correo electrónico', { type: 'email', autocomplete: 'email', ic: 'mail', placeholder: 'tu@correo.com', required: true })}
           ${passwordField('password', 'Contraseña', isLogin ? 'current-password' : 'new-password',
             isLogin ? html`<a class="forgot" href="#/forgot">¿Olvidaste tu contraseña?</a>` : strengthHint())}
-          <div class="field" id="mfa-field" hidden>
+          <div class="field" id="mfa-field" data-field="mfa" hidden>
             <label for="mfa">Código de verificación</label>
-            <input class="input mono" id="mfa" name="mfa" inputmode="numeric" autocomplete="one-time-code" placeholder="123 456 o código de recuperación">
+            <div class="input-wrap">${icon('key', 'lead')}
+              <input class="input mono" id="mfa" name="mfa" inputmode="numeric" autocomplete="one-time-code" placeholder="123 456 o código de recuperación" aria-describedby="mfa-msg">
+              <span class="state" aria-hidden="true"></span>
+            </div>
+            <div class="field-msg" id="mfa-msg" aria-live="polite"></div>
             <div class="hint">Abre tu app de autenticación. También puedes usar un código de recuperación.</div>
           </div>
           <div class="error-text" id="auth-error" role="alert"></div>
@@ -165,6 +169,11 @@ function renderLogin(el, isLogin) {
   }
   const mfaInput = $('#mfa', el);
   const mfaCtl = live(mfaInput, rules.mfa);
+  // Los 6 dígitos se agrupan solos como "123 456" (los códigos de recuperación quedan igual).
+  mfaInput.addEventListener('input', () => {
+    const digits = mfaInput.value.replace(/\s/g, '');
+    if (/^\d{4,6}$/.test(digits)) mfaInput.value = `${digits.slice(0, 3)} ${digits.slice(3)}`;
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
