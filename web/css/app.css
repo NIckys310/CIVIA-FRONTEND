@@ -658,3 +658,8 @@ input[type="range"] { accent-color: var(--gold); }
 .nav.has-pill a.active { background: transparent; }
 .nav.has-pill a.active::before { display: none; }
 .nav a > * { position: relative; }
+/* Barra móvil: el ícono activo se eleva con un rebote corto y un punto dorado lo marca. */
+.mobile-nav a svg { transition: transform var(--dur-2) var(--ease-spring), color var(--dur-1); }
+.mobile-nav a.active svg { transform: translateY(-2px) scale(1.12); }
+.mobile-nav a::after { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 8px var(--gold); opacity: 0; transform: scale(0); transition: transform var(--dur-2) var(--ease-spring), opacity var(--dur-1); }
+.mobile-nav a.active::after { opacity: 1; transform: scale(1); }
