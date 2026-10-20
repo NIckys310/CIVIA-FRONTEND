@@ -1,5 +1,6 @@
-// CIVIA Copilot: chat con la IA de arquitectura, con contexto de proyecto y archivos adjuntos.
-import { api } from '../api.js';
+// CIVIA Copilot: chat con la IA de ingeniería civil y arquitectura, en tiempo real, con contexto de
+// proyecto y archivos adjuntos.
+import { api, stream } from '../api.js';
 import { $, html, icon, markdown, mount, on, relTime } from '../ui.js';
 
 export async function render(el, { conversationId, query }) {
@@ -90,6 +91,35 @@ export async function render(el, { conversationId, query }) {
 
   const drawAttached = () => mount($('#attached', el), html`${attached.map((d) => html`<span class="chip">${icon('blueprint')}${d.name}<button class="btn ghost icon sm" data-detach="${d.id}" style="width:20px;height:20px">${icon('x')}</button></span>`)}`);
 
+  /** Respuesta en vivo: el texto aparece a medida que Claude lo escribe, con un cursor. */
+  function liveReply() {
+    const node = document.createElement('div');
+    node.className = 'msg live';
+    node.innerHTML = html`<div class="who"><img src="/assets/mark-96.png" alt=""></div>
+      <div><div class="md"><div class="typing"><i></i><i></i><i></i></div></div></div>`.s;
+    box.appendChild(node);
+    const target = node.querySelector('.md');
+    let text = '';
+    let frame = 0;
+    return {
+      node,
+      append(delta) {
+        text += delta;
+        frame ||= requestAnimationFrame(() => {
+          frame = 0;
+          target.innerHTML = markdown(text).s;
+          // El cursor va al final del último bloque (párrafo, ítem o código), no en una línea aparte.
+          let tail = target.lastElementChild;
+          while (tail?.lastElementChild && /^(UL|OL|LI|PRE|TABLE|TBODY|TR|BLOCKQUOTE)$/.test(tail.lastElementChild.tagName)) tail = tail.lastElementChild;
+          if (tail?.tagName === 'PRE') tail = tail.firstElementChild;
+          (tail || target).insertAdjacentHTML('beforeend', '<span class="caret" aria-hidden="true"></span>');
+          box.scrollTop = box.scrollHeight;
+        });
+      },
+      get text() { return text; },
+    };
+  }
+
   async function send(text) {
     const message = text.trim();
     if (!message) return;
@@ -97,24 +127,46 @@ export async function render(el, { conversationId, query }) {
     input.style.height = '';
     if (!activeId) mount(box, '');
     box.insertAdjacentHTML('beforeend', msgHtml({ role: 'user', content: message }).s);
-    box.insertAdjacentHTML('beforeend', html`<div class="msg" id="typing"><div class="who"><img src="/assets/mark-96.png" alt=""></div><div class="typing"><i></i><i></i><i></i></div></div>`.s);
     box.scrollTop = box.scrollHeight;
+    const body = { conversationId: activeId, projectId: projectId || null, message, documentIds: attached.map((d) => d.id) };
+    const live = liveReply();
+    let started = false;
+    let saved = null;
+    let failure = null;
     try {
-      const r = await api.post('/ai/chat', { conversationId: activeId, projectId: projectId || null, message, documentIds: attached.map((d) => d.id) });
-      $('#typing', el)?.remove();
-      box.insertAdjacentHTML('beforeend', msgHtml(r.message).s);
+      if (status.streaming) {
+        await stream('/ai/chat/stream', body, {
+          onEvent: (name, data) => {
+            if (name === 'start') { started = true; activeId ||= data.conversationId; }
+            else if (name === 'delta') live.append(data.text);
+            else if (name === 'done') saved = data;
+            else if (name === 'error') failure = data.message;
+          },
+        }).catch((e) => { if (started) throw e; });
+      }
+      // Sin streaming (o si no llegó a empezar): respuesta completa de una vez.
+      if (!started) saved = await api.post('/ai/chat', body);
+      if (failure) throw new Error(failure);
+      live.node.remove();
+      if (saved) {
+        box.insertAdjacentHTML('beforeend', msgHtml(saved.message).s);
+      } else {
+        // La conexión se cortó: el servidor termina y guarda la respuesta; se recarga del historial.
+        await loadConversation();
+      }
       box.scrollTop = box.scrollHeight;
       attached = [];
       drawAttached();
-      if (!activeId) {
-        activeId = r.conversationId;
+      const id = saved?.conversationId || activeId;
+      if (id && !location.hash.endsWith(id)) {
+        activeId = id;
         history.replaceState(null, '', `#/copilot/${activeId}`);
-        const fresh = await api.get('/ai/conversations');
-        conversations.splice(0, conversations.length, ...fresh);
-        drawList();
       }
+      const fresh = await api.get('/ai/conversations');
+      conversations.splice(0, conversations.length, ...fresh);
+      drawList();
     } catch (e) {
-      $('#typing', el)?.remove();
+      live.node.remove();
       box.insertAdjacentHTML('beforeend', html`<div class="msg"><div class="who">${icon('alert')}</div><div class="error-text">${e.message}</div></div>`.s);
     }
   }
