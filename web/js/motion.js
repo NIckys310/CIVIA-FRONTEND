@@ -80,3 +80,15 @@ export function moveNavPill(nav) {
   pill.style.height = `${active.offsetHeight}px`;
   pill.style.transform = `translateY(${active.offsetTop}px)`;
 }
+
+/** Pasa la posición del cursor a la tarjeta para el brillo que lo sigue. */
+export function enableSpotlight(root = document) {
+  if (!window.matchMedia('(hover: hover)').matches) return;
+  root.addEventListener('pointermove', (e) => {
+    const card = e.target.closest?.('.card.hover');
+    if (!card) return;
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    card.style.setProperty('--my', `${e.clientY - r.top}px`);
+  }, { passive: true });
+}

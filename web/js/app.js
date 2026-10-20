@@ -1,7 +1,7 @@
 // CIVIA AI — arranque, sesión, enrutador y estructura de la aplicación.
 import { api, hasSessionHint, logout, refresh, session } from './api.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
-import { autoStagger, enableRipples, leave, moveNavPill } from './motion.js';
+import { autoStagger, enableRipples, enableSpotlight, leave, moveNavPill } from './motion.js';
 
 const NAV = [
   { section: 'Estudio' },
@@ -274,6 +274,7 @@ document.addEventListener('click', async (e) => {
 
 // ------------------------------------------------------------------ arranque
 enableRipples();
+enableSpotlight();
 window.addEventListener('hashchange', route);
 window.addEventListener('unhandledrejection', (e) => {
   if (e.reason?.status && e.reason.status !== 401) toast(e.reason.message, 'error');
