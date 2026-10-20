@@ -38,7 +38,7 @@ export async function render(el, { conversationId, query }) {
         <form class="box" id="composer">
           <button type="button" class="btn ghost icon sm" id="attach" title="Adjuntar planos del proyecto" aria-label="Adjuntar">${icon('clip')}</button>
           <textarea id="input" rows="1" placeholder="Pregunta sobre arquitectura, tu proyecto, un plano o un modelo 3D…"></textarea>
-          <button class="btn primary icon" aria-label="Enviar">${icon('send')}</button>
+          <button class="btn primary icon" id="send" aria-label="Enviar">${icon('send')}</button>
         </form>
         <div class="hint" style="margin-top:8px;text-align:center">CIVIA puede equivocarse. Requiere revisión y aprobación del profesional responsable.</div>
       </div>
@@ -120,9 +120,19 @@ export async function render(el, { conversationId, query }) {
     };
   }
 
+  let controller = null;
+  const sendBtn = () => $('#send', el);
+  function setStreaming(on) {
+    const b = sendBtn();
+    if (!b) return;
+    b.innerHTML = icon(on ? 'stop' : 'send').s;
+    b.setAttribute('aria-label', on ? 'Detener la respuesta' : 'Enviar');
+    b.classList.toggle('stopping', on);
+  }
+
   async function send(text) {
     const message = text.trim();
-    if (!message) return;
+    if (!message || controller) return;
     input.value = '';
     input.style.height = '';
     if (!activeId) mount(box, '');
@@ -133,9 +143,12 @@ export async function render(el, { conversationId, query }) {
     let started = false;
     let saved = null;
     let failure = null;
+    controller = new AbortController();
+    setStreaming(true);
     try {
       if (status.streaming) {
         await stream('/ai/chat/stream', body, {
+          signal: controller.signal,
           onEvent: (name, data) => {
             if (name === 'start') { started = true; activeId ||= data.conversationId; }
             else if (name === 'delta') live.append(data.text);
@@ -166,13 +179,29 @@ export async function render(el, { conversationId, query }) {
       conversations.splice(0, conversations.length, ...fresh);
       drawList();
     } catch (e) {
+      if (e.name === 'AbortError') {
+        // Detenida por la persona: se conserva lo escrito; el servidor guarda la respuesta completa.
+        live.node.classList.add('stopped');
+        live.node.querySelector('.caret')?.remove();
+        live.node.lastElementChild.insertAdjacentHTML('beforeend', html`<div class="hint" style="margin-top:8px">Detenida. La respuesta completa queda en el historial.</div>`.s);
+        return;
+      }
       live.node.remove();
       box.insertAdjacentHTML('beforeend', html`<div class="msg"><div class="who">${icon('alert')}</div><div class="error-text">${e.message}</div></div>`.s);
+    } finally {
+      controller = null;
+      setStreaming(false);
     }
   }
 
-  $('#composer', el).addEventListener('submit', (e) => { e.preventDefault(); send(input.value); });
+  $('#composer', el).addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (controller) controller.abort();
+    else send(input.value);
+  });
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input.value); } });
+  const onEscape = (e) => { if (e.key === 'Escape' && controller) controller.abort(); };
+  document.addEventListener('keydown', onEscape);
   input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = `${Math.min(220, input.scrollHeight)}px`; });
   on(el, 'click', '[data-suggest]', (e, b) => send(b.dataset.suggest));
   on(el, 'click', '[data-detach]', (e, b) => { attached = attached.filter((d) => d.id !== b.dataset.detach); drawAttached(); });
@@ -202,4 +231,5 @@ export async function render(el, { conversationId, query }) {
   await loadConversation();
   const draft = sessionStorage.getItem('civia-copilot-draft');
   if (draft) { sessionStorage.removeItem('civia-copilot-draft'); send(draft); }
+  return () => { document.removeEventListener('keydown', onEscape); controller?.abort(); };
 }

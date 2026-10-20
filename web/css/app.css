@@ -413,6 +413,8 @@ input[type="range"] { accent-color: var(--gold); }
 .composer { padding: 14px; border-top: 1px solid var(--line); }
 .composer .box { display: flex; align-items: flex-end; gap: 10px; padding: 10px; border: 1px solid var(--line-2); border-radius: 16px; background: color-mix(in srgb, var(--bg) 60%, transparent); }
 .composer textarea { flex: 1; border: 0; outline: 0; background: transparent; resize: none; min-height: 24px; max-height: 220px; padding: 7px 6px; line-height: 1.5; }
+.composer .btn.stopping { background: var(--panel-2); color: var(--text); border-color: var(--line-2); box-shadow: 0 0 0 4px var(--gold-glow); }
+.msg.stopped .md { opacity: 0.75; }
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 5px 12px; text-align: left; line-height: 1.35; border-radius: 99px; border: 1px solid var(--line-2); background: var(--glass); color: var(--text-2); font-size: 12.5px; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
 .chip:hover { color: var(--text); border-color: color-mix(in srgb, var(--gold) 60%, transparent); }
