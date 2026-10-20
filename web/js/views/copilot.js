@@ -24,6 +24,7 @@ export async function render(el, { conversationId, query }) {
     <div class="card thread">
       <div class="card-head" style="padding:12px 18px">
         <div class="row" style="min-width:0">
+          <button class="btn ghost icon sm history-toggle" id="history-toggle" aria-label="Ver conversaciones" aria-expanded="false">${icon('history')}</button>
           <img src="/assets/mark-96.png" alt="" width="30" height="30" style="mix-blend-mode:screen;border-radius:8px">
           <div><div style="font:500 15px var(--display)">CIVIA <span class="ai-text">Copilot</span></div>
           <div class="hint">${status.llm ? status.engine : 'Motor local · biblioteca con citas'}</div></div>
@@ -128,6 +129,15 @@ export async function render(el, { conversationId, query }) {
   });
   const outside = (e) => { if (menu && !menu.contains(e.target) && !e.target.closest('[data-conv-menu]')) closeMenu(); };
   document.addEventListener('mousedown', outside);
+
+  // En pantallas pequeñas la lista se abre como panel sobre el chat.
+  const chat = $('.chat', el);
+  const toggleHistory = (open = !chat.classList.contains('show-list')) => {
+    chat.classList.toggle('show-list', open);
+    $('#history-toggle', el).setAttribute('aria-expanded', String(open));
+  };
+  $('#history-toggle', el).onclick = () => toggleHistory();
+  on(list, 'click', 'a.conv', () => toggleHistory(false));
 
   $('#clear-all', el).onclick = async () => {
     if (!conversations.length) return;
