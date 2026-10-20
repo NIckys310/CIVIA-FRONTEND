@@ -176,7 +176,10 @@ document.addEventListener('mousedown', (e) => {
 const viewModules = {};
 const loadView = (name) => (viewModules[name] ||= import(`./views/${name}.js`));
 
+let navSeq = 0;
+
 async function route() {
+  const seq = ++navSeq;
   const hash = location.hash || '#/';
   const [path, queryString] = (hash.slice(1) || '/').split('?');
   let match = null;
@@ -207,8 +210,11 @@ async function route() {
     shellReady = false;
     target = app;
   } else {
-    if (shellReady) await leave($('#view'));
-    else renderShell();
+    if (shellReady) {
+      await leave($('#view'));
+      // Si mientras tanto se pidió otra sección, esta navegación ya no aplica.
+      if (seq !== navSeq) return;
+    } else renderShell();
     target = $('#view');
     target.classList.remove('leaving');
     $$('[data-nav]').forEach((a) => a.classList.toggle('active', new RegExp(a.dataset.nav).test(hash)));
