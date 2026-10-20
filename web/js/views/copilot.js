@@ -1,7 +1,7 @@
 // CIVIA Copilot: chat con la IA de ingeniería civil y arquitectura, en tiempo real, con contexto de
 // proyecto y archivos adjuntos.
 import { api, stream } from '../api.js';
-import { $, html, icon, markdown, mount, on, relTime, toast } from '../ui.js';
+import { $, debounce, html, icon, markdown, mount, on, relTime, toast } from '../ui.js';
 
 export async function render(el, { conversationId, query }) {
   const [conversations, projects, status] = await Promise.all([
@@ -17,6 +17,7 @@ export async function render(el, { conversationId, query }) {
     <div class="card list-card" style="display:flex;flex-direction:column;min-height:0">
       <div class="card-head" style="padding:16px"><span class="eyebrow gold">Conversaciones</span>
         <a class="btn sm primary" href="#/copilot">${icon('plus')} Nueva</a></div>
+      <label class="search conv-search" for="conv-q">${icon('search')}<input id="conv-q" placeholder="Buscar en el historial" autocomplete="off"></label>
       <div class="list" id="conv-list"></div>
     </div>
     <div class="card thread">
@@ -49,11 +50,18 @@ export async function render(el, { conversationId, query }) {
   const box = $('#messages', el);
   const input = $('#input', el);
 
-  const drawList = () => mount(list, conversations.length
-    ? html`${conversations.map((c) => html`<a class="conv ${c.id === activeId ? 'active' : ''}" href="#/copilot/${c.id}" title="${c.title}">
+  let shown = conversations;
+  let searching = '';
+  const drawList = () => mount(list, shown.length
+    ? html`${shown.map((c) => html`<a class="conv ${c.id === activeId ? 'active' : ''}" href="#/copilot/${c.id}" title="${c.title}">
         ${c.title}<div class="hint" style="font-size:11px">${c.projectName ? `${c.projectName} · ` : ''}${relTime(c.updatedAt)}</div></a>`)}`
-    : html`<p class="hint" style="padding:12px">Tus conversaciones aparecerán aquí.</p>`);
+    : html`<p class="hint" style="padding:12px">${searching ? 'Ninguna conversación coincide.' : 'Tus conversaciones aparecerán aquí.'}</p>`);
   drawList();
+  $('#conv-q', el).addEventListener('input', debounce(async (e) => {
+    searching = e.target.value.trim();
+    shown = searching ? await api.get(`/ai/conversations?q=${encodeURIComponent(searching)}`) : conversations;
+    drawList();
+  }, 250));
 
   const sourcesHtml = (sources) => (sources?.length ? html`<div class="meta">${sources.map((s) => (s.slug
     ? html`<a class="chip" href="#/library/a/${s.slug}" title="${s.section || ''}">${icon('book')}<span class="mono" style="color:var(--gold-2)">${s.marker}</span> ${s.title}</a>`
@@ -183,6 +191,7 @@ export async function render(el, { conversationId, query }) {
       }
       const fresh = await api.get('/ai/conversations');
       conversations.splice(0, conversations.length, ...fresh);
+      if (!searching) shown = conversations;
       drawList();
     } catch (e) {
       if (e.name === 'AbortError') {
