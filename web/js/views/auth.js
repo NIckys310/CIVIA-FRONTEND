@@ -3,7 +3,7 @@ import { afterLogin } from '../app.js';
 import { api, login, logout, register, session } from '../api.js';
 import { $, busy, debounce, html, icon, mount, toast } from '../ui.js';
 import { stagger } from '../motion.js';
-import { live, rules, validateAll } from '../validate.js';
+import { live, passwordChecks, rules, validateAll } from '../validate.js';
 
 function strength(pw) {
   if (!pw) return 0;
@@ -41,7 +41,8 @@ const passwordField = (id, label, autocomplete, hint) => html`
 
 const strengthHint = () => html`
   <div class="strength" id="strength"><i></i><i></i><i></i><i></i></div>
-  <div class="hint" id="pw-hint">Mínimo 8 caracteres, sin límite máximo: puedes usar una frase larga.</div>`;
+  <ul class="pw-checks" id="pw-checks">${passwordChecks('', 8).map((c) => html`<li data-check="${c.id}">${c.label}</li>`)}</ul>
+  <div class="hint" id="pw-hint">Sin límite máximo: puedes usar una frase larga.</div>`;
 
 const footer = html`<div class="ruled eyebrow" style="margin-top:34px;font-size:9px">Protegido por CIVIA Auth</div>`;
 
@@ -72,8 +73,14 @@ function layout(el, panel) {
   });
 }
 
-/** Medidor de fuerza y validación en el servidor mientras se escribe. */
+/**
+ * Medidor de fuerza, requisitos marcados en vivo y revisión en el servidor (contraseñas comunes y
+ * filtradas) mientras se escribe. Devuelve el control de validación del campo.
+ */
 function watchStrength(el, email = () => '') {
+  const ctl = live($('#password', el), rules.newPassword(8, () => ({ email: email() })), {
+    onResult: (r) => r.checks?.forEach((c) => $(`[data-check="${c.id}"]`, el)?.classList.toggle('ok', c.ok)),
+  });
   const check = debounce(async (pw) => {
     if (!pw) return;
     try {
@@ -86,12 +93,21 @@ function watchStrength(el, email = () => '') {
     $('#strength', el).className = `strength s${strength(e.target.value)}`;
     check(e.target.value);
   });
+  return ctl;
 }
 
 export function render(el, params) {
   if (params.mode === 'forgot') return renderForgot(el);
   if (params.mode === 'reset') return renderReset(el, params.query);
   return renderLogin(el, params.mode === 'login');
+}
+
+/** "Confirma la contraseña": se revisa en vivo y también cuando cambia la primera. */
+function confirmField(el) {
+  const confirm = $('#confirm', el);
+  const ctl = live(confirm, rules.same(() => $('#password', el).value, 'Las contraseñas no coinciden.'));
+  $('#password', el).addEventListener('input', () => { if (confirm.value) ctl.refresh(); });
+  return [confirm, ctl];
 }
 
 /** Correo con validación en vivo y sugerencia clicable si el dominio parece mal escrito. */
@@ -138,6 +154,7 @@ function renderLogin(el, isLogin) {
           ${textField('email', 'Correo electrónico', { type: 'email', autocomplete: 'email', ic: 'mail', placeholder: 'tu@correo.com', required: true })}
           ${passwordField('password', 'Contraseña', isLogin ? 'current-password' : 'new-password',
             isLogin ? html`<a class="forgot" href="#/forgot">¿Olvidaste tu contraseña?</a>` : strengthHint())}
+          ${isLogin ? '' : passwordField('confirm', 'Confirma la contraseña', 'new-password', '')}
           <div class="field" id="mfa-field" data-field="mfa" hidden>
             <label for="mfa">Código de verificación</label>
             <div class="input-wrap">${icon('key', 'lead')}
@@ -158,14 +175,14 @@ function renderLogin(el, isLogin) {
   const errorBox = $('#auth-error', el);
   requestAnimationFrame(() => requestAnimationFrame(() => $('.seg-pill', el)?.classList.toggle('right', !isLogin)));
 
-  if (!isLogin) watchStrength(el, () => $('#email', el).value);
-
   // Validación en tiempo real de cada campo.
   const fields = [[$('#email', el), wireEmail(el)]];
   if (isLogin) {
     fields.push([$('#password', el), live($('#password', el), rules.loginPassword)]);
   } else {
     fields.unshift([$('#fullName', el), live($('#fullName', el), rules.fullName)]);
+    fields.push([$('#password', el), watchStrength(el, () => $('#email', el).value)]);
+    fields.push(confirmField(el));
   }
   const mfaInput = $('#mfa', el);
   const mfaCtl = live(mfaInput, rules.mfa);
@@ -233,11 +250,12 @@ function renderForgot(el) {
   const form = $('#forgot-form', el);
   const errorBox = $('#auth-error', el);
   $('#email', el).focus();
+  const emailCtl = wireEmail(el);
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     errorBox.textContent = '';
+    if (!validateAll([[$('#email', el), emailCtl]])) return;
     const email = $('#email', el).value.trim();
-    if (!email) { errorBox.textContent = 'Escribe tu correo electrónico.'; return; }
     await busy(form.querySelector('[type=submit]'), async () => {
       try {
         const r = await api.post('/auth/password/forgot', { email });
@@ -292,14 +310,14 @@ function renderReset(el, query) {
         ${footer}
       </form>`);
 
-  watchStrength(el);
+  const fields = [[$('#password', el), watchStrength(el)], confirmField(el)];
   const form = $('#reset-form', el);
   const errorBox = $('#auth-error', el);
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     errorBox.textContent = '';
+    if (!validateAll(fields)) return;
     const password = $('#password', el).value;
-    if (password !== $('#confirm', el).value) { errorBox.textContent = 'Las contraseñas no coinciden.'; return; }
     await busy(form.querySelector('[type=submit]'), async () => {
       try {
         const r = await api.post('/auth/password/reset', { token, password });

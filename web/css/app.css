@@ -802,3 +802,9 @@ html { scroll-behavior: smooth; }
 @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
 .link-btn { padding: 0; border: 0; background: none; color: var(--gold-2); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .field-msg a { color: var(--gold-2); text-decoration: underline; }
+/* Requisitos de la contraseña: se marcan en vivo. */
+.pw-checks { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; font-size: 12px; color: var(--text-3); }
+.pw-checks li { display: flex; align-items: center; gap: 8px; transition: color var(--dur-2); }
+.pw-checks li::before { content: ""; width: 14px; height: 14px; flex: none; border-radius: 50%; border: 1px solid var(--line-2); transition: background var(--dur-2), border-color var(--dur-2), transform var(--dur-2) var(--ease-spring); }
+.pw-checks li.ok { color: var(--text-2); }
+.pw-checks li.ok::before { border-color: var(--ok); transform: scale(1.05); background: var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23101317' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center / 10px no-repeat; }
