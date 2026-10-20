@@ -148,8 +148,16 @@ async function refreshNotifications() {
 }
 
 let drawer = null;
+/** Cierra el panel de notificaciones con su animación de salida. */
+function closeDrawer() {
+  if (!drawer) return;
+  const d = drawer;
+  drawer = null;
+  d.classList.add('closing');
+  setTimeout(() => d.remove(), 180);
+}
 async function toggleNotifications() {
-  if (drawer) { drawer.remove(); drawer = null; return; }
+  if (drawer) { closeDrawer(); return; }
   drawer = document.createElement('div');
   drawer.className = 'card drawer';
   drawer.innerHTML = '<div class="card-body"><div class="skeleton" style="height:120px"></div></div>';
@@ -169,7 +177,7 @@ async function toggleNotifications() {
   $('#read-all', drawer).onclick = async () => { await api.post('/notifications/read-all'); drawer?.remove(); drawer = null; refreshNotifications(); };
 }
 document.addEventListener('mousedown', (e) => {
-  if (drawer && !drawer.contains(e.target) && !e.target.closest('#notif-btn')) { drawer.remove(); drawer = null; }
+  if (drawer && !drawer.contains(e.target) && !e.target.closest('#notif-btn')) closeDrawer();
 });
 
 // ------------------------------------------------------------------ enrutador
