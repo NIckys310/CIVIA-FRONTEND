@@ -1,4 +1,5 @@
-// Biblioteca de arquitectura: una pregunta → respuesta con fuentes; categorías, artículos y glosario.
+// Biblioteca de ingeniería civil y arquitectura: una pregunta → respuesta con fuentes; categorías,
+// artículos, glosario y artículos propios.
 import { api } from '../api.js';
 import { $, busy, formData, html, icon, markdown, modal, mount, on, toast } from '../ui.js';
 
@@ -17,10 +18,10 @@ const nav = (active) => html`<div class="tabs" style="margin-bottom:20px">
 
 function askBox(q = '') {
   return html`<div class="card glow ask-hero">
-    <div class="eyebrow gold">Biblioteca de arquitectura</div>
-    <h1 style="margin-top:14px">Todo lo de arquitectura, <span class="chrome-text">con una sola pregunta</span></h1>
-    <p class="muted" style="margin-top:10px;max-width:640px">Historia y estilos, diseño, dimensiones, estructuras, materiales, instalaciones, normativa, sostenibilidad, planos, BIM, urbanismo, gestión e interiorismo. Las respuestas citan sus fuentes.</p>
-    <form class="box" id="ask-form"><input name="q" value="${q}" placeholder="Ej. ¿Qué pendiente máxima debe tener una rampa accesible?" autocomplete="off">
+    <div class="eyebrow gold">Biblioteca de ingeniería civil</div>
+    <h1 style="margin-top:14px">Ingeniería y arquitectura, <span class="chrome-text">con una sola pregunta</span></h1>
+    <p class="muted" style="margin-top:10px;max-width:680px">Estructuras, geotecnia, hidráulica, vías, topografía, puentes, materiales, instalaciones, normativa, seguridad en obra, BIM, gestión, urbanismo, diseño e historia. Las respuestas citan sus fuentes.</p>
+    <form class="box" id="ask-form"><input name="q" value="${q}" placeholder="Ej. ¿Cómo se evalúa la licuación de un suelo?" autocomplete="off">
       <button class="btn primary" data-busy="Buscando…">${icon('sparkle')} Preguntar</button></form>
     <div id="answer"></div>
   </div>`;
