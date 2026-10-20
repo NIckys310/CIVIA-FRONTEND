@@ -332,14 +332,15 @@ export function coverArt(seed, color = '#C9A46A') {
   const x0 = 300 - w / 2 + (rnd() - 0.5) * 80;
   const base = 170;
   let lines = '';
-  for (let f = 0; f <= floors; f++) lines += `<path d="M${x0} ${base - f * fh}H${x0 + w}"/>`;
-  for (let b = 0; b <= bays; b++) lines += `<path d="M${x0 + (b * w) / bays} ${base}V${base - floors * fh}"/>`;
-  const cant = rnd() > 0.5 ? `<path d="M${x0 + w * 0.55} ${base - floors * fh}h${w * 0.65}v${fh}h-${w * 0.65}"/>` : '';
+  // pathLength="1" permite "dibujar" cada trazo con CSS (stroke-dashoffset de 1 a 0).
+  for (let f = 0; f <= floors; f++) lines += `<path pathLength="1" style="--d:${f}" d="M${x0} ${base - f * fh}H${x0 + w}"/>`;
+  for (let b = 0; b <= bays; b++) lines += `<path pathLength="1" style="--d:${b}" d="M${x0 + (b * w) / bays} ${base}V${base - floors * fh}"/>`;
+  const cant = rnd() > 0.5 ? `<path pathLength="1" style="--d:${floors}" d="M${x0 + w * 0.55} ${base - floors * fh}h${w * 0.65}v${fh}h-${w * 0.65}"/>` : '';
   return raw(`<svg viewBox="0 0 600 180" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs><radialGradient id="g${Math.abs(h % 1e6)}" cx="70%" cy="10%" r="80%"><stop offset="0" stop-color="${c}" stop-opacity=".28"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient></defs>
     <rect width="600" height="180" fill="#0a0c10"/><rect width="600" height="180" fill="url(#g${Math.abs(h % 1e6)})"/>
     <g stroke="rgba(255,255,255,.05)">${Array.from({ length: 13 }, (_, i) => `<path d="M${i * 50} 0V180"/>`).join('')}${Array.from({ length: 4 }, (_, i) => `<path d="M0 ${i * 50}H600"/>`).join('')}</g>
-    <g fill="none" stroke="${c}" stroke-opacity=".75" stroke-width="1">${lines}${cant}</g>
+    <g class="lines" fill="none" stroke="${c}" stroke-opacity=".75" stroke-width="1">${lines}${cant}</g>
     <path d="M0 ${base}H600" stroke="rgba(255,255,255,.25)"/></svg>`);
 }
 
