@@ -78,7 +78,11 @@ function layout(el, panel) {
   el.querySelectorAll('[data-toggle]').forEach((b) => {
     b.onclick = () => {
       const input = $(`#${b.dataset.toggle}`, el);
-      input.type = input.type === 'password' ? 'text' : 'password';
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      b.innerHTML = icon(show ? 'eyeoff' : 'eye').s;
+      b.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+      b.setAttribute('aria-pressed', String(show));
     };
   });
 }
