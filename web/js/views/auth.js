@@ -79,13 +79,18 @@ export function render(el, params) {
   return renderLogin(el, params.mode === 'login');
 }
 
+/** Modo de la pantalla anterior: el selector se desliza desde ahí en vez de aparecer ya en su sitio. */
+let lastMode = null;
+
 function renderLogin(el, isLogin) {
+  const from = lastMode ?? (isLogin ? 'login' : 'register');
+  lastMode = isLogin ? 'login' : 'register';
   layout(el, html`
       <form id="auth-form" class="auth-card" novalidate>
         <nav class="seg" aria-label="Acceso">
           <a href="#/login" class="${isLogin ? 'active' : ''}" aria-current="${isLogin ? 'page' : 'false'}">Iniciar sesión</a>
           <a href="#/register" class="${isLogin ? '' : 'active'}" aria-current="${isLogin ? 'false' : 'page'}">Crear cuenta</a>
-          <i class="seg-pill ${isLogin ? '' : 'right'}" aria-hidden="true"></i>
+          <i class="seg-pill ${from === 'register' ? 'right' : ''}" aria-hidden="true"></i>
         </nav>
         <div class="eyebrow gold">${isLogin ? 'Bienvenido(a) de nuevo' : 'Crea tu estudio'}</div>
         <h1 style="margin:14px 0 8px">${isLogin ? html`Inicia <span class="chrome-text">sesión</span>` : html`Diseña con <span class="chrome-text">inteligencia</span>`}</h1>
@@ -114,6 +119,7 @@ function renderLogin(el, isLogin) {
 
   const form = $('#auth-form', el);
   const errorBox = $('#auth-error', el);
+  requestAnimationFrame(() => requestAnimationFrame(() => $('.seg-pill', el)?.classList.toggle('right', !isLogin)));
 
   if (!isLogin) watchStrength(el, () => $('#email', el).value);
 
