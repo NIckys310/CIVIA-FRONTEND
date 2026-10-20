@@ -368,7 +368,9 @@ export async function render(el, { conversationId, query }) {
     } catch (err) { toast(err.message, 'error'); }
   });
   on(el, 'click', '[data-copy]', async (e, b) => {
-    const text = b.closest('.msg')?.querySelector('.md')?.innerText || '';
+    const copy = b.closest('.msg')?.querySelector('.md')?.cloneNode(true);
+    copy?.querySelectorAll('.code-copy').forEach((x) => x.remove());
+    const text = copy?.innerText || copy?.textContent || '';
     try {
       await navigator.clipboard.writeText(text);
       b.classList.add('done');
