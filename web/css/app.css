@@ -700,3 +700,7 @@ input[type="range"] { accent-color: var(--gold); }
 #splash img { animation: splash-reveal 0.9s var(--ease-out) both, breathe 2.4s var(--ease) 0.9s infinite; }
 @keyframes splash-reveal { from { clip-path: inset(100% 0 0 0); filter: drop-shadow(0 0 0 transparent) brightness(1.6); transform: translateY(8px); } }
 #splash.out img { transform: scale(1.08); transition: transform 0.45s var(--ease); }
+/* Acceso: la imagen respira despacio y el formulario entra campo por campo. */
+.auth .hero img { animation: hero-drift 18s ease-in-out infinite alternate; transform-origin: 50% 40%; }
+@keyframes hero-drift { from { transform: scale(1); } to { transform: scale(1.06) translateY(-1%); } }
+.auth .panel > * { animation: enter var(--dur-3) var(--ease-out) both; }
