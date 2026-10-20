@@ -739,3 +739,7 @@ input[type="range"] { accent-color: var(--gold); }
 /* Campos: el borde dorado y el halo aparecen con transición. */
 .input, select.input, textarea.input { transition: border-color var(--dur-2), box-shadow var(--dur-2), background var(--dur-2); }
 .input:focus { background: color-mix(in srgb, var(--bg) 45%, transparent); }
+/* Glosario: las letras reaccionan al pasar y la elegida rebota. */
+.alpha button { transition: border-color var(--dur-1), color var(--dur-1), transform var(--dur-1) var(--ease-out); }
+.alpha button:hover { transform: translateY(-2px); }
+.alpha button.active { animation: tab-on var(--dur-2) var(--ease-spring); }
