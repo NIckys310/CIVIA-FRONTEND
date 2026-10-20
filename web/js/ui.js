@@ -251,9 +251,15 @@ export function toast(message, type = 'ok') {
   const box = document.getElementById('toasts');
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.innerHTML = `${icon(type === 'error' ? 'alert' : type === 'info' ? 'info' : 'check')}<span>${esc(message)}</span>`;
+  const ms = type === 'error' ? 6000 : 3600;
+  el.innerHTML = `${icon(type === 'error' ? 'alert' : type === 'info' ? 'info' : 'check')}<span>${esc(message)}</span><i class="toast-timer" style="animation-duration:${ms}ms"></i>`;
   box.appendChild(el);
-  setTimeout(() => { el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 320); }, type === 'error' ? 6000 : 3600);
+  const dismiss = () => {
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 340);
+  };
+  setTimeout(dismiss, ms);
+  el.addEventListener('click', dismiss, { once: true });
 }
 
 /** Abre un modal. `body` es html``; devuelve { el, close }. */
