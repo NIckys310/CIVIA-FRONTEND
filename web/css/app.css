@@ -718,3 +718,6 @@ input[type="range"] { accent-color: var(--gold); }
 .to-latest { position: absolute; left: 50%; bottom: 128px; z-index: 3; transform: translateX(-50%); border-radius: 50%; background: var(--panel-2); box-shadow: var(--shadow); animation: pop var(--dur-2) var(--ease-spring); }
 /* Cambio de tema: el nuevo tema se revela en círculo desde el botón (View Transitions). */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+/* Barra superior: gana sombra y una línea dorada tenue cuando la página se desplaza. */
+.topbar { transition: box-shadow var(--dur-2), border-color var(--dur-2); }
+.topbar.scrolled { box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.9); border-bottom-color: color-mix(in srgb, var(--gold) 22%, var(--line)); }
