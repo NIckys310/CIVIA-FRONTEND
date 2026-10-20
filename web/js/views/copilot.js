@@ -67,6 +67,8 @@ export async function render(el, { conversationId, query }) {
         ${m.suggestions?.length ? html`<div class="chips" style="margin-top:12px">${m.suggestions.map((s) => html`<button class="chip" data-suggest="${s}">${icon('sparkle')}${s}</button>`)}</div>` : ''}
         <div class="msg-actions">
           <button class="btn ghost icon sm" data-copy title="Copiar respuesta" aria-label="Copiar respuesta">${icon('copy')}</button>
+          ${m.id ? html`<button class="btn ghost icon sm ${m.feedback === 1 ? 'on' : ''}" data-rate="up" title="Respuesta útil" aria-label="Respuesta útil" aria-pressed="${m.feedback === 1}">${icon('thumbup')}</button>
+          <button class="btn ghost icon sm ${m.feedback === -1 ? 'on' : ''}" data-rate="down" title="No fue útil" aria-label="No fue útil" aria-pressed="${m.feedback === -1}">${icon('thumbdown')}</button>` : ''}
           <span class="hint engine-tag">${m.engine || ''}</span>
         </div></div></div>`);
 
@@ -207,6 +209,19 @@ export async function render(el, { conversationId, query }) {
   document.addEventListener('keydown', onEscape);
   input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = `${Math.min(220, input.scrollHeight)}px`; });
   on(el, 'click', '[data-suggest]', (e, b) => send(b.dataset.suggest));
+  on(el, 'click', '[data-rate]', async (e, b) => {
+    const msg = b.closest('.msg');
+    const value = b.classList.contains('on') ? null : b.dataset.rate;
+    try {
+      await api.post(`/ai/messages/${msg.dataset.mid}/feedback`, { value });
+      msg.querySelectorAll('[data-rate]').forEach((x) => {
+        const on = x.dataset.rate === value;
+        x.classList.toggle('on', on);
+        x.setAttribute('aria-pressed', String(on));
+      });
+      if (value) toast(value === 'up' ? 'Gracias: la respuesta te sirvió.' : 'Gracias: lo tendremos en cuenta para mejorar.', 'info');
+    } catch (err) { toast(err.message, 'error'); }
+  });
   on(el, 'click', '[data-copy]', async (e, b) => {
     const text = b.closest('.msg')?.querySelector('.md')?.innerText || '';
     try {
