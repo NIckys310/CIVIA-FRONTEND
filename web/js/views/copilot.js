@@ -1,7 +1,7 @@
 // CIVIA Copilot: chat con la IA de ingeniería civil y arquitectura, en tiempo real, con contexto de
 // proyecto y archivos adjuntos.
-import { api, stream } from '../api.js';
-import { $, debounce, html, icon, markdown, modal, mount, on, relTime, toast } from '../ui.js';
+import { api, downloadPath, stream } from '../api.js';
+import { $, confirmDialog, debounce, html, icon, markdown, modal, mount, on, relTime, toast } from '../ui.js';
 
 export async function render(el, { conversationId, query }) {
   const [conversations, projects, status] = await Promise.all([
@@ -80,7 +80,9 @@ export async function render(el, { conversationId, query }) {
     menu.className = 'card menu';
     menu.setAttribute('role', 'menu');
     mount(menu, html`<button role="menuitem" data-act="rename">${icon('edit')} Renombrar</button>
-      <button role="menuitem" data-act="pin">${icon('bookmark')} ${c.pinned ? 'Quitar de fijadas' : 'Fijar arriba'}</button>`);
+      <button role="menuitem" data-act="pin">${icon('bookmark')} ${c.pinned ? 'Quitar de fijadas' : 'Fijar arriba'}</button>
+      <button role="menuitem" data-act="export">${icon('download')} Exportar (Markdown)</button>
+      <button role="menuitem" data-act="delete" class="danger">${icon('trash')} Borrar</button>`);
     document.body.appendChild(menu);
     const r = b.getBoundingClientRect();
     menu.style.top = `${Math.min(r.bottom + 6, innerHeight - menu.offsetHeight - 12)}px`;
@@ -108,6 +110,17 @@ export async function render(el, { conversationId, query }) {
           setTimeout(() => $('#conv-title', m.el)?.select(), 60);
         } else if (item.dataset.act === 'pin') {
           await updateConversation(id, { pinned: !c.pinned });
+        } else if (item.dataset.act === 'export') {
+          const name = `${(c.title || 'conversacion').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').slice(0, 60) || 'conversacion'}.md`;
+          await downloadPath(`/ai/conversations/${id}/export`, name);
+        } else if (item.dataset.act === 'delete') {
+          if (!(await confirmDialog('Borrar conversación', `Se borrará «${c.title}» y sus mensajes. No se puede deshacer.`, 'Borrar', true))) return;
+          await api.del(`/ai/conversations/${id}`);
+          conversations.splice(conversations.findIndex((x) => x.id === id), 1);
+          shown = shown.filter((x) => x.id !== id);
+          drawList();
+          if (id === activeId) location.hash = '#/copilot';
+          toast('Conversación borrada');
         }
       } catch (err) { toast(err.message, 'error'); }
     });
