@@ -177,6 +177,8 @@ export function markdown(src) {
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/(^|[\s(])_([^_]+)_(?=[\s).,;:]|$)/g, '$1<em>$2</em>')
     .replace(/(^|[\s(])\*([^*\s][^*]*)\*(?=[\s).,;:]|$)/g, '$1<em>$2</em>')
+    // Enlaces solo http(s), abiertos aparte y sin pasar el origen.
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)"]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
     .replace(/\[(\d{1,3})\]/g, '<span class="cite">$1</span>');
   const closeList = () => { if (list) { out.push(`</${list}>`); list = null; } };
   const closeTable = () => {
