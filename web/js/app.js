@@ -1,7 +1,7 @@
 // CIVIA AI — arranque, sesión, enrutador y estructura de la aplicación.
 import { api, hasSessionHint, logout, refresh, session } from './api.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
-import { enableRipples } from './motion.js';
+import { autoStagger, enableRipples } from './motion.js';
 
 const NAV = [
   { section: 'Estudio' },
@@ -125,6 +125,7 @@ function renderShell() {
   });
   $('#notif-btn').onclick = toggleNotifications;
   shellReady = true;
+  autoStagger($('#view'));
   loadEngine();
   refreshNotifications();
 }
