@@ -42,7 +42,7 @@ export async function render(el) {
     <div class="stack lg">
       <div class="card glow ask-hero">
         <div class="eyebrow gold">CIVIA Copilot</div>
-        <h2 style="margin-top:12px;font-size:26px" class="display">Pregunta lo que necesites de <span class="chrome-text">arquitectura</span></h2>
+        <h2 style="margin-top:12px;font-size:26px" class="display">Pregunta lo que necesites de <span class="chrome-text">ingeniería</span></h2>
         <p class="muted" style="margin-top:8px">Normativa, dimensiones, materiales, estructuras, sostenibilidad… o qué le falta a tu proyecto.</p>
         <form class="box" id="ask">
           <input name="q" placeholder="Ej. ¿Cómo calculo la huella y contrahuella de una escalera?" autocomplete="off">
@@ -86,7 +86,7 @@ export async function render(el) {
       </div>
       <a class="card hover pad row" href="#/library" style="gap:16px">
         <div class="kpi" style="padding:0"><div class="ico" style="position:static">${icon('book')}</div></div>
-        <div><h3>Biblioteca de arquitectura</h3><p class="muted" style="font-size:13px;margin-top:4px">${d.ai.articles} artículos y ${d.ai.terms} términos del glosario.</p></div>
+        <div><h3>Biblioteca de ingeniería civil</h3><p class="muted" style="font-size:13px;margin-top:4px">${d.ai.articles} artículos y ${d.ai.terms} términos del glosario.</p></div>
         <span class="right">${icon('chevron')}</span>
       </a>
     </div>
