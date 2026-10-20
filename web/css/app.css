@@ -482,6 +482,11 @@ input[type="range"] { accent-color: var(--gold); }
 .ask-hero { position: relative; overflow: hidden; padding: clamp(28px, 4vw, 48px); }
 .ask-hero .box { display: flex; gap: 10px; margin-top: 22px; padding: 8px; border: 1px solid var(--line-2); border-radius: 16px; background: color-mix(in srgb, var(--bg) 70%, transparent); }
 .ask-hero .box input { flex: 1; border: 0; outline: 0; background: transparent; padding: 0 12px; font-size: 15.5px; min-width: 0; }
+.featured { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 22px; align-items: center; padding: 24px 26px; overflow: hidden; }
+.featured::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(500px 160px at 0% 50%, var(--gold-glow), transparent 70%); }
+.featured-mark { width: 58px; height: 58px; border-radius: 16px; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); color: var(--gold-2); background: color-mix(in srgb, var(--gold) 8%, transparent); }
+.featured-mark svg { width: 26px; height: 26px; }
+@media (max-width: 640px) { .featured { grid-template-columns: 1fr; } .featured-go { justify-self: start; } }
 .cat-card { padding: 20px; }
 .cat-card .ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; border: 1px solid var(--line-2); color: var(--gold); margin-bottom: 16px; }
 .cat-card .ico svg { width: 19px; height: 19px; }

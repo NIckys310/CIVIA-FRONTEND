@@ -61,7 +61,7 @@ export async function render(el, params) {
   if (view === 'home' || view === 'search') {
     mount(el, html`${nav('home')}${askBox(params.q || '')}
       <div id="related" style="margin-top:22px"></div>
-      ${view === 'home' ? html`
+      ${view === 'home' ? html`<div id="featured" style="margin-top:22px"></div>
       <div class="row between" style="margin:30px 0 16px"><div class="eyebrow gold">Categorías</div>
         <button class="btn sm" id="new-article">${icon('plus')} Aportar un artículo</button></div>
       <div class="grid g4">${cats.map((c) => html`<a class="card hover cat-card" href="#/library/c/${c.id}">
@@ -69,6 +69,18 @@ export async function render(el, params) {
         <h3>${c.name}</h3><p>${c.description}</p><div class="hint" style="margin-top:12px">${c.articles} artículos</div></a>`)}</div>` : ''}`);
     bindAsk(el);
     $('#new-article', el)?.addEventListener('click', () => newArticle(cats));
+    if (view === 'home') {
+      // Artículo del día: se carga aparte para no demorar la página.
+      api.get('/library/featured').then((a) => {
+        const box = $('#featured', el);
+        if (!box || !a) return;
+        mount(box, html`<a class="card hover featured" href="#/library/a/${a.slug}">
+          <div class="featured-mark">${icon(cats.find((c) => c.id === a.category)?.icon || 'book')}</div>
+          <div><div class="eyebrow gold">Artículo del día · ${catName(cats, a.category)}</div>
+          <h2 style="margin-top:10px">${a.title}</h2><p class="muted" style="margin-top:6px">${a.summary}</p></div>
+          <span class="btn sm featured-go">Leer ${icon('arrow')}</span></a>`);
+      }).catch(() => {});
+    }
     if (view === 'search') await ask(el, params.q, $('#ask-form button', el));
     return;
   }
