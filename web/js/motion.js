@@ -136,3 +136,9 @@ export function elevateOnScroll(bar) {
   window.addEventListener('scroll', update, { passive: true });
   update();
 }
+
+/** Vibración corta en teléfonos (si el navegador lo permite y no se pidió menos movimiento). */
+export function haptic(pattern = 12) {
+  if (reducedMotion() || !navigator.vibrate) return;
+  try { navigator.vibrate(pattern); } catch { /* algunos navegadores lo bloquean sin interacción */ }
+}
