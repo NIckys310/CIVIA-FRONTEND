@@ -128,3 +128,11 @@ export function circularReveal(origin, change) {
     );
   }).catch(() => {});
 }
+
+/** Marca la barra superior cuando la página se desplazó. */
+export function elevateOnScroll(bar) {
+  if (!bar) return;
+  const update = () => bar.classList.toggle('scrolled', window.scrollY > 8);
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+}
