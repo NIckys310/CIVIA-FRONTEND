@@ -288,7 +288,7 @@ export async function render(el, { projectId }) {
     mount(box, html`${images.length ? html`<div class="grid g3" style="gap:8px">${images.map((d) => html`<div class="preview" style="min-height:0;aspect-ratio:1" data-thumb="${d.id}" title="${d.name}"></div>`)}</div>` : html`<p class="faint" style="padding:8px">Aún no hay fotos.</p>`}
       ${measures.length ? html`<div class="eyebrow" style="margin:16px 6px 6px">Mediciones</div>${measures.slice(0, 8).map((m) => html`<div class="row between" style="padding:8px 6px;border-bottom:1px solid var(--line);font-size:13px"><span>${m.label}</span><span class="mono">${fmtNum(m.value, 2)} ${m.unit}</span><span class="hint">${relTime(m.createdAt)}</span></div>`)}` : ''}`);
     images.forEach(async (d) => {
-      const url = await fileUrl(d.id);
+      const url = await fileUrl(d.id, d);
       const cell = box.querySelector(`[data-thumb="${d.id}"]`);
       if (cell) mount(cell, html`<img src="${url}" alt="${d.name}" style="width:100%;height:100%;object-fit:cover">`);
     });

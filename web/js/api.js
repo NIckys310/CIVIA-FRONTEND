@@ -1,6 +1,8 @@
 // Cliente de la API de CIVIA (mismo origen). El access token vive solo en memoria;
 // el refresh token es una cookie HttpOnly que JavaScript no puede leer.
 
+import { clearFiles, offlineFile } from './offline.js';
+
 const BASE = '/api/v1';
 let accessToken = null;
 let refreshing = null;
@@ -230,6 +232,8 @@ export async function logout() {
   try { await request('POST', '/auth/revoke', { body: {} }); } catch { /* sin conexión: igual se limpia */ }
   blobCache.forEach((url) => URL.revokeObjectURL(url));
   blobCache.clear();
+  // Los archivos guardados son privados: en un equipo compartido no deben quedar tras cerrar sesión.
+  await clearFiles().catch(() => {});
   setSession(null, null);
 }
 
@@ -272,12 +276,17 @@ export function upload(path, file, fields = {}, onProgress) {
 
 const blobCache = new Map();
 
-/** URL local (blob:) de un archivo privado, descargado con autorización. */
-export async function fileUrl(docId) {
-  if (blobCache.has(docId)) return blobCache.get(docId);
-  const blob = await request('GET', `/documents/${docId}/file`, { blob: true });
+/**
+ * URL local (blob:) de un archivo privado. Si el archivo ya está guardado en este dispositivo en esa
+ * versión, abre al instante y sin conexión; si no, se descarga con autorización y se guarda.
+ * `doc` (opcional) aporta versión, nombre y tipo para guardarlo bien.
+ */
+export async function fileUrl(docId, doc) {
+  const key = `${docId}:${doc?.version ?? 0}`;
+  if (blobCache.has(key)) return blobCache.get(key);
+  const blob = await offlineFile(docId, doc, () => request('GET', `/documents/${docId}/file`, { blob: true }));
   const url = URL.createObjectURL(blob);
-  blobCache.set(docId, url);
+  blobCache.set(key, url);
   return url;
 }
 

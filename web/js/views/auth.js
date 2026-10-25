@@ -1,7 +1,7 @@
 // Inicio de sesión, registro y recuperación de contraseña (CIVIA Auth).
 import { afterLogin } from '../app.js';
 import { api, login, logout, register, session } from '../api.js';
-import { $, busy, debounce, html, icon, mount, toast } from '../ui.js';
+import { $, busy, debounce, html, icon, mount, raw, toast } from '../ui.js';
 import { stagger } from '../motion.js';
 import { live, passwordChecks, rules, validateAll } from '../validate.js';
 
@@ -47,14 +47,33 @@ const strengthHint = () => html`
 
 const footer = html`<div class="ruled eyebrow" style="margin-top:34px;font-size:9px">Protegido por CIVIA Auth</div>`;
 
-/** Estructura común de las pantallas de acceso: imagen y panel con el formulario. */
+/** Plano isométrico que se dibuja solo: torre, pisos y trazos de construcción. */
+const blueprint = () => raw(`<svg class="auth-blueprint" viewBox="0 0 600 600" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <g class="bp b1" stroke="#d6a46c" stroke-width="1.4"><path pathLength="1" d="M120 470 L300 380 L480 470 L300 560 Z"/><path pathLength="1" d="M190 465 V230 L300 175 L410 230 V465"/><path pathLength="1" d="M300 175 V420"/></g>
+  <g class="bp b2" stroke="#9fb2d3" stroke-width="1"><path pathLength="1" d="M190 270 L300 215 L410 270"/><path pathLength="1" d="M190 310 L300 255 L410 310"/><path pathLength="1" d="M190 350 L300 295 L410 350"/><path pathLength="1" d="M190 390 L300 335 L410 390"/><path pathLength="1" d="M190 430 L300 375 L410 430"/></g>
+  <g class="bp b3" stroke="currentColor" stroke-width=".8" stroke-dasharray="4 6" opacity=".45"><path d="M80 520 L520 300"/><path d="M80 300 L520 520"/><circle cx="300" cy="380" r="150"/></g>
+</svg>`);
+
+/** Estructura común de las pantallas de acceso: escena de arquitectura y panel con el formulario. */
 function layout(el, panel) {
   mount(el, html`
   <div class="auth">
     <section class="hero" aria-hidden="true">
-      <img src="/assets/logo-original.png" alt="" fetchpriority="high">
+      <div class="hero-grid"></div>
+      <div class="hero-glow"></div>
+      <div class="hero-brand"><img src="/assets/mark-96.png" alt="" width="40" height="40"><span class="chrome-text">Civia <b class="ai-text">AI</b></span></div>
+      ${blueprint()}
+      <div class="hero-copy">
+        <div class="eyebrow gold">Arquitectura inteligente</div>
+        <h2 class="display">Del primer trazo a la obra, con un estudio que <span class="chrome-text">piensa contigo</span>.</h2>
+        <ul class="hero-points">
+          <li>${icon('blueprint')}<span>Planos revisados por IA</span></li>
+          <li>${icon('cube')}<span>Modelado 3D sin límite de pisos</span></li>
+          <li>${icon('shield')}<span>Tus proyectos, cifrados y sin conexión</span></li>
+        </ul>
+      </div>
       <div class="brand-mobile">
-        <img src="/assets/mark-256.png" alt="" width="84" height="84">
+        <img src="/assets/mark-256.png" alt="" width="72" height="72">
         <div class="wordmark chrome-text">Civia <span class="ai-text">AI</span></div>
         <div class="eyebrow">Ingeniería y arquitectura inteligente</div>
       </div>
