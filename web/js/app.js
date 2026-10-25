@@ -264,10 +264,14 @@ async function route() {
 
 function hideSplash() {
   const s = document.getElementById('splash');
-  if (s && !s.classList.contains('out')) {
+  if (!s || s.dataset.leaving) return;
+  s.dataset.leaving = '1';
+  // Se muestra al menos 1,6 s para que la animación de entrada se vea completa (no en «reducir movimiento»).
+  const min = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1600;
+  setTimeout(() => {
     s.classList.add('out');
-    setTimeout(() => s.remove(), 500);
-  }
+    setTimeout(() => s.remove(), 650);
+  }, Math.max(0, min - performance.now()));
 }
 
 session.onChange((user) => {
