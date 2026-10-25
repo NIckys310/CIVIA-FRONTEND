@@ -1747,7 +1747,7 @@ img, video, canvas, iframe, table { max-width: 100%; }
 .district .scalebar text { fill: #8b919c; font: 500 8.5px var(--mono); }
 
 @media (max-width: 960px) {
-  .auth-scene.district { width: min(90vw, 380px); margin: -6px auto -24px; }
+  .auth-scene.district { position: relative; left: auto; top: auto; transform: none; display: block; width: min(90vw, 380px); margin: 4px auto -30px; }
   .district .tag, .district .scalebar, .district .compass { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
