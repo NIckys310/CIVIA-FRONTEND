@@ -1499,3 +1499,62 @@ img, video, canvas, iframe, table { max-width: 100%; }
   .msg, #list .pc3, .ph-band::after, .avatar-ring::before, .avatar-ring i, .mfa-shield svg, .ph2 .eyebrow.kinetic .kc { animation: none !important; }
   .ph2::after { transform: scaleX(1); }
 }
+
+/* ================================================================ fondo animado de la aplicación */
+.bg-scene { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; contain: strict;
+  background: radial-gradient(120% 80% at 50% 120%, #10151f 0%, transparent 60%), radial-gradient(90% 60% at 80% -10%, rgba(214, 164, 108, 0.08), transparent 60%), var(--bg); }
+.shell { position: relative; z-index: 1; }
+.sidebar { background-color: color-mix(in srgb, var(--bg) 82%, transparent) !important; backdrop-filter: blur(14px); }
+
+/* Auroras de luz que se desplazan muy despacio (siguen un poco al cursor). */
+.bg-aurora { position: absolute; inset: -20%; transform: translate(calc(var(--px, 0) * -30px), calc(var(--py, 0) * -20px)); }
+.bg-aurora i { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.5; mix-blend-mode: screen; }
+.bg-aurora .a1 { width: 48vw; height: 48vw; top: 4%; right: 6%; background: radial-gradient(circle, rgba(214, 164, 108, 0.35), transparent 65%); animation: bg-drift1 38s ease-in-out infinite; }
+.bg-aurora .a2 { width: 56vw; height: 56vw; bottom: 0; left: -4%; background: radial-gradient(circle, rgba(91, 117, 166, 0.38), transparent 65%); animation: bg-drift2 46s ease-in-out infinite; }
+.bg-aurora .a3 { width: 34vw; height: 34vw; top: 38%; left: 40%; background: radial-gradient(circle, rgba(242, 207, 159, 0.18), transparent 65%); animation: bg-drift3 30s ease-in-out infinite; }
+@keyframes bg-drift1 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-12vw, 10vh) scale(1.15); } }
+@keyframes bg-drift2 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(14vw, -8vh) scale(0.9); } }
+@keyframes bg-drift3 { 0%, 100% { transform: translate(0, 0); opacity: 0.35; } 50% { transform: translate(-8vw, -12vh); opacity: 0.6; } }
+
+/* Retícula de plano en perspectiva que avanza hacia el horizonte. */
+.bg-floor { position: absolute; left: -50%; right: -50%; bottom: -10%; height: 62%; perspective: 520px; perspective-origin: 50% 0%;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 45%, #000 100%); }
+.bg-floor-grid { position: absolute; inset: 0; transform: rotateX(72deg); transform-origin: 50% 0%;
+  background-image: linear-gradient(rgba(214, 164, 108, 0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(159, 178, 211, 0.12) 1px, transparent 1px);
+  background-size: 70px 70px; animation: bg-floor 6s linear infinite; }
+@keyframes bg-floor { to { background-position: 0 70px; } }
+.bg-horizon { position: absolute; left: 0; right: 0; bottom: 61%; height: 1px; background: linear-gradient(90deg, transparent, rgba(214, 164, 108, 0.35), rgba(242, 207, 159, 0.5), rgba(214, 164, 108, 0.35), transparent);
+  box-shadow: 0 0 22px 4px rgba(214, 164, 108, 0.12); opacity: 0.6; }
+
+/* Ciudad de líneas con ventanas que se encienden. */
+.bg-city-wrap { position: absolute; left: -4%; right: -4%; bottom: 0; height: 38vh; min-height: 220px; transform: translate(calc(var(--px, 0) * 18px), calc(var(--py, 0) * 6px));
+  mask-image: linear-gradient(180deg, transparent, #000 35%); }
+.bg-city { width: 100%; height: 100%; }
+.bg-city-body path { fill: url(#bgc); stroke: rgba(214, 164, 108, 0.32); stroke-width: 1; }
+.bg-city-win rect { fill: #ffe2bb; opacity: 0.05; animation: bg-win 7s ease-in-out infinite; }
+@keyframes bg-win { 0%, 100% { opacity: 0.04; } 40%, 55% { opacity: 0.55; } }
+.bg-city-ground { stroke: rgba(214, 164, 108, 0.45); stroke-width: 1; }
+
+/* Puntos de obra y acabado. */
+.bg-particles { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bg-vignette { position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 40%, transparent 50%, rgba(0, 0, 0, 0.55) 100%); }
+.bg-grain { position: absolute; inset: -50%; opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: bg-grain 1.2s steps(4) infinite; }
+@keyframes bg-grain { 25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -2%); } }
+
+/* Tema claro: el mismo fondo, más suave. */
+:root[data-theme="light"] .bg-scene { background: radial-gradient(90% 60% at 80% -10%, rgba(214, 164, 108, 0.12), transparent 60%), var(--bg); }
+:root[data-theme="light"] .bg-aurora i { mix-blend-mode: multiply; opacity: 0.25; }
+:root[data-theme="light"] .bg-vignette, :root[data-theme="light"] .bg-grain { display: none; }
+
+/* Móvil: menos capas pesadas. */
+@media (max-width: 960px) {
+  .bg-aurora i { filter: blur(60px); }
+  .bg-city-wrap { height: 28vh; opacity: 0.8; }
+  .bg-grain { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bg-scene *, .bg-scene *::before { animation: none !important; }
+  .bg-particles { display: none; }
+}

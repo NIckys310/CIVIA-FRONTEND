@@ -1,5 +1,6 @@
 // CIVIA AI — arranque, sesión, enrutador y estructura de la aplicación.
 import { api, hasSessionHint, logout, refresh, server, session, wakeServer } from './api.js';
+import { mountBackground } from './background.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
 import { autoStagger, circularReveal, elevateOnScroll, enableRipples, enableSpotlight, enhanceView, kinetic, leave, moveNavPill } from './motion.js';
 
@@ -61,15 +62,10 @@ try { applyTheme(localStorage.getItem('civia-theme') || 'dark'); } catch { apply
 export { applyTheme };
 
 // ------------------------------------------------------------------ estructura
-function backdrop() {
-  return raw(`<div class="backdrop"><svg viewBox="0 0 400 300" fill="none" stroke="currentColor" stroke-width=".6" style="color:var(--text-3)">
-    <path d="M40 280V120l120-60 120 60v160M160 60v220M40 120h240M40 170h240M40 220h240M100 90v190M220 90v190"/>
-    <path d="M280 280V160l80-30v150M280 200h80M280 240h80" opacity=".6"/><path d="M0 280h400"/></svg></div>`);
-}
-
 function renderShell() {
   const u = session.user;
-  mount(app, html`${backdrop()}
+  mountBackground();
+  mount(app, html`
   <div class="shell">
     <aside class="sidebar" aria-label="Navegación">
       <a class="brand" href="#/">
