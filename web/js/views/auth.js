@@ -47,12 +47,101 @@ const strengthHint = () => html`
 
 const footer = html`<div class="ruled eyebrow" style="margin-top:34px;font-size:9px">Protegido por CIVIA Auth</div>`;
 
-/** Plano isométrico que se dibuja solo: torre, pisos y trazos de construcción. */
-const blueprint = () => raw(`<svg class="auth-blueprint" viewBox="0 0 600 600" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <g class="bp b1" stroke="#d6a46c" stroke-width="1.4"><path pathLength="1" d="M120 470 L300 380 L480 470 L300 560 Z"/><path pathLength="1" d="M190 465 V230 L300 175 L410 230 V465"/><path pathLength="1" d="M300 175 V420"/></g>
-  <g class="bp b2" stroke="#9fb2d3" stroke-width="1"><path pathLength="1" d="M190 270 L300 215 L410 270"/><path pathLength="1" d="M190 310 L300 255 L410 310"/><path pathLength="1" d="M190 350 L300 295 L410 350"/><path pathLength="1" d="M190 390 L300 335 L410 390"/><path pathLength="1" d="M190 430 L300 375 L410 430"/></g>
-  <g class="bp b3" stroke="currentColor" stroke-width=".8" stroke-dasharray="4 6" opacity=".45"><path d="M80 520 L520 300"/><path d="M80 300 L520 520"/><circle cx="300" cy="380" r="150"/></g>
-</svg>`);
+/**
+ * Escena de arquitectura animada (en bucle de 14 s): plano del lote que se dibuja, torre isométrica
+ * que sube piso a piso, ventanas que se encienden, grúa que gira, sol y barrido de luz, cotas y
+ * etiquetas de plano. Todo es SVG y CSS: liviano, sin librerías y respetando «reducir movimiento».
+ */
+function architectureScene() {
+  const s = 21; const cx = 300; const cy = 300;
+  const P = (x, y, z) => [cx + (x - y) * 0.866 * s, cy + (x + y) * 0.5 * s - z * s];
+  const pts = (...a) => a.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ');
+  const floors = 16; const fh = 0.82; const gap = 0.12;
+  const [x0, x1, y0, y1] = [0, 4, 0, 4];
+  const cycle = 14;
+  let keyframes = '';
+  let tower = '';
+  for (let i = 0; i < floors; i++) {
+    const za = i * fh; const zb = za + fh - gap;
+    const at = 10 + i * 3.1; // % del ciclo en que aparece este piso
+    keyframes += `@keyframes cf${i}{0%,${(at - 0.1).toFixed(1)}%{opacity:0;transform:translateY(-16px)}${(at + 3.5).toFixed(1)}%,86%{opacity:1;transform:none}95%,100%{opacity:0;transform:none}}`;
+    let win = '';
+    for (let k = 0; k < 3; k++) {
+      const a = x0 + 0.5 + k * 1.15; const b = a + 0.6;
+      const d = ((i * 7 + k * 3) % 11) * 0.37;
+      win += `<polygon class="win" style="animation-delay:${d.toFixed(2)}s" points="${pts(P(a, y1, za + 0.18), P(b, y1, za + 0.18), P(b, y1, zb - 0.12), P(a, y1, zb - 0.12))}"/>`;
+      const c = y1 - 0.5 - k * 1.15; const e = c - 0.6;
+      win += `<polygon class="win r" style="animation-delay:${(d + 1.3).toFixed(2)}s" points="${pts(P(x1, c, za + 0.18), P(x1, e, za + 0.18), P(x1, e, zb - 0.12), P(x1, c, zb - 0.12))}"/>`;
+    }
+    tower += `<g class="floor" style="animation:cf${i} ${cycle}s cubic-bezier(.16,1,.3,1) infinite">
+      <polygon class="face l" points="${pts(P(x0, y1, za), P(x1, y1, za), P(x1, y1, zb), P(x0, y1, zb))}"/>
+      <polygon class="face r" points="${pts(P(x1, y1, za), P(x1, y0, za), P(x1, y0, zb), P(x1, y1, zb))}"/>
+      <polyline class="slab" points="${pts(P(x0, y1, zb), P(x1, y1, zb), P(x1, y0, zb))}"/>${win}</g>`;
+  }
+  const H = floors * fh;
+  keyframes += `@keyframes croof{0%,${(10 + floors * 3.1).toFixed(1)}%{opacity:0;transform:translateY(-16px)}${(14 + floors * 3.1).toFixed(1)}%,86%{opacity:1;transform:none}95%,100%{opacity:0}}`;
+  const roof = `<polygon class="roof" style="animation:croof ${cycle}s cubic-bezier(.16,1,.3,1) infinite" points="${pts(P(x0, y0, H), P(x1, y0, H), P(x1, y1, H), P(x0, y1, H))}"/>`;
+
+  // Edificios vecinos (fijos) con ventanas que parpadean.
+  const block = (bx0, bx1, by0, by1, n, cls) => {
+    const h = n * fh; let w = '';
+    for (let i = 0; i < n; i++) {
+      const z = i * fh + 0.2;
+      w += `<polygon class="win dim" style="animation-delay:${((i * 5 + bx0 * 3) % 9 * 0.45).toFixed(2)}s" points="${pts(P(bx0 + 0.4, by1, z), P(bx1 - 0.4, by1, z), P(bx1 - 0.4, by1, z + 0.4), P(bx0 + 0.4, by1, z + 0.4))}"/>`;
+    }
+    return `<g class="${cls}"><polygon class="face l dim" points="${pts(P(bx0, by1, 0), P(bx1, by1, 0), P(bx1, by1, h), P(bx0, by1, h))}"/>
+      <polygon class="face r dim" points="${pts(P(bx1, by1, 0), P(bx1, by0, 0), P(bx1, by0, h), P(bx1, by1, h))}"/>
+      <polygon class="roof dim" points="${pts(P(bx0, by0, h), P(bx1, by0, h), P(bx1, by1, h), P(bx0, by1, h))}"/>${w}</g>`;
+  };
+
+  // Retícula isométrica del suelo y lote.
+  let grid = '';
+  for (let g = -6; g <= 10; g += 2) {
+    grid += `<line x1="${P(g, -6, 0)[0]}" y1="${P(g, -6, 0)[1]}" x2="${P(g, 10, 0)[0]}" y2="${P(g, 10, 0)[1]}"/>`;
+    grid += `<line x1="${P(-6, g, 0)[0]}" y1="${P(-6, g, 0)[1]}" x2="${P(10, g, 0)[0]}" y2="${P(10, g, 0)[1]}"/>`;
+  }
+  const lot = pts(P(-1, -1, 0), P(5, -1, 0), P(5, 5, 0), P(-1, 5, 0), P(-1, -1, 0));
+
+  // Grúa: mástil fijo y pluma que gira sobre su punta.
+  const mBase = P(6.5, -1.5, 0); const mTop = P(6.5, -1.5, H + 3.2);
+  const crane = `<g class="crane"><line class="mast" x1="${mBase[0]}" y1="${mBase[1]}" x2="${mTop[0]}" y2="${mTop[1]}"/>
+    ${Array.from({ length: 9 }, (_, k) => { const a = P(6.5, -1.5, k * (H + 3.2) / 9); const b = P(6.5, -1.5, (k + 1) * (H + 3.2) / 9); return `<line class="lattice" x1="${a[0] - 4}" y1="${a[1]}" x2="${b[0] + 4}" y2="${b[1]}"/>`; }).join('')}
+    <g class="jib" style="transform-origin:${mTop[0].toFixed(1)}px ${mTop[1].toFixed(1)}px">
+      <line class="mast" x1="${mTop[0] + 46}" y1="${mTop[1]}" x2="${mTop[0] - 170}" y2="${mTop[1]}"/>
+      <line class="lattice" x1="${mTop[0]}" y1="${mTop[1] - 22}" x2="${mTop[0] - 170}" y2="${mTop[1]}"/>
+      <line class="lattice" x1="${mTop[0]}" y1="${mTop[1] - 22}" x2="${mTop[0] + 46}" y2="${mTop[1]}"/>
+      <rect class="counter" x="${mTop[0] + 30}" y="${mTop[1]}" width="16" height="9"/>
+      <g class="hook" style="transform-origin:${(mTop[0] - 120).toFixed(1)}px ${mTop[1].toFixed(1)}px"><line class="cable" x1="${mTop[0] - 120}" y1="${mTop[1]}" x2="${mTop[0] - 120}" y2="${mTop[1] + 70}"/><rect class="load" x="${mTop[0] - 132}" y="${mTop[1] + 70}" width="24" height="8"/></g>
+    </g></g>`;
+
+  // Cotas de altura y etiquetas de plano.
+  const d0 = P(x0 - 1.4, y1 + 1.4, 0); const d1 = P(x0 - 1.4, y1 + 1.4, H);
+  const tag = (x, y, text, delay) => `<g class="tag" style="animation-delay:${delay}s"><rect x="${x}" y="${y - 13}" width="${text.length * 6.2 + 16}" height="20" rx="6"/><text x="${x + 8}" y="${y + 1}">${text}</text></g>`;
+
+  return raw(`<svg class="auth-scene" viewBox="0 0 600 600" aria-hidden="true">
+    <defs>
+      <style>${keyframes}</style>
+      <radialGradient id="as-sun"><stop offset="0" stop-color="#ffe2bb"/><stop offset=".4" stop-color="#d6a46c" stop-opacity=".5"/><stop offset="1" stop-color="#d6a46c" stop-opacity="0"/></radialGradient>
+      <linearGradient id="as-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8d4ea" stop-opacity=".55"/><stop offset="1" stop-color="#5b75a6" stop-opacity=".3"/></linearGradient>
+      <linearGradient id="as-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d90b4" stop-opacity=".55"/><stop offset="1" stop-color="#2c3a57" stop-opacity=".45"/></linearGradient>
+      <linearGradient id="as-beam" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f2cf9f" stop-opacity="0"/><stop offset=".5" stop-color="#f2cf9f" stop-opacity=".16"/><stop offset="1" stop-color="#f2cf9f" stop-opacity="0"/></linearGradient>
+    </defs>
+    <g class="sun"><circle cx="500" cy="96" r="80" fill="url(#as-sun)"/><circle cx="500" cy="96" r="18" fill="#ffe8c7"/></g>
+    <g class="ground">${grid}</g>
+    <polyline class="lot" pathLength="1" points="${lot}"/>
+    ${block(-6, -3, 1, 4, 5, 'nb a')}
+    ${block(6, 9, 2, 5, 8, 'nb b')}
+    ${block(-2, 1, 6, 8.5, 3, 'nb c')}
+    <g class="tower">${tower}${roof}</g>
+    ${crane}
+    <g class="dim-line"><line x1="${d0[0]}" y1="${d0[1]}" x2="${d1[0]}" y2="${d1[1]}" pathLength="1"/>
+      <line x1="${d0[0] - 6}" y1="${d0[1]}" x2="${d0[0] + 6}" y2="${d0[1]}"/><line x1="${d1[0] - 6}" y1="${d1[1]}" x2="${d1[0] + 6}" y2="${d1[1]}"/></g>
+    ${tag(d1[0] - 96, (d0[1] + d1[1]) / 2, '16 PISOS · 46,4 m', 7)}
+    ${tag(P(x1, y0, H)[0] + 14, P(x1, y0, H)[1] - 6, 'N16 · CUBIERTA', 9.5)}
+    ${tag(P(5, 5, 0)[0] + 10, P(5, 5, 0)[1] + 8, 'LOTE 600 m² · IO 0,6', 3)}
+    <polygon class="beam" points="0,0 120,0 40,600 -80,600" fill="url(#as-beam)"/>
+  </svg>`);
+}
 
 /** Estructura común de las pantallas de acceso: escena de arquitectura y panel con el formulario. */
 function layout(el, panel) {
@@ -62,7 +151,7 @@ function layout(el, panel) {
       <div class="hero-grid"></div>
       <div class="hero-glow"></div>
       <div class="hero-brand"><img src="/assets/mark-96.png" alt="" width="40" height="40"><span class="chrome-text">Civia <b class="ai-text">AI</b></span></div>
-      ${blueprint()}
+      ${architectureScene()}
       <div class="hero-copy">
         <div class="eyebrow gold">Arquitectura inteligente</div>
         <h2 class="display">Del primer trazo a la obra, con un estudio que <span class="chrome-text">piensa contigo</span>.</h2>

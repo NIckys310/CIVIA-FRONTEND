@@ -877,12 +877,46 @@ img, video, canvas, iframe, table { max-width: 100%; }
 .hero-glow { position: absolute; top: -160px; left: -120px; width: 620px; height: 620px; border-radius: 50%; background: radial-gradient(circle, rgba(214, 164, 108, 0.16), transparent 62%); animation: drift 20s ease-in-out infinite; }
 .hero-brand { position: absolute; top: 34px; left: 40px; z-index: 2; display: flex; align-items: center; gap: 12px; font: 300 22px/1 var(--display); letter-spacing: -0.01em; }
 .auth .hero .hero-brand img { position: static; inset: auto; width: 40px; height: 40px; object-fit: contain; opacity: 1; mix-blend-mode: screen; animation: none; }
-.auth-blueprint { position: absolute; left: 50%; top: 46%; width: min(78%, 620px); height: auto; aspect-ratio: 1; transform: translate(-50%, -50%); color: var(--text); animation: float 8s ease-in-out infinite; }
-.auth-blueprint .bp path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw-line 2.8s cubic-bezier(0.65, 0, 0.35, 1) both; }
-.auth-blueprint .b2 path { animation-delay: 0.6s; }
-.auth-blueprint .b3 { animation: fade 1.6s ease 1.4s both; }
-@keyframes float { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(-50%, calc(-50% - 10px)); } }
 @keyframes fade { from { opacity: 0; } }
+/* Escena de arquitectura del acceso (bucle de 14 s). */
+.auth-scene { position: absolute; left: 50%; top: 44%; width: min(84%, 640px); height: auto; aspect-ratio: 1; transform: translate(-50%, -50%); overflow: visible; fill: none; animation: scene-float 9s ease-in-out infinite; }
+@keyframes scene-float { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(-50%, calc(-50% - 10px)); } }
+.auth-scene .ground line { stroke: rgba(214, 164, 108, 0.16); stroke-width: 0.8; stroke-dasharray: 3 5; }
+.auth-scene .lot { stroke: #d6a46c; stroke-width: 1.4; stroke-dasharray: 1; stroke-dashoffset: 1; animation: lot-draw 14s cubic-bezier(.65, 0, .35, 1) infinite; }
+@keyframes lot-draw { 0% { stroke-dashoffset: 1; opacity: 1; } 12%, 86% { stroke-dashoffset: 0; opacity: 1; } 96%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+.auth-scene .face.l { fill: url(#as-l); stroke: rgba(200, 212, 234, 0.35); stroke-width: 0.6; }
+.auth-scene .face.r { fill: url(#as-r); stroke: rgba(200, 212, 234, 0.25); stroke-width: 0.6; }
+.auth-scene .face.dim { opacity: 0.55; }
+.auth-scene .roof { fill: #e9e6df; fill-opacity: 0.85; stroke: #f2cf9f; stroke-width: 0.8; }
+.auth-scene .roof.dim { fill-opacity: 0.25; stroke: rgba(242, 207, 159, 0.4); }
+.auth-scene .slab { stroke: #e9e6df; stroke-width: 1.2; stroke-opacity: 0.8; }
+.auth-scene .floor { transform-box: fill-box; }
+.auth-scene .win { fill: #ffe2bb; opacity: 0.15; animation: win-light 4.2s ease-in-out infinite; }
+.auth-scene .win.r { fill: #f2cf9f; }
+.auth-scene .win.dim { animation-duration: 5.6s; }
+@keyframes win-light { 0%, 100% { opacity: 0.12; } 45%, 60% { opacity: 0.85; } }
+.auth-scene .nb { animation: fade 1.6s ease both; }
+.auth-scene .nb.b { animation-delay: 0.3s; } .auth-scene .nb.c { animation-delay: 0.6s; }
+.auth-scene .mast { stroke: #d6a46c; stroke-width: 2; stroke-linecap: round; }
+.auth-scene .lattice { stroke: rgba(214, 164, 108, 0.6); stroke-width: 0.8; }
+.auth-scene .counter { fill: #d6a46c; fill-opacity: 0.7; }
+.auth-scene .cable { stroke: rgba(236, 238, 242, 0.55); stroke-width: 0.8; }
+.auth-scene .load { fill: #9fb2d3; fill-opacity: 0.8; }
+.auth-scene .jib { transform-box: view-box; animation: jib-swing 14s ease-in-out infinite; }
+@keyframes jib-swing { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(14deg); } }
+.auth-scene .hook { transform-box: view-box; animation: hook-sway 3.5s ease-in-out infinite; }
+@keyframes hook-sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+.auth-scene .sun { animation: sun-pulse 6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes sun-pulse { 0%, 100% { opacity: 0.85; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+.auth-scene .beam { animation: beam-sweep 9s ease-in-out infinite; mix-blend-mode: screen; }
+@keyframes beam-sweep { 0% { transform: translateX(-160px); opacity: 0; } 20% { opacity: 1; } 70% { opacity: 1; } 100% { transform: translateX(760px); opacity: 0; } }
+.auth-scene .dim-line line { stroke: rgba(236, 238, 242, 0.5); stroke-width: 0.8; }
+.auth-scene .dim-line line:first-child { stroke-dasharray: 1; stroke-dashoffset: 1; animation: dim-draw 14s ease infinite; }
+@keyframes dim-draw { 0%, 45% { stroke-dashoffset: 1; } 60%, 86% { stroke-dashoffset: 0; } 96%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+.auth-scene .tag { opacity: 0; animation: tag-in 14s ease infinite; }
+.auth-scene .tag rect { fill: rgba(7, 8, 11, 0.8); stroke: rgba(214, 164, 108, 0.45); stroke-width: 0.8; }
+.auth-scene .tag text { fill: #f2cf9f; font: 500 9.5px var(--mono); letter-spacing: 0.04em; }
+@keyframes tag-in { 0% { opacity: 0; transform: translateY(6px); } 6%, 30% { opacity: 1; transform: none; } 38%, 100% { opacity: 0; } }
 .hero-copy { position: absolute; left: 40px; right: 40px; bottom: 40px; z-index: 2; animation: enter var(--dur-3) var(--ease-out) 0.4s both; }
 .hero-copy h2 { margin-top: 12px; max-width: 520px; font-size: clamp(26px, 2.6vw, 38px); line-height: 1.12; }
 .hero-points { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
@@ -1019,7 +1053,9 @@ img, video, canvas, iframe, table { max-width: 100%; }
   .content { padding: 18px 14px calc(100px + env(safe-area-inset-bottom)); }
   .mobile-nav { left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); }
   .auth .hero { min-height: 0; }
-  .hero-grid, .hero-glow, .hero-brand, .auth-blueprint, .hero-copy { display: none; }
+  .hero-grid, .hero-glow, .hero-brand, .hero-copy { display: none; }
+  .auth .hero .brand-mobile img { display: none; }
+  .auth-scene { position: relative; left: auto; top: auto; display: block; width: min(78vw, 340px); margin: -10px auto -18px; transform: none; animation: none; }
   .auth .hero { background: radial-gradient(60% 80% at 50% 30%, rgba(214, 164, 108, 0.14), transparent 70%), var(--bg); }
   .auth .panel { padding: 6px 12px 32px; }
   .auth .auth-card { max-width: 520px; margin: 0 auto; }
@@ -1041,6 +1077,8 @@ img, video, canvas, iframe, table { max-width: 100%; }
   .intro-meta { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sheen::after, .hero-banner::before, .hero-glow, .auth-blueprint, .auth .auth-card::after, .auth .btn.primary.lg::after { animation: none; }
-  .auth-blueprint .bp path { stroke-dashoffset: 0; animation: none; }
+  .sheen::after, .hero-banner::before, .hero-glow, .auth .auth-card::after, .auth .btn.primary.lg::after { animation: none; }
+  .auth-scene, .auth-scene * { animation: none !important; }
+  .auth-scene .floor, .auth-scene .roof, .auth-scene .tag { opacity: 1; }
+  .auth-scene .lot, .auth-scene .dim-line line { stroke-dashoffset: 0; }
 }
