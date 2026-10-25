@@ -1,7 +1,7 @@
 // CIVIA AI — arranque, sesión, enrutador y estructura de la aplicación.
 import { api, hasSessionHint, logout, refresh, server, session, wakeServer } from './api.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
-import { autoStagger, circularReveal, elevateOnScroll, enableRipples, enableSpotlight, leave, moveNavPill } from './motion.js';
+import { autoStagger, circularReveal, elevateOnScroll, enableRipples, enableSpotlight, kinetic, leave, moveNavPill } from './motion.js';
 
 const NAV = [
   { section: 'Estudio' },
@@ -77,12 +77,15 @@ function renderShell() {
         <div><div class="name chrome-text">Civia <b class="ai-text">AI</b></div><div class="tag">Arquitectura inteligente</div></div>
       </a>
       <nav class="nav">
-        ${NAV.map((n) => (n.section
-          ? html`<div class="eyebrow nav-section">${n.section}</div>`
-          : html`<a href="${n.href}" data-nav="${n.match.source}">${icon(n.icon)}<span>${n.label}</span></a>`))}
+        ${NAV.map((n, i) => (n.section
+          ? html`<div class="eyebrow nav-section" style="--ni:${i}"><span>${n.section}</span></div>`
+          : html`<a href="${n.href}" data-nav="${n.match.source}" style="--ni:${i}"><span class="nav-ico">${icon(n.icon)}</span><span class="nav-label">${n.label}</span><span class="nav-arrow" aria-hidden="true">${icon('chevron')}</span></a>`))}
       </nav>
       <div class="foot">
-        <div class="engine" id="engine"><i></i><span>Motor de IA…</span></div>
+        <div class="engine-card" id="engine">
+          <span class="engine-orb" aria-hidden="true"><i></i></span>
+          <div><div class="eyebrow">Motor de IA</div><div class="engine-name">Conectando…</div></div>
+        </div>
       </div>
     </aside>
     <div class="main">
@@ -126,6 +129,7 @@ function renderShell() {
     }
   });
   $('#notif-btn').onclick = toggleNotifications;
+  document.querySelectorAll('.sidebar .nav-section span, .brand .tag').forEach(kinetic);
   shellReady = true;
   autoStagger($('#view'));
   elevateOnScroll($('.topbar'));
@@ -137,7 +141,11 @@ async function loadEngine() {
   try {
     aiStatus ||= await api.get('/ai/status');
     const el = $('#engine');
-    if (el) mount(el, html`<i></i><span>${aiStatus.llm ? aiStatus.engine : 'Motor local de CIVIA'}</span>`);
+    if (el) {
+      mount(el, html`<span class="engine-orb ${aiStatus.llm ? 'live' : ''}" aria-hidden="true"><i></i></span>
+        <div><div class="eyebrow">Motor de IA</div><div class="engine-name">${aiStatus.llm ? aiStatus.engine : 'Motor local de CIVIA'}</div></div>`);
+      el.title = aiStatus.llm ? `CIVIA Copilot responde con ${aiStatus.engine}` : 'CIVIA Copilot responde con el motor local';
+    }
   } catch { /* sin conexión */ }
 }
 
