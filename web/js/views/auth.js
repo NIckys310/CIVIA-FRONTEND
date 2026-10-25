@@ -2,7 +2,7 @@
 import { afterLogin } from '../app.js';
 import { api, login, logout, register, session } from '../api.js';
 import { $, busy, debounce, html, icon, mount, raw, toast } from '../ui.js';
-import { stagger } from '../motion.js';
+import { kinetic, stagger } from '../motion.js';
 import { live, passwordChecks, rules, validateAll } from '../validate.js';
 
 function strength(pw) {
@@ -141,45 +141,6 @@ function architectureScene() {
     ${tag(P(5, 5, 0)[0] + 10, P(5, 5, 0)[1] + 8, 'LOTE 600 m² · IO 0,6', 3)}
     <polygon class="beam" points="0,0 120,0 40,600 -80,600" fill="url(#as-beam)"/>
   </svg>`);
-}
-
-/**
- * Divide el texto de un título en letras para animarlas una a una (sube, se enfoca y brilla).
- * Los lectores de pantalla leen el texto completo del atributo aria-label, no las letras sueltas.
- */
-function kinetic(node) {
-  if (!node || node.dataset.kinetic) return;
-  node.dataset.kinetic = '1';
-  node.setAttribute('aria-label', node.textContent.replace(/\s+/g, ' ').trim());
-  node.classList.add('kinetic');
-  let i = 0;
-  const walk = (parent) => {
-    [...parent.childNodes].forEach((child) => {
-      if (child.nodeType === Node.TEXT_NODE) {
-        const frag = document.createDocumentFragment();
-        // Palabra por palabra (para que no se corten al final de la línea) y letra por letra dentro.
-        child.textContent.split(/(\s+)/).forEach((part) => {
-          if (!part) return;
-          if (/^\s+$/.test(part)) { frag.append(' '); return; }
-          const word = document.createElement('span');
-          word.className = 'kw';
-          [...part].forEach((ch) => {
-            const c = document.createElement('span');
-            c.className = 'kc';
-            c.textContent = ch;
-            c.style.setProperty('--ci', i++);
-            word.append(c);
-          });
-          frag.append(word);
-        });
-        child.replaceWith(frag);
-      } else if (child.nodeType === Node.ELEMENT_NODE) {
-        walk(child);
-      }
-    });
-  };
-  walk(node);
-  node.querySelectorAll('.kc, .kw').forEach((s) => s.setAttribute('aria-hidden', 'true'));
 }
 
 /** Estructura común de las pantallas de acceso: escena de arquitectura y panel con el formulario. */
