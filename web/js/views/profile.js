@@ -3,6 +3,8 @@ import { adoptTokens, api, setUser } from '../api.js';
 import { applyTheme } from '../app.js';
 import { $, avatar, busy, confirmDialog, fmtDate, fmtDateTime, formData, html, icon, modal, mount, toast } from '../ui.js';
 import { countUp } from '../motion.js';
+import { introEnabled, setIntroEnabled } from '../intro.js';
+import { storagePanel } from './storage.js';
 
 const EVENT_LABEL = {
   register: 'Cuenta creada', login: 'Inicio de sesión', locked: 'Bloqueo temporal', 'password-changed': 'Contraseña cambiada',
@@ -90,10 +92,14 @@ export async function render(el) {
           <div class="field"><label>Tema</label><select class="input" name="theme"><option value="dark" ${pref.theme !== 'light' ? 'selected' : ''}>Oscuro (recomendado)</option><option value="light" ${pref.theme === 'light' ? 'selected' : ''}>Claro</option></select></div>
           <div class="field"><label>Unidades</label><select class="input" name="units"><option value="metric">Métricas (m, m²)</option><option value="imperial" ${pref.units === 'imperial' ? 'selected' : ''}>Imperiales (ft, ft²)</option></select></div>
           <label class="check"><input type="checkbox" name="emailNotifications" ${pref.emailNotifications !== false ? 'checked' : ''}> Avisos por correo</label>
+          <label class="check"><input type="checkbox" id="pref-intro" ${introEnabled() ? 'checked' : ''}> Intro de bienvenida al iniciar sesión</label>
           <button class="btn">Guardar preferencias</button>
         </div></form>
     </div>
-  </div>`);
+  </div>
+  <div id="storage-panel" style="margin-top:22px"></div>`);
+  $('#pref-intro', el).onchange = (e) => { setIntroEnabled(e.target.checked); toast(e.target.checked ? 'La intro se mostrará al iniciar sesión.' : 'Intro desactivada.'); };
+  storagePanel($('#storage-panel', el));
 
   $('#profile-form', el).addEventListener('submit', async (e) => {
     e.preventDefault();

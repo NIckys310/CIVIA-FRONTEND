@@ -4,7 +4,7 @@ import {
   $, avatar, busy, confirmDialog, coverArt, fmtBytes, fmtDate, fmtMoney, fmtNum, formData, html, icon, KIND_LABEL, KIND_PLURAL,
   markdown, modal, mount, on, relTime, STATUS_LABEL, toast,
 } from '../ui.js';
-import { projectForm, readProjectForm } from './projects.js';
+import { projectForm, readProjectForm, wireProjectForm } from './projects.js';
 
 const TABS = [
   ['overview', 'Resumen', 'home'], ['files', 'Archivos', 'blueprint'], ['tasks', 'Tareas', 'tasks'],
@@ -84,7 +84,8 @@ function editProject(project) {
       <button class="btn ghost" data-cancel>Cancelar</button><button class="btn primary" data-save data-busy="Guardando…">Guardar</button>`,
   });
   m.el.querySelector('[data-cancel]').onclick = m.close;
-  m.el.querySelector('[data-save]').onclick = (e) => busy(e.currentTarget, async () => {
+  const check = wireProjectForm($('#project-form', m.el));
+  m.el.querySelector('[data-save]').onclick = (e) => check() && busy(e.currentTarget, async () => {
     await api.patch(`/projects/${project.id}`, readProjectForm($('#project-form', m.el)));
     m.close();
     toast('Proyecto actualizado');
@@ -374,7 +375,7 @@ async function openDocument(d, project, canEdit, onChange) {
   m.el.querySelector('a[href^="#/viewer"]')?.addEventListener('click', m.close);
 
   if (previewable) {
-    fileUrl(d.id).then((url) => {
+    fileUrl(d.id, d).then((url) => {
       mount($('#pv', m.el), d.mediaType === 'application/pdf'
         ? html`<iframe src="${url}" title="${d.name}"></iframe>` : html`<img src="${url}" alt="${d.name}">`);
     }).catch((e) => mount($('#pv', m.el), html`<p class="error-text">${e.message}</p>`));

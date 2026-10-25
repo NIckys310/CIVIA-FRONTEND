@@ -1,6 +1,7 @@
 // Visor y modelado 3D (Three.js): modelos del proyecto, medición, notas, sección, sol y volumetría con IA.
 import { api, fileUrl, upload } from '../api.js';
 import { $, busy, fmtBytes, fmtNum, html, icon, mount, on, relTime, toast } from '../ui.js';
+import { fieldRules, live } from '../validate.js';
 
 const THREE_URL = '/vendor/three/three.module.min.js';
 
@@ -317,7 +318,7 @@ function applyClipping(ctx, object) {
 async function modelMode(THREE, ctx, el, docId) {
   const doc = await api.get(`/documents/${docId}`);
   $('#v-title', el).textContent = doc.name;
-  const url = await fileUrl(docId);
+  const url = await fileUrl(docId, doc);
   const ext = doc.extension;
   $('#v-progress', el).textContent = `Cargando ${ext.toUpperCase()} (${fmtBytes(doc.sizeBytes)})…`;
 
@@ -453,18 +454,33 @@ async function massingMode(THREE, ctx, el, projectId) {
   $('#v-loading', el).remove();
   const lot = project.lotArea || 200;
   const defaults = { lotWidth: Math.round(Math.sqrt(lot / 2) * 10) / 10 || 10, lotDepth: Math.round(Math.sqrt(lot * 2) * 10) / 10 || 20,
-    occupancyIndex: 0.7, constructionIndex: 2.4, frontSetback: 3, rearSetback: 3, sideSetback: 0, floorHeight: 2.9, maxFloors: project.floors || 0 };
+    occupancyIndex: 0.7, constructionIndex: 2.4, frontSetback: 3, rearSetback: 3, sideSetback: 0, floorHeight: 2.9 };
+  const PRESETS = [8, 24, 60, 120, 250];
 
   mount($('#v-actions', el), html`<a class="btn" href="#/projects/${projectId}">${icon('back')} Proyecto</a>
     ${project.role !== 'VIEWER' ? html`<button class="btn primary" id="save-glb" data-busy="Guardando…" disabled>${icon('upload')} Guardar como modelo 3D</button>` : ''}`);
-  mount($('#v-panel', el), html`<form id="massing" class="stack">
-    <div class="eyebrow gold">Lote y norma</div>
-    <div class="form-grid">
-      ${[['lotWidth', 'Frente (m)'], ['lotDepth', 'Fondo (m)'], ['occupancyIndex', 'Índice ocupación'], ['constructionIndex', 'Índice construcción'],
-        ['frontSetback', 'Retiro frontal'], ['rearSetback', 'Retiro posterior'], ['sideSetback', 'Retiro lateral'], ['floorHeight', 'Altura piso (m)'], ['maxFloors', 'Pisos máx. (0 = libre)']]
-        .map(([k, l]) => html`<div class="field"><label>${l}</label><input class="input" type="number" step="any" min="0" name="${k}" value="${defaults[k]}"></div>`)}
+  mount($('#v-panel', el), html`<form id="massing" class="stack massing-form" novalidate>
+    <div class="eyebrow gold">Altura del edificio</div>
+    <div class="field" data-field="floors">
+      <label for="m-floors">Número de pisos <span class="faint">· sin límite</span></label>
+      <div class="floor-stepper">
+        <button type="button" class="btn icon" data-step="-1" aria-label="Quitar un piso">−</button>
+        <input class="input" id="m-floors" name="floors" type="number" min="1" step="1" inputmode="numeric" placeholder="Según norma" value="${project.floors || ''}" aria-describedby="m-floors-msg">
+        <button type="button" class="btn icon" data-step="1" aria-label="Agregar un piso">+</button>
+      </div>
+      <input type="range" id="m-floors-range" min="1" max="40" step="1" value="${project.floors || 1}" aria-label="Pisos (el rango crece a medida que subes)">
+      <div class="range-ends mono"><span>1</span><span id="m-range-max">40+</span></div>
+      <div class="chips presets">${PRESETS.map((n) => html`<button type="button" class="chip" data-preset="${n}">${n} pisos</button>`)}</div>
+      <div class="field-msg" id="m-floors-msg" aria-live="polite"></div>
     </div>
-    <button class="btn primary block" data-busy="Calculando…">${icon('sparkle')} Generar volumetría</button>
+    <div id="m-alerts" class="stack"></div>
+    <div class="sep"></div>
+    <div class="eyebrow gold">Lote y norma</div>
+    <div class="form-grid compact">
+      ${[['lotWidth', 'Frente', 'm'], ['lotDepth', 'Fondo', 'm'], ['occupancyIndex', 'Índice ocupación', 'IO'], ['constructionIndex', 'Índice construcción', 'IC'],
+        ['frontSetback', 'Retiro frontal', 'm'], ['rearSetback', 'Retiro posterior', 'm'], ['sideSetback', 'Retiro lateral', 'm'], ['floorHeight', 'Altura de piso', 'm']]
+        .map(([k, l, u]) => html`<div class="field"><label for="m-${k}">${l}</label><div class="input-wrap affixed"><input class="input" id="m-${k}" type="number" step="any" min="0" name="${k}" value="${defaults[k]}"><span class="affix post">${u}</span></div></div>`)}
+    </div>
     <div id="m-result"></div>
   </form>`);
 
@@ -474,9 +490,12 @@ async function massingMode(THREE, ctx, el, projectId) {
   const slab = new THREE.MeshStandardMaterial({ color: 0xe9e6df, roughness: 0.55 });
   const lotMat = new THREE.MeshStandardMaterial({ color: 0x1c2027, roughness: 1 });
   const gold = new THREE.LineBasicMaterial({ color: 0xd6a46c });
+  let mergeTools = null;
 
-  const build = (p, input) => {
+  const build = async (p, input) => {
+    group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
     group.clear();
+    ctx.clearLabels('floor');
     const lotMesh = new THREE.Mesh(new THREE.BoxGeometry(input.lotWidth, 0.06, input.lotDepth), lotMat);
     lotMesh.position.y = 0.03;
     lotMesh.receiveShadow = true;
@@ -488,40 +507,94 @@ async function massingMode(THREE, ctx, el, projectId) {
     group.add(edges);
     const x = -input.lotWidth / 2 + p.offsetX + p.footprintWidth / 2;
     const z = -input.lotDepth / 2 + p.offsetZ + p.footprintDepth / 2;
-    for (let i = 0; i < p.floors; i++) {
-      const y = 0.06 + i * p.floorHeight;
-      const s = new THREE.Mesh(new THREE.BoxGeometry(p.footprintWidth, 0.22, p.footprintDepth), slab);
-      s.position.set(x, y + 0.11, z);
-      s.name = `Losa_N${i + 1}`;
-      const g = new THREE.Mesh(new THREE.BoxGeometry(p.footprintWidth - 0.1, p.floorHeight - 0.22, p.footprintDepth - 0.1), glass);
-      g.position.set(x, y + 0.22 + (p.floorHeight - 0.22) / 2, z);
-      g.name = `Fachada_Vidrio_N${i + 1}`;
+    const fh = p.floorHeight;
+    const slabAt = (i) => new THREE.BoxGeometry(p.footprintWidth, 0.22, p.footprintDepth).translate(x, 0.06 + i * fh + 0.11, z);
+    const glassAt = (i) => new THREE.BoxGeometry(p.footprintWidth - 0.1, fh - 0.22, p.footprintDepth - 0.1).translate(x, 0.06 + i * fh + 0.22 + (fh - 0.22) / 2, z);
+    if (p.floors <= 120) {
+      // Una malla por piso: el modelo exportado conserva los nombres de cada nivel.
+      for (let i = 0; i < p.floors; i++) {
+        const s = new THREE.Mesh(slabAt(i), slab); s.name = `Losa_N${i + 1}`;
+        const g = new THREE.Mesh(glassAt(i), glass); g.name = `Fachada_Vidrio_N${i + 1}`;
+        group.add(s, g);
+      }
+    } else {
+      // Muchos pisos: se fusionan en dos mallas para que el visor siga fluido, tenga los pisos que tenga.
+      mergeTools ||= await import('/vendor/three/addons/utils/BufferGeometryUtils.js');
+      const slabs = []; const glasses = [];
+      for (let i = 0; i < p.floors; i++) { slabs.push(slabAt(i)); glasses.push(glassAt(i)); }
+      const s = new THREE.Mesh(mergeTools.mergeGeometries(slabs), slab); s.name = `Losas_N1-N${p.floors}`;
+      const g = new THREE.Mesh(mergeTools.mergeGeometries(glasses), glass); g.name = `Fachada_Vidrio_N1-N${p.floors}`;
+      slabs.concat(glasses).forEach((geo) => geo.dispose());
       group.add(s, g);
     }
     const roof = new THREE.Mesh(new THREE.BoxGeometry(p.footprintWidth + 0.3, 0.3, p.footprintDepth + 0.3), slab);
-    roof.position.set(x, 0.06 + p.floors * p.floorHeight + 0.15, z);
+    roof.position.set(x, 0.06 + p.floors * fh + 0.15, z);
     roof.name = 'Cubierta';
     group.add(roof);
+    // Etiquetas de nivel: unas 10 repartidas en la altura, siempre la primera y la última.
+    const every = Math.max(1, Math.ceil(p.floors / 10));
+    for (let i = 0; i < p.floors; i++) {
+      if (i === 0 || (i + 1) % every === 0 || i === p.floors - 1) {
+        ctx.addLabel(new THREE.Vector3(x + p.footprintWidth / 2 + 0.6, 0.06 + i * fh + fh / 2, z + p.footprintDepth / 2), `N${i + 1}`, 'floor');
+      }
+    }
     applyClipping(ctx, group);
+    // Encuadre automático: la cámara se aleja lo necesario para ver el edificio completo.
     ctx.frame(new THREE.Box3().setFromObject(group));
   };
 
   const form = $('#massing', el);
+  const floorsInput = $('#m-floors', el);
+  const range = $('#m-floors-range', el);
+  const syncRange = (n) => {
+    const max = Math.max(40, Math.ceil((n * 1.5) / 20) * 20);
+    range.max = String(max);
+    range.value = String(n || 1);
+    $('#m-range-max', el).textContent = `${max}+`;
+  };
+  const floorsCtl = live(floorsInput, fieldRules.integer('Pisos', { warnAbove: 1000 }));
+
+  let seq = 0;
   const run = async () => {
+    if (floorsInput.value && !floorsCtl.check().ok) return;
     const input = Object.fromEntries([...new FormData(form).entries()].map(([k, v]) => [k, Number(v) || 0]));
+    input.maxFloors = 0;
+    const mySeq = ++seq;
     const p = await api.post('/ai/massing', input);
-    build(p, input);
+    if (mySeq !== seq) return; // llegó una respuesta más nueva mientras tanto
+    await build(p, input);
+    if (!floorsInput.value) syncRange(p.floors);
+    mount($('#m-alerts', el), html`
+      ${p.exceedsNorm ? html`<div class="notice warn" role="status">${icon('alert')}<div><b>Posible exceso sobre la norma</b>
+        <p>${p.floors} pisos superan los ${p.normFloors} que permite el índice de construcción. La volumetría se dibuja igual; confírmalo con la ficha normativa del predio.</p></div></div>` : ''}
+      ${p.floors >= 15 ? html`<div class="notice info" role="status">${icon('info')}<div><b>Edificio en altura</b>
+        <p>Prevé ascensores, escalera presurizada y núcleo estructural.</p></div></div>` : ''}`);
     mount($('#m-result', el), html`<div class="sep"></div>
-      <div class="grid g2" style="gap:10px">
-        ${[['Huella', `${fmtNum(p.footprintArea)} m²`], ['Pisos', p.floors], ['Área total', `${fmtNum(p.totalArea)} m²`], ['Altura', `${fmtNum(p.floors * p.floorHeight + 0.4)} m`]]
-          .map(([k, v]) => html`<div><div class="eyebrow" style="font-size:9px">${k}</div><div class="display" style="font-size:20px;margin-top:6px">${v}</div></div>`)}
+      <div class="metric-grid">
+        ${[['Huella', `${fmtNum(p.footprintArea)} m²`], ['Pisos', fmtNum(p.floors, 0)], ['Área total', `${fmtNum(p.totalArea)} m²`],
+          ['Altura', `${fmtNum(p.floors * p.floorHeight + 0.4, 1)} m`], ['Pisos por norma', fmtNum(p.normFloors ?? p.floors, 0)], ['IC resultante', fmtNum(p.totalArea / p.lotArea, 2)]]
+          .map(([k, v]) => html`<div class="metric"><div class="eyebrow">${k}</div><div class="display">${v}</div></div>`)}
       </div>
-      ${p.notes.map((n) => html`<div class="rec ${n.priority}" style="padding:10px 0"><div class="mark" style="width:24px;height:24px">${icon('info')}</div><div><h4 style="font-size:13px">${n.title}</h4><p style="font-size:12px">${n.detail}</p></div><span></span></div>`)}`);
+      ${p.notes.filter((n) => !/exceso|altura/i.test(n.title)).map((n) => html`<div class="rec ${n.priority}" style="padding:10px 0"><div class="mark" style="width:24px;height:24px">${icon('info')}</div><div><h4 style="font-size:13px">${n.title}</h4><p style="font-size:12px">${n.detail}</p></div><span></span></div>`)}`);
     const save = $('#save-glb', el);
     if (save) save.disabled = false;
   };
-  form.addEventListener('submit', (e) => { e.preventDefault(); busy(form.querySelector('button'), run); });
-  run();
+  const debounced = (() => { let t; return () => { clearTimeout(t); t = setTimeout(() => run().catch((e) => toast(e.message, 'error')), 260); }; })();
+
+  const setFloors = (n) => {
+    floorsInput.value = n ? String(Math.max(1, Math.floor(n))) : '';
+    syncRange(Number(floorsInput.value) || 1);
+    floorsCtl.refresh();
+    debounced();
+  };
+  floorsInput.addEventListener('input', () => { syncRange(Number(floorsInput.value) || 1); debounced(); });
+  range.addEventListener('input', () => setFloors(Number(range.value)));
+  on(form, 'click', '[data-step]', (e, b) => setFloors((Number(floorsInput.value) || Number(range.value) || 1) + Number(b.dataset.step)));
+  on(form, 'click', '[data-preset]', (e, b) => setFloors(Number(b.dataset.preset)));
+  form.querySelectorAll('.form-grid input').forEach((i) => i.addEventListener('input', debounced));
+  form.addEventListener('submit', (e) => { e.preventDefault(); run(); });
+  syncRange(Number(floorsInput.value) || 1);
+  await run();
 
   $('#save-glb', el)?.addEventListener('click', (e) => busy(e.currentTarget, async () => {
     const { GLTFExporter } = await import('/vendor/three/addons/exporters/GLTFExporter.js');

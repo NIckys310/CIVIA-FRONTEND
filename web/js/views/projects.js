@@ -1,33 +1,118 @@
 // Lista de proyectos y creación.
 import { api } from '../api.js';
 import { $, busy, coverArt, fmtNum, formData, html, icon, modal, mount, on, relTime, STATUS_LABEL, toast } from '../ui.js';
+import { fieldRules, formatNumber, live, liveThousands, parseNumber } from '../validate.js';
 
 export const PROJECT_TYPES = ['Vivienda unifamiliar', 'Vivienda multifamiliar', 'Oficinas', 'Comercio', 'Uso mixto', 'Educación', 'Salud',
   'Hotelería', 'Industrial', 'Cultural', 'Espacio público', 'Interiorismo', 'Remodelación', 'Otro'];
 
+/** Campo con estado (✓ / !), prefijo o unidad y mensaje de validación debajo. */
+const field = (name, label, { value = '', type = 'text', inputmode = 'text', placeholder = '', prefix = '', suffix = '', required = false, full = false, counter = 0 } = {}) => html`
+  <div class="field ${full ? 'full' : ''}" data-field="${name}">
+    <div class="label-row"><label for="pf-${name}">${label}${required ? html`<span class="req" aria-hidden="true"> *</span>` : ''}</label>
+      ${counter ? html`<span class="counter mono" data-counter="${name}">0/${counter}</span>` : ''}</div>
+    <div class="input-wrap affixed">
+      ${prefix ? html`<span class="affix pre">${prefix}</span>` : ''}
+      <input class="input" id="pf-${name}" name="${name}" type="${type}" inputmode="${inputmode}" placeholder="${placeholder}" value="${value}" ${required ? 'required' : ''} aria-describedby="pf-${name}-msg" autocomplete="off">
+      ${suffix ? html`<span class="affix post">${suffix}</span>` : ''}
+      <span class="state" aria-hidden="true"></span>
+    </div>
+    <div class="field-msg" id="pf-${name}-msg" aria-live="polite"></div>
+  </div>`;
+
+const fmtField = (v, dec = 2) => (v == null || v === '' ? '' : formatNumber(Number(v), dec));
+
 export function projectForm(p = {}) {
-  return html`<form id="project-form" class="form-grid">
-    <div class="field full"><label>Nombre del proyecto</label><input class="input" name="name" required value="${p.name || ''}" placeholder="Casa Loma"></div>
-    <div class="field"><label>Tipo</label><select class="input" name="type">${PROJECT_TYPES.map((t) => html`<option ${p.type === t ? 'selected' : ''}>${t}</option>`)}</select></div>
-    <div class="field"><label>Estado</label><select class="input" name="status">${Object.entries(STATUS_LABEL).map(([k, v]) => html`<option value="${k}" ${(p.status || 'DESIGN') === k ? 'selected' : ''}>${v}</option>`)}</select></div>
-    <div class="field"><label>Ubicación</label><input class="input" name="location" value="${p.location || ''}" placeholder="Ciudad, país"></div>
-    <div class="field"><label>Dirección</label><input class="input" name="address" value="${p.address || ''}"></div>
-    <div class="field"><label>Área del lote (m²)</label><input class="input" name="lotArea" type="number" step="any" min="0" value="${p.lotArea ?? ''}"></div>
-    <div class="field"><label>Área construida (m²)</label><input class="input" name="builtArea" type="number" step="any" min="0" value="${p.builtArea ?? ''}"></div>
-    <div class="field"><label>Pisos</label><input class="input" name="floors" type="number" min="0" value="${p.floors ?? ''}"></div>
-    <div class="field"><label>Presupuesto estimado</label><input class="input" name="budgetEstimate" type="number" step="any" min="0" value="${p.budgetEstimate ?? ''}"></div>
-    <div class="field"><label>Inicio</label><input class="input" name="startDate" type="date" value="${p.startDate || ''}"></div>
-    <div class="field"><label>Entrega</label><input class="input" name="dueDate" type="date" value="${p.dueDate || ''}"></div>
-    <div class="field full"><label>Descripción y programa</label><textarea class="input" name="description" placeholder="Concepto, programa arquitectónico, requisitos del cliente…">${p.description || ''}</textarea></div>
+  return html`<form id="project-form" class="project-form" novalidate>
+    <div class="form-summary" id="pf-summary" role="alert" hidden></div>
+    <fieldset><legend class="eyebrow gold">Identificación</legend>
+      <div class="form-grid">
+        ${field('name', 'Nombre del proyecto', { value: p.name || '', placeholder: 'Ej. Torre Mirador', required: true, full: true, counter: 120 })}
+        <div class="field"><label for="pf-type">Tipo</label><select class="input" id="pf-type" name="type">${PROJECT_TYPES.map((t) => html`<option ${p.type === t ? 'selected' : ''}>${t}</option>`)}</select></div>
+        <div class="field"><label for="pf-status">Estado</label><select class="input" id="pf-status" name="status">${Object.entries(STATUS_LABEL).map(([k, v]) => html`<option value="${k}" ${(p.status || 'DESIGN') === k ? 'selected' : ''}>${v}</option>`)}</select></div>
+        ${field('location', 'Municipio', { value: p.location || '', placeholder: 'Pasto, Nariño' })}
+        ${field('address', 'Dirección', { value: p.address || '', placeholder: 'Calle 18 # 25-40' })}
+      </div>
+    </fieldset>
+    <fieldset><legend class="eyebrow gold">Predio y alcance</legend>
+      <div class="form-grid">
+        ${field('lotArea', 'Área del lote', { value: fmtField(p.lotArea), inputmode: 'decimal', suffix: 'm²', placeholder: '600' })}
+        ${field('builtArea', 'Área construida', { value: fmtField(p.builtArea), inputmode: 'decimal', suffix: 'm²', placeholder: 'Opcional' })}
+        ${field('floors', 'Pisos', { value: p.floors ?? '', inputmode: 'numeric', placeholder: 'Sin límite' })}
+        ${field('budgetEstimate', 'Presupuesto estimado', { value: fmtField(p.budgetEstimate, 0), inputmode: 'numeric', prefix: '$', suffix: 'COP', placeholder: '1.250.000.000' })}
+      </div>
+    </fieldset>
+    <fieldset><legend class="eyebrow gold">Calendario</legend>
+      <div class="form-grid">
+        ${field('startDate', 'Inicio', { value: p.startDate || '', type: 'date' })}
+        ${field('dueDate', 'Entrega estimada', { value: p.dueDate || '', type: 'date' })}
+      </div>
+    </fieldset>
+    <div class="field full"><div class="label-row"><label for="pf-description">Descripción y programa</label><span class="counter mono" data-counter="description">0/2000</span></div>
+      <textarea class="input" id="pf-description" name="description" maxlength="2000" placeholder="Concepto, programa arquitectónico, requisitos del cliente…">${p.description || ''}</textarea></div>
   </form>`;
+}
+
+/**
+ * Validación en vivo del formulario de proyecto. Devuelve `check()`: valida todo, muestra el resumen
+ * de errores con enlaces a cada campo y enfoca el primero. Los avisos (ámbar) no bloquean.
+ */
+export function wireProjectForm(form) {
+  const $f = (n) => form.elements[n];
+  const label = (n) => form.querySelector(`label[for="pf-${n}"]`)?.firstChild?.textContent?.trim() || n;
+  const rulesByField = {
+    name: fieldRules.text('El nombre', { min: 3, max: 120 }),
+    location: fieldRules.text('El municipio', { min: 3, max: 120, required: false }),
+    address: fieldRules.text('La dirección', { min: 4, max: 200, required: false }),
+    lotArea: fieldRules.positive('El área del lote', { unit: 'm²', warn: (n) => (n < 36 ? 'Lote muy pequeño (menos de 36 m²); revisa las unidades.' : null) }),
+    builtArea: fieldRules.positive('El área construida', {
+      unit: 'm²',
+      warn: (n) => { const lot = parseNumber($f('lotArea').value); return lot > 0 && n > lot * 30 ? 'Supera 30 veces el área del lote; confirma la cifra.' : null; },
+    }),
+    floors: fieldRules.integer('Pisos', { warnAbove: 80 }),
+    budgetEstimate: fieldRules.money({ perUnit: () => parseNumber($f('builtArea').value) || parseNumber($f('lotArea').value) }),
+    dueDate: fieldRules.dateAfter('La fecha de inicio', () => $f('startDate').value),
+  };
+  const controls = Object.entries(rulesByField).map(([n, rule]) => [$f(n), live($f(n), rule)]);
+  liveThousands($f('budgetEstimate'));
+  // Áreas: al salir del campo quedan con el formato colombiano (1.250,5).
+  ['lotArea', 'builtArea'].forEach((n) => $f(n).addEventListener('blur', () => {
+    const v = parseNumber($f(n).value);
+    if (v > 0) $f(n).value = formatNumber(v);
+  }));
+  // Lo que depende de otros campos se revisa de nuevo cuando estos cambian.
+  const refresh = (n) => controls.find(([i]) => i === $f(n))?.[1].refresh();
+  $f('startDate').addEventListener('change', () => refresh('dueDate'));
+  ['lotArea', 'builtArea'].forEach((n) => $f(n).addEventListener('input', () => { refresh('budgetEstimate'); refresh('builtArea'); }));
+  // Contadores de caracteres.
+  form.querySelectorAll('[data-counter]').forEach((c) => {
+    const input = $f(c.dataset.counter);
+    const max = Number(c.textContent.split('/')[1]);
+    const upd = () => { c.textContent = `${formatNumber(input.value.length, 0)}/${formatNumber(max, 0)}`; c.classList.toggle('near', input.value.length > max * 0.9); };
+    input.addEventListener('input', upd);
+    upd();
+  });
+
+  const summary = $('#pf-summary', form);
+  return function check() {
+    const failed = controls.filter(([, ctl]) => !ctl.check().ok).map(([input]) => input);
+    if (!failed.length) { summary.hidden = true; return true; }
+    mount(summary, html`<b>Revisa ${failed.length === 1 ? 'un campo' : `${failed.length} campos`} antes de guardar</b>
+      <ul>${failed.map((i) => html`<li><a href="#${i.id}" data-jump="${i.id}">${label(i.name)}</a>: ${form.querySelector(`#${i.id}-msg`)?.textContent || ''}</li>`)}</ul>`);
+    summary.hidden = false;
+    summary.querySelectorAll('[data-jump]').forEach((a) => { a.onclick = (e) => { e.preventDefault(); form.querySelector(`#${a.dataset.jump}`)?.focus(); }; });
+    summary.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    failed[0].focus({ preventScroll: true });
+    return false;
+  };
 }
 
 export function readProjectForm(form) {
   const d = formData(form);
-  const num = (v) => (v === '' || v == null ? null : Number(v));
+  const num = (v) => { const n = parseNumber(v); return n === null || Number.isNaN(n) ? null : n; };
   return {
-    name: d.name, type: d.type, status: d.status, location: d.location, address: d.address, description: d.description,
-    lotArea: num(d.lotArea), builtArea: num(d.builtArea), floors: num(d.floors), budgetEstimate: num(d.budgetEstimate),
+    name: d.name.trim(), type: d.type, status: d.status, location: d.location.trim(), address: d.address.trim(), description: d.description,
+    lotArea: num(d.lotArea), builtArea: num(d.builtArea), floors: d.floors ? Number(d.floors) : null, budgetEstimate: num(d.budgetEstimate),
     startDate: d.startDate || null, dueDate: d.dueDate || null,
   };
 }
@@ -41,17 +126,21 @@ export function openCreate() {
     foot: html`<button class="btn ghost" data-cancel>Cancelar</button><button class="btn primary" data-save data-busy="Creando…">${icon('plus')} Crear proyecto</button>`,
   });
   m.el.querySelector('[data-cancel]').onclick = m.close;
+  const form = $('#project-form', m.el);
+  const check = wireProjectForm(form);
+  form.elements.name.focus();
   const save = m.el.querySelector('[data-save]');
-  const submit = () => busy(save, async () => {
-    const form = $('#project-form', m.el);
-    if (!form.name.value.trim()) { form.name.focus(); return; }
-    const p = await api.post('/projects', readProjectForm(form));
-    m.close();
-    toast('Proyecto creado');
-    location.hash = `#/projects/${p.id}`;
-  });
+  const submit = () => {
+    if (!check()) return;
+    busy(save, async () => {
+      const p = await api.post('/projects', readProjectForm(form));
+      m.close();
+      toast('Proyecto creado');
+      location.hash = `#/projects/${p.id}`;
+    });
+  };
   save.onclick = submit;
-  $('#project-form', m.el).addEventListener('submit', (e) => { e.preventDefault(); submit(); });
+  form.addEventListener('submit', (e) => { e.preventDefault(); submit(); });
 }
 
 export async function render(el, { query }) {

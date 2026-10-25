@@ -244,6 +244,7 @@ async function route() {
     clearTimeout(skeleton); // la vista ya puede pintarse: el esqueleto no debe pisarla
     if (target === $('#view') || match.isPublic) {
       cleanup = await mod.render(target, match.params, { refreshNotifications, aiStatus: () => aiStatus });
+      restoreDrafts(target);
     }
   } catch (e) {
     console.error(e);
@@ -275,6 +276,8 @@ session.onChange((user) => {
 export function afterLogin() {
   const next = sessionStorage.getItem('civia-after-login');
   sessionStorage.removeItem('civia-after-login');
+  // La intro se muestra al entrar con la cuenta (no al recargar) mientras la sección carga detrás.
+  import('./intro.js').then(({ playIntro }) => playIntro(session.user)).catch(() => {});
   location.hash = next && !next.includes('login') ? next : '#/';
 }
 
@@ -298,6 +301,64 @@ window.addEventListener('unhandledrejection', (e) => {
   if (e.reason?.status && e.reason.status !== 401) toast(e.reason.message, 'error');
 });
 
+// ------------------------------------------------------------------ actualizaciones al instante
+// Una versión nueva se descarga en segundo plano y aparece el aviso «Actualizar»: al pulsarlo se
+// activa y la página se recarga (los formularios abiertos se guardan antes como borrador).
+let reloading = false;
+function showUpdate(reg) {
+  if ($('.update-banner')) return;
+  const bar = document.createElement('div');
+  bar.className = 'update-banner';
+  bar.setAttribute('role', 'status');
+  bar.innerHTML = `<span class="update-ico" aria-hidden="true">${icon('refresh').s}</span>
+    <div><b>Nueva versión de CIVIA lista</b><span>Actualiza para ver las mejoras. No pierdes lo que estás haciendo.</span></div>
+    <button type="button" class="btn sm ghost" data-later>Después</button>
+    <button type="button" class="btn sm primary" data-update>Actualizar ahora</button>`;
+  document.body.append(bar);
+  bar.querySelector('[data-later]').onclick = () => bar.remove();
+  bar.querySelector('[data-update]').onclick = () => {
+    saveDrafts();
+    reg.waiting?.postMessage({ type: 'skip-waiting' });
+  };
+}
+
+/** Guarda lo escrito en formularios abiertos para recuperarlo tras recargar. */
+function saveDrafts() {
+  try {
+    const drafts = {};
+    document.querySelectorAll('textarea[id], input[id]:not([type=password]):not([type=hidden]):not([type=file])').forEach((i) => {
+      if (i.value && i.closest('form')) drafts[i.id] = i.value;
+    });
+    sessionStorage.setItem('civia-drafts', JSON.stringify({ hash: location.hash, drafts }));
+  } catch { /* sin almacenamiento */ }
+}
+
+/** Tras actualizar, devuelve lo escrito a los campos de la misma sección. */
+export function restoreDrafts(root) {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('civia-drafts') || 'null');
+    if (!saved || saved.hash !== location.hash) return;
+    sessionStorage.removeItem('civia-drafts');
+    Object.entries(saved.drafts).forEach(([id, v]) => { const i = root.querySelector(`#${CSS.escape(id)}`); if (i && !i.value) { i.value = v; i.dispatchEvent(new Event('input', { bubbles: true })); } });
+  } catch { /* nada que restaurar */ }
+}
+
+async function watchUpdates() {
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const track = (w) => w?.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) showUpdate(reg); });
+    if (reg.waiting && navigator.serviceWorker.controller) showUpdate(reg);
+    track(reg.installing);
+    reg.addEventListener('updatefound', () => track(reg.installing));
+    // Solo se recarga al reemplazar una versión anterior (no en la primera visita, cuando el worker toma el control).
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloading) { reloading = true; location.reload(); } });
+    // Busca versiones nuevas al volver a la pestaña y cada 30 minutos.
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+    setInterval(() => reg.update().catch(() => {}), 30 * 60_000);
+  } catch { /* sin service worker: la app funciona igual */ }
+}
+
 // Aviso mientras la API despierta (plan gratuito de Render: tarda unos minutos tras dormir).
 const wakeBanner = document.createElement('div');
 wakeBanner.className = 'wake-banner';
@@ -315,9 +376,7 @@ server.onChange((on) => { wakeBanner.hidden = !on; });
   // Restaurar la sesión con la cookie segura (una sola petición) solo si hubo sesión antes.
   if (hasSessionHint()) await refresh();
   route();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  }
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') watchUpdates();
 })();
 
 export { esc };
