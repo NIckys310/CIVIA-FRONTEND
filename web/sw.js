@@ -5,7 +5,7 @@
    - Nunca se toca la API (/api/): datos y archivos privados siempre van a la red. Los archivos
      disponibles sin conexión los guarda la aplicación aparte (civia-files-v1), no este worker.
    - Una versión nueva espera hasta que la persona pulsa «Actualizar» (no recarga sola). */
-const VERSION = 'civia-1.7.2';
+const VERSION = 'civia-1.7.3';
 const SHELL = [
   '/', '/index.html', '/css/app.css?v=1.7.0', '/js/app.js?v=1.7.0', '/js/api.js', '/js/ui.js', '/js/motion.js', '/js/validate.js',
   '/js/offline.js', '/js/intro.js', '/js/background.js', '/assets/mark-96.png', '/assets/mark-256.png', '/assets/mark-centered.png', '/assets/favicon.png', '/manifest.webmanifest',
