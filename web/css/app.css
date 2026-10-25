@@ -1082,3 +1082,77 @@ img, video, canvas, iframe, table { max-width: 100%; }
   .auth-scene .floor, .auth-scene .roof, .auth-scene .tag { opacity: 1; }
   .auth-scene .lot, .auth-scene .dim-line line { stroke-dashoffset: 0; }
 }
+
+/* ---------------------------------------------------------------- acceso: texto cinético y pestañas */
+/* Letras: suben, se enfocan y se iluminan una tras otra. */
+.kinetic .kw { display: inline-block; white-space: nowrap; }
+.kinetic .kc { display: inline-block; opacity: 0; transform: translateY(0.55em) rotateX(-70deg); filter: blur(6px); transform-origin: 50% 100%;
+  animation: kc-in 0.75s cubic-bezier(.16, 1, .3, 1) both; animation-delay: calc(0.18s + var(--ci) * 0.028s); }
+@keyframes kc-in { 60% { filter: blur(0); } to { opacity: 1; transform: none; filter: none; } }
+.auth-card h1.kinetic, .hero-copy h2.kinetic { perspective: 600px; }
+
+/* Etiqueta dorada: las letras entran abiertas y se cierran, con un destello que la recorre. */
+.eyebrow.kinetic .kc { transform: translateX(-0.4em); filter: blur(3px); animation-name: kc-track; animation-duration: 0.6s; animation-delay: calc(0.05s + var(--ci) * 0.02s); }
+@keyframes kc-track { to { opacity: 1; transform: none; filter: none; } }
+.auth-card > .eyebrow.kinetic, .hero-copy .eyebrow.kinetic { background: linear-gradient(90deg, var(--gold) 0%, var(--gold) 40%, #fff2dc 50%, var(--gold) 60%, var(--gold) 100%); background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: eyebrow-shine 5s ease-in-out 1.4s infinite; }
+.auth-card > .eyebrow.kinetic .kc, .hero-copy .eyebrow.kinetic .kc { background: inherit; background-size: inherit; -webkit-background-clip: text; background-clip: text; color: transparent; }
+@keyframes eyebrow-shine { 0% { background-position: 100% 0; } 40%, 100% { background-position: 0 0; } }
+
+/* Palabra destacada: dorado y acero que fluyen dentro de las letras, con un leve resplandor. */
+.fx-accent { position: relative; font-weight: 400; }
+.fx-accent .kc { background: linear-gradient(100deg, #8e97a6 0%, #eceef2 18%, #f2cf9f 36%, #d6a46c 50%, #f2cf9f 64%, #c8d4ea 82%, #8e97a6 100%);
+  background-size: 900% 100%; background-position: calc(var(--ci) * 7%) 0; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: kc-in 0.75s cubic-bezier(.16, 1, .3, 1) both, accent-flow 6s linear infinite; animation-delay: calc(0.18s + var(--ci) * 0.028s), 0s;
+  filter: drop-shadow(0 0 14px rgba(214, 164, 108, 0.18)); }
+@keyframes accent-flow { to { background-position: calc(var(--ci) * 7% + 100%) 0; } }
+.fx-accent::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0.02em; height: 1.5px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--gold), var(--gold-2), transparent);
+  transform: scaleX(0); transform-origin: left; animation: underline-in 0.9s cubic-bezier(.16, 1, .3, 1) 0.9s both; }
+@keyframes underline-in { to { transform: scaleX(1); } }
+
+/* Subtítulo y textos: aparecen suaves después del título. */
+.auth-card > p.muted { animation: sub-in 0.8s ease 0.55s both; }
+@keyframes sub-in { from { opacity: 0; transform: translateY(6px); filter: blur(3px); } }
+.auth .field label { transition: color var(--dur-2), letter-spacing var(--dur-2); }
+.auth .field:focus-within label { color: var(--gold-2); letter-spacing: 0.02em; }
+
+/* Pestañas Iniciar sesión / Crear cuenta: la píldora viaja con un rebote, se estira al moverse y
+   deja un destello dorado; el texto activo se vuelve dorado y el inactivo se atenúa. */
+.seg { overflow: hidden; isolation: isolate; }
+.seg::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(120px 40px at var(--gx, 25%) 50%, rgba(214, 164, 108, 0.12), transparent 70%); transition: --gx 0.6s; pointer-events: none; }
+.seg.on-right::before { --gx: 75%; }
+@property --gx { syntax: "<percentage>"; inherits: false; initial-value: 25%; }
+.seg-pill { transition: transform 0.55s cubic-bezier(.34, 1.56, .64, 1); background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01)), var(--panel-2);
+  box-shadow: inset 0 0 0 1px rgba(214, 164, 108, 0.35), 0 8px 22px -10px rgba(214, 164, 108, 0.45), 0 6px 16px -8px rgba(0, 0, 0, 0.8); overflow: hidden; }
+.seg-pill b { position: absolute; left: 12%; right: 12%; bottom: 0; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--gold), var(--gold-2), var(--gold), transparent); box-shadow: 0 0 10px var(--gold); }
+.seg-pill::after { content: ""; position: absolute; top: 0; bottom: 0; width: 45%; left: -50%; background: linear-gradient(100deg, transparent, rgba(255, 242, 220, 0.22), transparent); }
+.seg-pill.moving { animation: pill-stretch 0.55s cubic-bezier(.16, 1, .3, 1); }
+.seg-pill.moving::after { animation: pill-sheen 0.7s ease 0.15s; }
+@keyframes pill-stretch { 0% { scale: 1 1; } 35% { scale: 1.12 0.9; } 70% { scale: 0.97 1.03; } 100% { scale: 1 1; } }
+@keyframes pill-sheen { to { left: 110%; } }
+.seg a span { display: inline-block; transition: transform 0.45s cubic-bezier(.34, 1.56, .64, 1), color 0.3s, opacity 0.3s, letter-spacing 0.3s; }
+.seg a:not(.active) span { opacity: 0.62; transform: scale(0.96); }
+.seg a:not(.active):hover span { opacity: 1; transform: translateY(-1px); color: var(--gold-2); }
+.seg a.active span { background: linear-gradient(180deg, #fff, #f2cf9f); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: 0.01em; animation: tab-pop 0.5s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes tab-pop { 0% { transform: scale(0.9); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
+
+/* El contenido del formulario entra desde el lado hacia el que se cambió. */
+.auth-card.from-right > :not(.seg) { animation: from-right 0.6s cubic-bezier(.16, 1, .3, 1) both; }
+.auth-card.from-left > :not(.seg) { animation: from-left 0.6s cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes from-right { from { opacity: 0; transform: translateX(34px); filter: blur(4px); } }
+@keyframes from-left { from { opacity: 0; transform: translateX(-34px); filter: blur(4px); } }
+.auth-card.from-right > .eyebrow.kinetic, .auth-card.from-left > .eyebrow.kinetic { animation: eyebrow-shine 5s ease-in-out 1.4s infinite; }
+
+/* Botón principal: el texto se ilumina al pasar el cursor. */
+.auth .btn.primary.lg { letter-spacing: 0.01em; transition: letter-spacing 0.3s, filter 0.2s, box-shadow 0.25s; }
+.auth .btn.primary.lg:hover { letter-spacing: 0.04em; }
+.auth .btn.primary.lg svg { transition: transform 0.3s cubic-bezier(.34, 1.56, .64, 1); }
+.auth .btn.primary.lg:hover svg { transform: translateX(4px); }
+.auth .switch a, .auth .forgot { background: linear-gradient(currentColor, currentColor) left bottom / 0 1px no-repeat; transition: background-size 0.35s ease; }
+.auth .switch a:hover, .auth .forgot:hover { background-size: 100% 1px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kinetic .kc, .fx-accent .kc, .fx-accent::after, .auth-card > p.muted, .seg-pill.moving, .seg-pill.moving::after, .seg a.active span,
+  .auth-card.from-right > *, .auth-card.from-left > *, .auth-card > .eyebrow.kinetic { animation: none !important; opacity: 1; transform: none; filter: none; }
+  .fx-accent::after { transform: scaleX(1); }
+}
