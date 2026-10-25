@@ -258,3 +258,42 @@ export function typewriterPlaceholder(input, phrases, { type = 45, hold = 2200 }
   })();
   return () => { stopped = true; };
 }
+
+/**
+ * Indicador que se desliza entre las pestañas de un `.tabs` (la activa lleva la clase `active`).
+ * Se reubica al cambiar la pestaña activa, el tamaño o las fuentes.
+ */
+export function slideTabs(tabs) {
+  if (!tabs || tabs.dataset.ink) return;
+  tabs.dataset.ink = '1';
+  tabs.classList.add('has-ink');
+  const ink = document.createElement('span');
+  ink.className = 'tab-ink';
+  ink.setAttribute('aria-hidden', 'true');
+  tabs.prepend(ink);
+  let first = true;
+  const place = () => {
+    const a = tabs.querySelector('.active');
+    if (!a) { ink.style.opacity = '0'; return; }
+    const r = a.getBoundingClientRect();
+    const p = tabs.getBoundingClientRect();
+    if (first) { ink.style.transition = 'none'; requestAnimationFrame(() => requestAnimationFrame(() => { ink.style.transition = ''; })); first = false; }
+    ink.style.opacity = '1';
+    ink.style.width = `${r.width}px`;
+    ink.style.height = `${r.height}px`;
+    ink.style.transform = `translate(${r.left - p.left + tabs.scrollLeft}px, ${r.top - p.top}px)`;
+  };
+  new MutationObserver(place).observe(tabs, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  if ('ResizeObserver' in window) new ResizeObserver(place).observe(tabs);
+  document.fonts?.ready.then(place);
+  place();
+}
+
+/** Mejoras comunes de cada sección: título con letras animadas, pestañas con indicador, cifras que cuentan. */
+export function enhanceView(root) {
+  if (!root) return;
+  root.querySelectorAll('.page-head h1, .page-head .eyebrow').forEach((n) => { if (!n.querySelector('*:not(span)')) kinetic(n); });
+  root.querySelectorAll('.page-head').forEach((h) => h.classList.add('ph2'));
+  root.querySelectorAll('.tabs').forEach(slideTabs);
+  root.querySelectorAll('.usage-val').forEach((v) => countUp(v, 1100));
+}

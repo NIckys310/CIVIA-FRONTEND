@@ -2,6 +2,7 @@
 import { api } from '../api.js';
 import { $, busy, coverArt, fmtNum, formData, html, icon, modal, mount, on, relTime, STATUS_LABEL, toast } from '../ui.js';
 import { fieldRules, formatNumber, live, liveThousands, parseNumber } from '../validate.js';
+import { tilt } from '../motion.js';
 
 export const PROJECT_TYPES = ['Vivienda unifamiliar', 'Vivienda multifamiliar', 'Oficinas', 'Comercio', 'Uso mixto', 'Educación', 'Salud',
   'Hotelería', 'Industrial', 'Cultural', 'Espacio público', 'Interiorismo', 'Remodelación', 'Otro'];
@@ -155,7 +156,7 @@ export async function render(el, { query }) {
       .filter((p) => !status || p.status === status)
       .filter((p) => !filter || `${p.name} ${p.location || ''} ${p.type || ''} ${p.code || ''}`.toLowerCase().includes(filter));
     mount($('#list', el), list.length ? html`${list.map((p) => html`
-      <a class="card hover project-card" href="#/projects/${p.id}">
+      <a class="card project-card pc2 pc3" href="#/projects/${p.id}">
         <div class="cover">${coverArt(p.id, p.coverColor)}
           <div style="position:absolute;top:14px;left:16px" class="row"><span class="pill gold">${STATUS_LABEL[p.status] || p.status}</span>${p.role !== 'OWNER' ? html`<span class="pill">${p.role === 'EDITOR' ? 'Editor' : 'Lector'}</span>` : ''}</div>
           <div style="position:absolute;top:14px;right:16px" class="mono faint">${p.code || ''}</div>
@@ -171,6 +172,7 @@ export async function render(el, { query }) {
             <span>${icon('clock')}${relTime(p.updatedAt)}</span>
           </div>
         </div>
+        <span class="pc2-glare" aria-hidden="true"></span>
       </a>`)}`
       : html`<div class="card" style="grid-column:1/-1"><div class="empty">${icon('projects', 'big')}<h3>${projects.length ? 'Sin resultados' : 'Aún no tienes proyectos'}</h3>
         <p>${projects.length ? 'Prueba con otro filtro.' : 'Crea un proyecto para subir planos, modelos 3D y fotos, y recibir recomendaciones de CIVIA.'}</p>
@@ -182,7 +184,7 @@ export async function render(el, { query }) {
     <div><div class="eyebrow gold">Estudio</div><h1>Proyectos</h1><p class="muted">${projects.length} proyecto${projects.length === 1 ? '' : 's'} en los que participas.</p></div>
     <button class="btn primary" data-new>${icon('plus')} Nuevo proyecto</button>
   </div>
-  <div class="row wrap" style="margin-bottom:18px">
+  <div class="row wrap filter-bar" style="margin-bottom:18px">
     <label class="search" style="max-width:360px">${icon('search')}<input id="filter" placeholder="Filtrar por nombre, ubicación o código"></label>
     <div class="tabs" id="status-tabs">
       <button class="active" data-status="">Todos</button>
@@ -191,12 +193,13 @@ export async function render(el, { query }) {
   </div>
   <div class="grid g3" id="list"></div>`);
 
-  draw();
-  $('#filter', el).addEventListener('input', (e) => { filter = e.target.value.toLowerCase().trim(); draw(); });
+  const redraw = () => { draw(); tilt($('#list', el), '.pc3', 5); };
+  redraw();
+  $('#filter', el).addEventListener('input', (e) => { filter = e.target.value.toLowerCase().trim(); redraw(); });
   on(el, 'click', '[data-status]', (e, b) => {
     status = b.dataset.status;
     el.querySelectorAll('[data-status]').forEach((x) => x.classList.toggle('active', x === b));
-    draw();
+    redraw();
   });
   on(el, 'click', '[data-new]', openCreate);
   if (query?.has('new')) openCreate();

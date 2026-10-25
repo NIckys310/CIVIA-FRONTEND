@@ -39,6 +39,11 @@ export async function render(el, { projectId }) {
         <canvas class="shot" id="shot" hidden></canvas>
         <canvas class="overlay" id="overlay" hidden></canvas>
         <div class="reticle" id="reticle"></div>
+        <div class="vf" aria-hidden="true">
+          <span class="vf-c tl"></span><span class="vf-c tr"></span><span class="vf-c bl"></span><span class="vf-c br"></span>
+          <span class="vf-grid"></span><span class="vf-scan"></span>
+          <span class="vf-tag"><i></i><b id="vf-mode">Foto de obra</b></span>
+        </div>
         <div class="controls" id="cam-controls">
           <label class="btn icon glass-panel" title="Elegir de la galería" aria-label="Elegir imagen">${icon('image')}<input type="file" accept="image/*" id="gallery" hidden></label>
           <button class="shutter" id="shutter" aria-label="Tomar foto"></button>
@@ -91,7 +96,17 @@ export async function render(el, { projectId }) {
     const box = $('#cam-error', el);
     box.hidden = false;
     $('#reticle', el).hidden = true;
-    mount(box, html`${icon('camera', 'big')}<p>${msg}</p>`);
+    box.style.pointerEvents = 'auto';
+    mount(box, html`<div class="cam-denied">
+      <span class="cam-denied-ico" aria-hidden="true"><i></i><i></i>${icon('camera')}</span>
+      <h3>Cámara no disponible</h3>
+      <p>${msg}</p>
+      <div class="row wrap" style="justify-content:center;gap:10px">
+        <button type="button" class="btn primary" id="cam-pick">${icon('image')} Elegir de la galería</button>
+        <button type="button" class="btn glass-btn" id="cam-retry">${icon('refresh')} Reintentar</button>
+      </div></div>`);
+    $('#cam-pick', box).onclick = () => $('#gallery', el).click();
+    $('#cam-retry', box).onclick = () => { box.hidden = true; $('#reticle', el).hidden = false; start(); };
   }
 
   function showCaptured(source, w, h) {
@@ -298,6 +313,9 @@ export async function render(el, { projectId }) {
   on(el, 'click', '[data-mode]', (e, b) => {
     mode = b.dataset.mode;
     el.querySelectorAll('[data-mode]').forEach((x) => x.classList.toggle('active', x === b));
+    const tag = $('#vf-mode', el);
+    if (tag) tag.textContent = b.textContent.trim();
+    $('#cam', el).dataset.mode = mode;
     overlay.hidden = mode !== 'measure' || shot.hidden;
     side();
   });

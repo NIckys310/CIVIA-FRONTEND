@@ -1,7 +1,7 @@
 // CIVIA AI — arranque, sesión, enrutador y estructura de la aplicación.
 import { api, hasSessionHint, logout, refresh, server, session, wakeServer } from './api.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
-import { autoStagger, circularReveal, elevateOnScroll, enableRipples, enableSpotlight, kinetic, leave, moveNavPill } from './motion.js';
+import { autoStagger, circularReveal, elevateOnScroll, enableRipples, enableSpotlight, enhanceView, kinetic, leave, moveNavPill } from './motion.js';
 
 const NAV = [
   { section: 'Estudio' },
@@ -253,6 +253,7 @@ async function route() {
     if (target === $('#view') || match.isPublic) {
       cleanup = await mod.render(target, match.params, { refreshNotifications, aiStatus: () => aiStatus });
       restoreDrafts(target);
+      enhanceView(target);
     }
   } catch (e) {
     console.error(e);

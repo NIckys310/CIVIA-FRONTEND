@@ -1,7 +1,7 @@
 // CIVIA Copilot: chat con la IA de ingeniería civil y arquitectura, en tiempo real, con contexto de
 // proyecto y archivos adjuntos.
 import { api, downloadPath, stream } from '../api.js';
-import { haptic } from '../motion.js';
+import { haptic, kinetic } from '../motion.js';
 import { $, confirmDialog, debounce, html, icon, markdown, modal, mount, on, relTime, toast } from '../ui.js';
 
 export async function render(el, { conversationId, query }) {
@@ -38,7 +38,7 @@ export async function render(el, { conversationId, query }) {
       </div>
       <div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversación con CIVIA Copilot"></div>
       <button class="btn icon sm to-latest" id="to-latest" hidden aria-label="Ir al último mensaje">${icon('download')}</button>
-      <div class="composer">
+      <div class="composer composer2">
         <div class="chips" id="attached" style="margin-bottom:8px"></div>
         <form class="box" id="composer">
           <button type="button" class="btn ghost icon sm" id="attach" title="Adjuntar planos del proyecto" aria-label="Adjuntar">${icon('clip')}</button>
@@ -186,13 +186,18 @@ export async function render(el, { conversationId, query }) {
   const FALLBACK = ['¿Qué le falta a mi proyecto?', '¿Cómo predimensiono una viga de concreto?', 'Explícame la licuación de suelos',
     'Caudal de diseño con el método racional', 'Diferencias entre pavimento rígido y flexible'];
   const welcome = () => {
-    mount(box, html`<div class="empty welcome" style="margin:auto">
-      <img src="/assets/mark-256.png" alt="" width="120" height="120">
-      <h2 class="display" style="font-size:30px">¿En qué <span class="chrome-text">trabajamos</span> hoy?</h2>
+    mount(box, html`<div class="empty welcome welcome2" style="margin:auto">
+      <div class="wl-logo" aria-hidden="true">
+        <span class="wl-ring r1"></span><span class="wl-ring r2"></span><span class="wl-ring r3"></span>
+        ${Array.from({ length: 8 }, (_, i) => html`<span class="wl-dot" style="--d:${i}"></span>`)}
+        <img src="/assets/mark-256.png" alt="" width="120" height="120">
+      </div>
+      <h2 class="display wl-title" style="font-size:30px">¿En qué <span class="fx-accent">trabajamos</span> hoy?</h2>
       <p>Pregunta lo que necesites: estructuras, geotecnia, hidráulica, vías, presupuestos, normativa o cualquier otro tema. Elige un proyecto para que CIVIA conozca su contexto y te diga qué le falta.</p>
       <div class="chips" id="suggested" style="justify-content:center">
         ${FALLBACK.map((s) => html`<button class="chip" data-suggest="${s}">${s}</button>`)}
       </div></div>`);
+    kinetic($('.wl-title', box));
     // Sugerencias según el estado del proyecto elegido (si la API no responde, quedan las generales).
     api.get(`/ai/suggestions${projectId ? `?projectId=${projectId}` : ''}`).then((list) => {
       const target = $('#suggested', box);
