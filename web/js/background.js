@@ -17,27 +17,27 @@ function skylineSvg() {
   let bodies = '';
   let windows = '';
   while (x < W) {
-    const w = 46 + Math.round(rnd() * 90);
-    const h = 60 + Math.round(rnd() * 230);
+    const w = 30 + Math.round(rnd() * 56);
+    const h = 40 + Math.round(rnd() * (rnd() > 0.85 ? 220 : 130));
     const top = base - h;
     const roof = rnd();
-    const tall = h > 190;
+    const tall = h > 150;
     bodies += `<path d="M${x} ${base}V${top}${roof > 0.7 ? `L${x + w / 2} ${top - 18}L${x + w} ${top}` : `H${x + w}`}V${base}"/>`;
     if (tall && rnd() > 0.4) bodies += `<path d="M${x + w / 2} ${top - (roof > 0.7 ? 18 : 0)}v-${16 + Math.round(rnd() * 22)}"/>`;
-    const cols = Math.max(1, Math.floor((w - 12) / 16));
-    const rows = Math.floor((h - 20) / 22);
+    const cols = Math.max(1, Math.floor((w - 10) / 12));
+    const rows = Math.floor((h - 16) / 16);
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         if (rnd() > 0.32) continue;
         const d = (rnd() * 9).toFixed(2);
         const dur = (4 + rnd() * 6).toFixed(2);
-        windows += `<rect x="${x + 8 + c * 16}" y="${top + 12 + r * 22}" width="7" height="10" style="animation-delay:${d}s;animation-duration:${dur}s"/>`;
+        windows += `<rect x="${x + 6 + c * 12}" y="${top + 10 + r * 16}" width="5" height="7" style="animation-delay:${d}s;animation-duration:${dur}s"/>`;
       }
     }
-    x += w + 8 + Math.round(rnd() * 22);
+    x += w + 6 + Math.round(rnd() * 18);
   }
   return `<svg class="bg-city" viewBox="0 0 ${W} ${base + 10}" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-    <defs><linearGradient id="bgc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fb2d3" stop-opacity=".22"/><stop offset="1" stop-color="#d6a46c" stop-opacity=".1"/></linearGradient></defs>
+    <defs><linearGradient id="bgc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fb2d3" stop-opacity=".09"/><stop offset="1" stop-color="#d6a46c" stop-opacity=".03"/></linearGradient></defs>
     <g class="bg-city-body">${bodies}</g><g class="bg-city-win">${windows}</g>
     <line class="bg-city-ground" x1="0" y1="${base}" x2="${W}" y2="${base}"/>
   </svg>`;
