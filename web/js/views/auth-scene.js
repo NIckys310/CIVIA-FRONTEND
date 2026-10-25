@@ -71,7 +71,7 @@ function car(from, to, dur, begin, color, alongX) {
     .replaceAll(/points="([^"]+)"/g, (m, p) => `points="${p.split(' ').map((q) => { const [x, y] = q.split(',').map(Number); return `${f(x - CX)},${f(y - CY)}`; }).join(' ')}"`);
   return `<g class="car" style="--car:${color}">${body}
     <circle class="car-light" r="1.6" cx="${alongX ? 7 : -7}" cy="2"/>
-    <animateMotion dur="${dur}s" begin="${begin}s" repeatCount="indefinite" path="M${f(ax)} ${f(ay)} L${f(bx)} ${f(by)}"/></g>`;
+    <animateMotion dur="${dur}s" begin="-${begin}s" repeatCount="indefinite" path="M${f(ax)} ${f(ay)} L${f(bx)} ${f(by)}"/></g>`;
 }
 
 export function districtScene() {
