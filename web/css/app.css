@@ -811,3 +811,11 @@ html { scroll-behavior: smooth; }
 .caps { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--warn); animation: enter var(--dur-2) var(--ease-out); }
 .caps[hidden] { display: none; }
 .caps svg { width: 13px; height: 13px; }
+
+/* Aviso mientras la API despierta (plan gratuito de Render). */
+.wake-banner { position: fixed; z-index: 90; top: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; width: max-content; max-width: calc(100vw - 32px); padding: 10px 16px; border-radius: 13px; background: var(--panel-2); border: 1px solid var(--line-2); box-shadow: var(--shadow); color: var(--text); font-size: 13.5px; line-height: 1.4; animation: wake-in var(--dur-2) var(--ease-out); }
+@keyframes wake-in { from { opacity: 0; transform: translate(-50%, -8px); } }
+.wake-banner[hidden] { display: none; }
+.wake-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 0 var(--gold-glow); animation: wake-pulse 1.4s ease-in-out infinite; }
+@keyframes wake-pulse { 0%, 100% { box-shadow: 0 0 0 0 var(--gold-glow); } 50% { box-shadow: 0 0 0 7px transparent; } }
+@media (prefers-reduced-motion: reduce) { .wake-banner, .wake-dot { animation: none; } }
