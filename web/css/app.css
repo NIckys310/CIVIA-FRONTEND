@@ -823,7 +823,6 @@ html { scroll-behavior: smooth; }
 /* ================================================================ Interfaz 2.0 */
 
 /* ---- Distribución: todo centrado y sin desbordes laterales, en PC y en móvil */
-html, body { max-width: 100%; overflow-x: hidden; }
 .shell, .main, .content { min-width: 0; }
 .main { overflow-x: clip; }
 .content { max-width: 1560px; padding: 30px clamp(16px, 3vw, 44px) 80px; }
@@ -878,7 +877,7 @@ img, video, canvas, iframe, table { max-width: 100%; }
 .hero-glow { position: absolute; top: -160px; left: -120px; width: 620px; height: 620px; border-radius: 50%; background: radial-gradient(circle, rgba(214, 164, 108, 0.16), transparent 62%); animation: drift 20s ease-in-out infinite; }
 .hero-brand { position: absolute; top: 34px; left: 40px; z-index: 2; display: flex; align-items: center; gap: 12px; font: 300 22px/1 var(--display); letter-spacing: -0.01em; }
 .auth .hero .hero-brand img { position: static; inset: auto; width: 40px; height: 40px; object-fit: contain; opacity: 1; mix-blend-mode: screen; animation: none; }
-.auth-blueprint { position: absolute; left: 50%; top: 46%; width: min(78%, 620px); transform: translate(-50%, -50%); color: var(--text); animation: float 8s ease-in-out infinite; }
+.auth-blueprint { position: absolute; left: 50%; top: 46%; width: min(78%, 620px); height: auto; aspect-ratio: 1; transform: translate(-50%, -50%); color: var(--text); animation: float 8s ease-in-out infinite; }
 .auth-blueprint .bp path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw-line 2.8s cubic-bezier(0.65, 0, 0.35, 1) both; }
 .auth-blueprint .b2 path { animation-delay: 0.6s; }
 .auth-blueprint .b3 { animation: fade 1.6s ease 1.4s both; }
