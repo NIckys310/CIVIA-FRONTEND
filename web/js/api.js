@@ -43,15 +43,86 @@ async function parse(res) {
   return data;
 }
 
+// ------------------------------------------------------------------ servidor dormido
+// El plan gratuito de Render apaga la API tras 15 min sin tráfico y despertarla tarda varios
+// minutos. Mientras tanto Vercel responde 502/503/504 (o corta la conexión a los 120 s).
+// En vez de mostrar un error o cerrar la sesión, se espera a que la API responda y se reintenta.
+
+const GATEWAY = new Set([502, 503, 504]);
+const WAKE_LIMIT_MS = 6 * 60_000;
+const WAKE_POLL_MS = 4000;
+const WAKE_NOTICE_MS = 2500;
+const serverListeners = new Set();
+let waking = null;
+
+export const server = {
+  waking: false,
+  onChange(fn) { serverListeners.add(fn); return () => serverListeners.delete(fn); },
+};
+
+function setWaking(value) {
+  if (server.waking === value) return;
+  server.waking = value;
+  serverListeners.forEach((fn) => fn(value));
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Espera a que la API responda (una sola espera compartida). Devuelve false si no despierta. */
+export function wakeServer() {
+  waking ||= (async () => {
+    // El aviso solo aparece si la espera es real; con la API despierta responde en menos de 1 s.
+    const notice = setTimeout(() => setWaking(true), WAKE_NOTICE_MS);
+    const deadline = Date.now() + WAKE_LIMIT_MS;
+    try {
+      while (Date.now() < deadline) {
+        try {
+          const r = await fetch(`${BASE}/status`, { cache: 'no-store', credentials: 'same-origin' });
+          if (r.ok) return true;
+        } catch { /* sin respuesta todavía */ }
+        setWaking(true);
+        await sleep(WAKE_POLL_MS);
+      }
+      return false;
+    } finally {
+      clearTimeout(notice);
+      setWaking(false);
+    }
+  })().finally(() => { waking = null; });
+  return waking;
+}
+
+/**
+ * Ejecuta la petición y, si la API está dormida (502/503/504 o sin conexión), espera a que
+ * despierte y la repite una vez. Las cancelaciones (AbortController) se respetan.
+ */
+async function send(run, signal) {
+  let res = null;
+  try {
+    res = await run();
+  } catch (e) {
+    if (e?.name === 'AbortError' || signal?.aborted) throw e;
+  }
+  if (res && !GATEWAY.has(res.status)) return res;
+  if (await wakeServer()) return run();
+  if (res) return res;
+  throw new ApiError('Sin conexión con el servidor. Intenta de nuevo en un momento.', 0);
+}
+
 /** Renueva el access token con la cookie de refresco (una sola petición aunque la pidan varios). */
 export function refresh() {
-  refreshing ||= fetch(`${BASE}/auth/token`, {
+  refreshing ||= send(() => fetch(`${BASE}/auth/token`, {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ grant_type: 'refresh_token' }),
-  }).then(parse).then((r) => { setSession(r.access_token, r.user); return true; })
-    .catch(() => { setSession(null, null); return false; })
+  })).then(parse).then((r) => { setSession(r.access_token, r.user); return true; })
+    .catch((e) => {
+      // Solo una respuesta de la API que rechaza la cookie cierra la sesión. Un fallo de red o de
+      // la pasarela (API dormida) no debe borrarla: al despertar, la sesión sigue siendo válida.
+      if (e instanceof ApiError && e.status >= 400 && e.status < 500) setSession(null, null);
+      return false;
+    })
     .finally(() => { refreshing = null; });
   return refreshing;
 }
@@ -67,7 +138,7 @@ export async function request(method, path, { body, signal, blob = false } = {})
     },
     body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
   });
-  let res = await run();
+  let res = await send(run, signal);
   if (res.status === 401 && !path.startsWith('/auth/token') && (await refresh())) {
     res = await run();
   }
@@ -107,7 +178,7 @@ export async function stream(path, body, { onEvent, signal } = {}) {
     },
     body: JSON.stringify(body ?? {}),
   });
-  let res = await run();
+  let res = await send(run, signal);
   if (res.status === 401 && (await refresh())) res = await run();
   if (!res.ok || !res.body) return parse(res);
 
@@ -193,6 +264,8 @@ export function upload(path, file, fields = {}, onProgress) {
   });
   return send().catch(async (e) => {
     if (e.status === 401 && (await refresh())) return send();
+    // API dormida (pasarela o sin conexión): se espera a que despierte y se sube de nuevo.
+    if ((e.status === 0 || GATEWAY.has(e.status)) && (await wakeServer())) return send();
     throw e;
   });
 }
