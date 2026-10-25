@@ -9,7 +9,7 @@
 
 const S = 15.5;
 const CX = 300;
-const CY = 318;
+const CY = 352;
 const P = (x, y, z = 0) => [CX + (x - y) * 0.866 * S, CY + (x + y) * 0.5 * S - z * S];
 const f = (n) => n.toFixed(1);
 const pts = (...a) => a.map((p) => `${f(p[0])},${f(p[1])}`).join(' ');
@@ -105,17 +105,17 @@ export function districtScene() {
     frame += `<line class="brace" x1="${f(P(-6.5, -3, z0)[0])}" y1="${f(P(-6.5, -3, z0)[1])}" x2="${f(P(-4.75, -3, z1)[0])}" y2="${f(P(-4.75, -3, z1)[1])}"/>`;
     frame += `<line class="brace" x1="${f(P(-3, -4.75, z0)[0])}" y1="${f(P(-3, -4.75, z0)[1])}" x2="${f(P(-3, -6.5, z1)[0])}" y2="${f(P(-3, -6.5, z1)[1])}"/>`;
   }
-  const mb = P(-7.3, -7.3, 0); const mt = P(-7.3, -7.3, 15.5);
+  const mb = P(-7.3, -7.3, 0); const mt = P(-7.3, -7.3, 12.2);
   const crane = `<g class="crane2">
     <line class="mast" x1="${f(mb[0])}" y1="${f(mb[1])}" x2="${f(mt[0])}" y2="${f(mt[1])}"/>
-    ${Array.from({ length: 12 }, (_, k) => { const a = P(-7.3, -7.3, k * 1.29); const b = P(-7.3, -7.3, (k + 1) * 1.29); return `<line class="lat" x1="${f(a[0] - 3)}" y1="${f(a[1])}" x2="${f(b[0] + 3)}" y2="${f(b[1])}"/>`; }).join('')}
+    ${Array.from({ length: 12 }, (_, k) => { const a = P(-7.3, -7.3, k * 1.016); const b = P(-7.3, -7.3, (k + 1) * 1.016); return `<line class="lat" x1="${f(a[0] - 3)}" y1="${f(a[1])}" x2="${f(b[0] + 3)}" y2="${f(b[1])}"/>`; }).join('')}
     <g class="jib2" style="transform-origin:${f(mt[0])}px ${f(mt[1])}px">
-      <line class="mast" x1="${f(mt[0] - 40)}" y1="${f(mt[1])}" x2="${f(mt[0] + 175)}" y2="${f(mt[1])}"/>
-      <line class="lat" x1="${f(mt[0])}" y1="${f(mt[1] - 20)}" x2="${f(mt[0] + 175)}" y2="${f(mt[1])}"/>
+      <line class="mast" x1="${f(mt[0] - 40)}" y1="${f(mt[1])}" x2="${f(mt[0] + 150)}" y2="${f(mt[1])}"/>
+      <line class="lat" x1="${f(mt[0])}" y1="${f(mt[1] - 20)}" x2="${f(mt[0] + 150)}" y2="${f(mt[1])}"/>
       <line class="lat" x1="${f(mt[0])}" y1="${f(mt[1] - 20)}" x2="${f(mt[0] - 40)}" y2="${f(mt[1])}"/>
       <rect class="cw" x="${f(mt[0] - 40)}" y="${f(mt[1])}" width="14" height="8"/>
-      <g class="hook2"><line class="cable" x1="${f(mt[0] + 120)}" y1="${f(mt[1])}" x2="${f(mt[0] + 120)}" y2="${f(mt[1] + 64)}"/>
-        <rect class="load" x="${f(mt[0] + 106)}" y="${f(mt[1] + 64)}" width="28" height="6"/>
+      <g class="hook2"><line class="cable" x1="${f(mt[0] + 104)}" y1="${f(mt[1])}" x2="${f(mt[0] + 104)}" y2="${f(mt[1] + 64)}"/>
+        <rect class="load" x="${f(mt[0] + 90)}" y="${f(mt[1] + 64)}" width="28" height="6"/>
         <animateTransform attributeName="transform" type="translate" values="0 0; 0 26; 0 26; 0 0; 0 0" keyTimes="0;0.35;0.5;0.85;1" dur="9s" repeatCount="indefinite"/></g>
     </g>
     <circle class="beacon" cx="${f(mt[0])}" cy="${f(mt[1] - 22)}" r="2.2"/>
@@ -189,7 +189,7 @@ export function districtScene() {
     ${tag(d1[0] + 22, (d0[1] + d1[1]) / 2 + 7, '14 PISOS · 41,2 m', 6.5)}
     ${tag(P(-3, -6.5, levels * fz)[0] - 120, P(-3, -6.5, levels * fz)[1] - 18, 'OBRA · ESTRUCTURA N11', 2.5, 'steel')}
     ${tag(P(-1.6, 7.2)[0] - 150, P(-1.6, 7.2)[1] + 18, 'ROTONDA · Ø 4,8 m', 9.5)}
-    <g class="compass" transform="translate(548 70)"><circle r="17"/><path class="n" d="M0 -14 L5 4 L0 1 L-5 4 Z"/><text y="-21" text-anchor="middle">N</text></g>
+    <g class="compass" transform="translate(560 40)"><circle r="17"/><path class="n" d="M0 -14 L5 4 L0 1 L-5 4 Z"/><text y="-21" text-anchor="middle">N</text></g>
     <g class="scalebar" transform="translate(470 560)"><rect x="0" y="0" width="20" height="4"/><rect class="w" x="20" y="0" width="20" height="4"/><rect x="40" y="0" width="20" height="4"/><rect class="w" x="60" y="0" width="20" height="4"/><text x="0" y="16">0</text><text x="72" y="16">20 m</text></g>`;
 
   return `<svg class="auth-scene district" viewBox="0 0 600 600" aria-hidden="true">
