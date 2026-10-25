@@ -1402,10 +1402,27 @@ img, video, canvas, iframe, table { max-width: 100%; }
   color: #fff; background: rgba(7, 8, 11, 0.6); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(8px); }
 .vf-tag i { width: 7px; height: 7px; border-radius: 50%; background: #e57a6e; box-shadow: 0 0 8px #e57a6e; animation: dot-pulse 1.2s ease-in-out infinite; }
 .camera .controls { z-index: 3; }
-.shutter { position: relative; transition: transform 0.3s var(--ease-spring); box-shadow: 0 0 0 6px rgba(214, 164, 108, 0.15), 0 10px 30px -10px rgba(0, 0, 0, 0.8); }
-.shutter::before { content: ""; position: absolute; inset: -9px; border-radius: 50%; border: 1px solid rgba(214, 164, 108, 0.5); animation: orb-ring 2.6s ease-out infinite; }
+/* Obturador: el círculo interior queda centrado de forma absoluta (no depende del relleno del botón
+   ni de los elementos que se le agregan); un arco dorado gira alrededor, un halo respira y al
+   disparar el centro se hunde, destella y la imagen hace un flash. */
+.shutter { position: relative; flex: none; width: 74px; height: 74px; padding: 0; margin: 0; border: 0; border-radius: 50%; background: transparent; display: block; cursor: pointer;
+  transition: transform 0.35s var(--ease-spring); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8); -webkit-tap-highlight-color: transparent; }
+.shutter::before { content: ""; position: absolute; inset: 0; border-radius: 50%; padding: 3px;
+  background: conic-gradient(from var(--angle, 0deg), rgba(255, 255, 255, 0.9) 0 62%, var(--gold) 72%, var(--gold-2) 80%, rgba(255, 255, 255, 0.9) 92%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: orbit 3.2s linear infinite; }
+.shutter::after { content: ""; position: absolute; top: 50%; left: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, #eceef2 60%, #d9dee6); box-shadow: inset 0 -2px 6px rgba(0, 0, 0, 0.18), 0 0 0 0 rgba(214, 164, 108, 0.6);
+  transition: transform 0.18s ease, background 0.2s; animation: shutter-breathe 2.4s ease-in-out infinite; }
+@keyframes shutter-breathe { 0%, 100% { box-shadow: inset 0 -2px 6px rgba(0, 0, 0, 0.18), 0 0 0 0 rgba(214, 164, 108, 0.55); } 50% { box-shadow: inset 0 -2px 6px rgba(0, 0, 0, 0.18), 0 0 0 9px rgba(214, 164, 108, 0); } }
+.shutter > * { display: none; }
 .shutter:hover { transform: scale(1.06); }
-.shutter:hover::after { background: var(--gold-2); }
+.shutter:hover::after { background: radial-gradient(circle at 35% 30%, #fff8ec, var(--gold-2) 70%, var(--gold)); }
+.shutter:active::after, .shutter.snap::after { transform: scale(0.82); background: radial-gradient(circle at 35% 30%, #fff8ec, var(--gold-2) 60%, var(--gold)); }
+.shutter.snap { animation: shutter-pop 0.45s var(--ease-spring); }
+@keyframes shutter-pop { 40% { transform: scale(0.92); } 100% { transform: scale(1); } }
+.camera .controls { align-items: center; }
+.camera .flash { position: absolute; inset: 0; z-index: 5; background: #fff; pointer-events: none; animation: cam-flash 0.45s ease-out forwards; }
+@keyframes cam-flash { from { opacity: 0.85; } to { opacity: 0; } }
 #cam-error:not([hidden]) ~ .vf, #cam-error:not([hidden]) + .vf { display: none; }
 .camera:has(#cam-error:not([hidden])) .vf { display: none; }
 .cam-denied { position: relative; z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 420px; text-align: center; color: var(--text-2); }
@@ -1478,7 +1495,7 @@ img, video, canvas, iframe, table { max-width: 100%; }
 .usage .usage-val { background: linear-gradient(180deg, #fff 20%, #b9c0cc); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ph2::after, .ph2 p.muted, .ph2 > :last-child, .content .card, .tab-ink, .vf-c, .vf-scan, .vf-tag i, .shutter::before, .cam-denied-ico *, .wl-logo *, .welcome2 *, .composer2 .box::before,
+  .ph2::after, .ph2 p.muted, .ph2 > :last-child, .content .card, .tab-ink, .vf-c, .vf-scan, .vf-tag i, .shutter::before, .shutter::after, .cam-denied-ico *, .wl-logo *, .welcome2 *, .composer2 .box::before,
   .msg, #list .pc3, .ph-band::after, .avatar-ring::before, .avatar-ring i, .mfa-shield svg, .ph2 .eyebrow.kinetic .kc { animation: none !important; }
   .ph2::after { transform: scaleX(1); }
 }

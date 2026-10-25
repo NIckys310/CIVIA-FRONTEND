@@ -136,7 +136,19 @@ export async function render(el, { projectId }) {
     shot.toBlob((b) => { captured = b; }, 'image/jpeg', 0.92);
   }
 
-  $('#shutter', el).onclick = () => { haptic([8, 40, 8]); capture(); };
+  $('#shutter', el).onclick = (e) => {
+    haptic([8, 40, 8]);
+    const b = e.currentTarget;
+    b.classList.remove('snap'); void b.offsetWidth; b.classList.add('snap');
+    setTimeout(() => b.classList.remove('snap'), 450);
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const flash = document.createElement('div');
+      flash.className = 'flash';
+      $('#cam', el).append(flash);
+      flash.addEventListener('animationend', () => flash.remove(), { once: true });
+    }
+    capture();
+  };
   $('#flip', el).onclick = () => { facing = facing === 'environment' ? 'user' : 'environment'; start(); };
   $('#gallery', el).addEventListener('change', (e) => {
     const file = e.target.files[0];
