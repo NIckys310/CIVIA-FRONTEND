@@ -1,5 +1,5 @@
 // CIVIA AI — arranque, sesión, enrutador y estructura de la aplicación.
-import { api, hasSessionHint, logout, refresh, session } from './api.js';
+import { api, hasSessionHint, logout, refresh, server, session, wakeServer } from './api.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
 import { autoStagger, circularReveal, elevateOnScroll, enableRipples, enableSpotlight, leave, moveNavPill } from './motion.js';
 
@@ -298,7 +298,20 @@ window.addEventListener('unhandledrejection', (e) => {
   if (e.reason?.status && e.reason.status !== 401) toast(e.reason.message, 'error');
 });
 
+// Aviso mientras la API despierta (plan gratuito de Render: tarda unos minutos tras dormir).
+const wakeBanner = document.createElement('div');
+wakeBanner.className = 'wake-banner';
+wakeBanner.setAttribute('role', 'status');
+wakeBanner.setAttribute('aria-live', 'polite');
+wakeBanner.hidden = true;
+wakeBanner.innerHTML = '<span class="wake-dot" aria-hidden="true"></span>'
+  + '<span>Despertando el servidor de CIVIA… puede tardar hasta 3 minutos. Tu sesión y tus datos están a salvo.</span>';
+document.body.append(wakeBanner);
+server.onChange((on) => { wakeBanner.hidden = !on; });
+
 (async () => {
+  // Despertar la API apenas abre la página: mientras la persona escribe, el servidor ya arranca.
+  wakeServer();
   // Restaurar la sesión con la cookie segura (una sola petición) solo si hubo sesión antes.
   if (hasSessionHint()) await refresh();
   route();
