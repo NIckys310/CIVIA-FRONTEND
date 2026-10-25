@@ -1094,10 +1094,11 @@ img, video, canvas, iframe, table { max-width: 100%; }
 /* Etiqueta dorada: las letras entran abiertas y se cierran, con un destello que la recorre. */
 .eyebrow.kinetic .kc { transform: translateX(-0.4em); filter: blur(3px); animation-name: kc-track; animation-duration: 0.6s; animation-delay: calc(0.05s + var(--ci) * 0.02s); }
 @keyframes kc-track { to { opacity: 1; transform: none; filter: none; } }
-.auth-card > .eyebrow.kinetic, .hero-copy .eyebrow.kinetic { background: linear-gradient(90deg, var(--gold) 0%, var(--gold) 40%, #fff2dc 50%, var(--gold) 60%, var(--gold) 100%); background-size: 300% 100%;
-  -webkit-background-clip: text; background-clip: text; color: transparent; animation: eyebrow-shine 5s ease-in-out 1.4s infinite; }
-.auth-card > .eyebrow.kinetic .kc, .hero-copy .eyebrow.kinetic .kc { background: inherit; background-size: inherit; -webkit-background-clip: text; background-clip: text; color: transparent; }
-@keyframes eyebrow-shine { 0% { background-position: 100% 0; } 40%, 100% { background-position: 0 0; } }
+.auth-card > .eyebrow.kinetic .kc, .hero-copy .eyebrow.kinetic .kc {
+  background: linear-gradient(90deg, var(--gold) 0%, var(--gold) 42%, #fff2dc 50%, var(--gold) 58%, var(--gold) 100%);
+  background-size: 1200% 100%; background-position: calc(100% - var(--ci) * 4%) 0; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: kc-track 0.6s cubic-bezier(.16, 1, .3, 1) both, eyebrow-shine 5s ease-in-out infinite; animation-delay: calc(0.05s + var(--ci) * 0.02s), 1.4s; }
+@keyframes eyebrow-shine { 0% { background-position: calc(100% - var(--ci) * 4%) 0; } 40%, 100% { background-position: calc(0% - var(--ci) * 4%) 0; } }
 
 /* Palabra destacada: dorado y acero que fluyen dentro de las letras, con un leve resplandor. */
 .fx-accent { position: relative; font-weight: 400; }
@@ -1141,7 +1142,6 @@ img, video, canvas, iframe, table { max-width: 100%; }
 .auth-card.from-left > :not(.seg) { animation: from-left 0.6s cubic-bezier(.16, 1, .3, 1) both; }
 @keyframes from-right { from { opacity: 0; transform: translateX(34px); filter: blur(4px); } }
 @keyframes from-left { from { opacity: 0; transform: translateX(-34px); filter: blur(4px); } }
-.auth-card.from-right > .eyebrow.kinetic, .auth-card.from-left > .eyebrow.kinetic { animation: eyebrow-shine 5s ease-in-out 1.4s infinite; }
 
 /* Botón principal: el texto se ilumina al pasar el cursor. */
 .auth .btn.primary.lg { letter-spacing: 0.01em; transition: letter-spacing 0.3s, filter 0.2s, box-shadow 0.25s; }
@@ -1153,6 +1153,6 @@ img, video, canvas, iframe, table { max-width: 100%; }
 
 @media (prefers-reduced-motion: reduce) {
   .kinetic .kc, .fx-accent .kc, .fx-accent::after, .auth-card > p.muted, .seg-pill.moving, .seg-pill.moving::after, .seg a.active span,
-  .auth-card.from-right > *, .auth-card.from-left > *, .auth-card > .eyebrow.kinetic { animation: none !important; opacity: 1; transform: none; filter: none; }
+  .auth-card.from-right > *, .auth-card.from-left > *, .eyebrow.kinetic .kc { animation: none !important; opacity: 1; transform: none; filter: none; }
   .fx-accent::after { transform: scaleX(1); }
 }
