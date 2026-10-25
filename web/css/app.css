@@ -1627,3 +1627,132 @@ img, video, canvas, iframe, table { max-width: 100%; }
 .sp-dust::after { content: ""; position: absolute; top: 100vh; left: 0; width: 2px; height: 2px; border-radius: 50%; box-shadow: inherit; }
 #splash .sp-grid { mask-image: radial-gradient(circle at 50% 45%, #000 12%, transparent 58%); }
 @media (max-width: 640px) { .sp-city { height: 22vh; } .sp-au { filter: blur(60px); } }
+
+/* ================================================================ acceso: distrito urbano (día y noche, 28 s) */
+.auth .hero { --cycle: 28s; }
+/* Cielo: atardecer dorado → noche azul → amanecer. */
+.auth .hero::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(10, 16, 32, 0.0), rgba(10, 16, 32, 0.0)); animation: sky-night var(--cycle) ease-in-out infinite; }
+@keyframes sky-night { 0%, 30% { background: linear-gradient(180deg, rgba(214, 164, 108, 0.14), rgba(91, 117, 166, 0.06) 60%, transparent); }
+  50%, 75% { background: linear-gradient(180deg, rgba(8, 14, 34, 0.75), rgba(20, 30, 60, 0.35) 60%, transparent); }
+  100% { background: linear-gradient(180deg, rgba(214, 164, 108, 0.14), rgba(91, 117, 166, 0.06) 60%, transparent); } }
+.auth-scene.district { position: absolute; width: min(92%, 680px); top: 46%; }
+.district { overflow: visible; }
+
+/* Terreno y calles. */
+.district .pl-top { fill: rgba(28, 33, 44, 0.92); stroke: rgba(214, 164, 108, 0.35); stroke-width: 0.8; }
+.district .pl-l { fill: #11151d; } .district .pl-r { fill: #0b0e14; }
+.district .street { fill: rgba(9, 11, 16, 0.9); }
+.district .lane { stroke: rgba(242, 207, 159, 0.55); stroke-width: 0.9; stroke-dasharray: 5 6; animation: lane-run 1.6s linear infinite; }
+@keyframes lane-run { to { stroke-dashoffset: -11; } }
+.district .corner { fill: #d6a46c; }
+.district .plot { fill: none; stroke: #d6a46c; stroke-width: 1.2; stroke-dasharray: 1; stroke-dashoffset: 1; animation: plot-draw var(--cycle, 14s) cubic-bezier(.65, 0, .35, 1) infinite; animation-duration: 14s; }
+@keyframes plot-draw { 0% { stroke-dashoffset: 1; } 10%, 90% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+.district .pad.fl, .district .pad.fr, .district .pad.ft { fill: rgba(60, 66, 80, 0.7); stroke: rgba(214, 164, 108, 0.25); stroke-width: 0.5; }
+.district .plaza.ft { fill: rgba(70, 72, 66, 0.55); } .district .plaza.fl, .district .plaza.fr { fill: #1a1d24; }
+.district .fountain { fill: rgba(159, 178, 211, 0.35); stroke: rgba(200, 212, 234, 0.6); stroke-width: 0.8; animation: fountain 3s ease-in-out infinite; }
+@keyframes fountain { 50% { fill: rgba(159, 178, 211, 0.55); } }
+
+/* Torre de vidrio. */
+.district .glass.fl { fill: url(#ds-glass-l); stroke: rgba(200, 212, 234, 0.35); stroke-width: 0.5; }
+.district .glass.fr { fill: url(#ds-glass-r); stroke: rgba(200, 212, 234, 0.25); stroke-width: 0.5; }
+.district .slab-line { fill: none; stroke: #e9e6df; stroke-width: 1.1; stroke-opacity: 0.8; }
+.district .roof.fl, .district .roof.fr { fill: #2a2f39; stroke: rgba(242, 207, 159, 0.4); stroke-width: 0.6; }
+.district .roof.ft { fill: #e9e6df; fill-opacity: 0.85; stroke: #f2cf9f; stroke-width: 0.6; }
+.district .mast-thin { stroke: #d6a46c; stroke-width: 1.2; }
+.district .beacon { fill: #e57a6e; filter: drop-shadow(0 0 4px #e57a6e); animation: beacon 1.4s steps(2) infinite; }
+@keyframes beacon { 50% { opacity: 0.15; } }
+.district .sheen { fill: url(#ds-sheen); mix-blend-mode: screen; animation: sheen-move 7s ease-in-out infinite; }
+@keyframes sheen-move { 0%, 20% { transform: translateX(0); opacity: 0; } 30% { opacity: 1; } 60% { transform: translateX(52px) translateY(30px); opacity: 0.9; } 70%, 100% { transform: translateX(60px) translateY(34px); opacity: 0; } }
+
+/* Ventanas: encendidas sobre todo de noche. */
+.district .win { fill: #ffe2bb; opacity: 0.1; animation: win-night var(--cycle) ease-in-out infinite, win-light 4.2s ease-in-out infinite; }
+.district .win.r { fill: #f2cf9f; }
+@keyframes win-night { 0%, 30%, 100% { fill-opacity: 0.4; } 50%, 75% { fill-opacity: 1; } }
+
+/* Obra: estructura de acero y losas. */
+.district .beam { fill: none; stroke: rgba(214, 164, 108, 0.75); stroke-width: 1; }
+.district .slab { fill: rgba(233, 230, 223, 0.08); stroke: rgba(233, 230, 223, 0.35); stroke-width: 0.6; }
+.district .col { stroke: rgba(242, 207, 159, 0.85); stroke-width: 1.4; }
+.district .brace { stroke: rgba(159, 178, 211, 0.4); stroke-width: 0.6; }
+.district .mast { stroke: #d6a46c; stroke-width: 2; stroke-linecap: round; }
+.district .lat { stroke: rgba(214, 164, 108, 0.55); stroke-width: 0.7; }
+.district .cw { fill: rgba(214, 164, 108, 0.75); }
+.district .cable { stroke: rgba(236, 238, 242, 0.55); stroke-width: 0.7; }
+.district .load { fill: #9fb2d3; }
+.district .jib2 { transform-box: view-box; animation: jib2 18s ease-in-out infinite; }
+@keyframes jib2 { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(16deg); } }
+
+/* Rotonda con cúpula. */
+.district .cyl { fill: url(#ds-cyl); stroke: rgba(200, 212, 234, 0.4); stroke-width: 0.6; }
+.district .rib { stroke: rgba(255, 242, 220, 0.18); stroke-width: 0.8; }
+.district .cyl-top { fill: #2a2f39; stroke: rgba(242, 207, 159, 0.5); stroke-width: 0.6; }
+.district .dome { fill: url(#ds-dome); stroke: rgba(242, 207, 159, 0.6); stroke-width: 0.6; }
+.district .dome-hl { fill: none; stroke: rgba(255, 255, 255, 0.5); stroke-width: 1.2; stroke-linecap: round; }
+
+/* Edificio bajo, techo verde y paneles solares. */
+.district .low.fl { fill: rgba(200, 196, 186, 0.35); stroke: rgba(233, 230, 223, 0.4); stroke-width: 0.5; }
+.district .low.fr { fill: rgba(120, 118, 112, 0.4); stroke: rgba(233, 230, 223, 0.3); stroke-width: 0.5; }
+.district .low.ft { fill: rgba(233, 230, 223, 0.55); }
+.district .green { fill: rgba(124, 198, 161, 0.55); stroke: rgba(124, 198, 161, 0.8); stroke-width: 0.5; }
+.district .solar { fill: #1d3a63; stroke: #9fb2d3; stroke-width: 0.5; animation: solar 5s ease-in-out infinite; }
+@keyframes solar { 50% { fill: #2f5a96; } }
+
+/* Árboles que se mecen. */
+.district .tree-shadow { fill: rgba(0, 0, 0, 0.35); }
+.district .trunk { stroke: #6e5238; stroke-width: 1.6; }
+.district .crown circle { fill: rgba(92, 160, 120, 0.85); }
+.district .crown .hl { fill: rgba(170, 220, 180, 0.45); }
+.district .crown { animation: sway 4s ease-in-out infinite; animation-delay: var(--sw, 0s); }
+@keyframes sway { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+
+/* Autos y alumbrado. */
+.district .car .fl, .district .car .fr, .district .car .ft { stroke: rgba(0, 0, 0, 0.3); stroke-width: 0.3; }
+.district .car .ft { fill: var(--car); } .district .car .fl { fill: color-mix(in srgb, var(--car) 70%, #000); } .district .car .fr { fill: color-mix(in srgb, var(--car) 50%, #000); }
+.district .car-light { fill: #fff2dc; filter: drop-shadow(0 0 3px #ffe2bb); animation: night-on var(--cycle) ease-in-out infinite; }
+.district .lamp line { stroke: #8e97a6; stroke-width: 1; }
+.district .lamp-bulb { fill: #fff2dc; }
+.district .lamp-glow { fill: rgba(255, 226, 187, 0.35); filter: blur(3px); animation: night-on var(--cycle) ease-in-out infinite; }
+.district .lamp-pool { fill: rgba(255, 226, 187, 0.18); animation: night-on var(--cycle) ease-in-out infinite; }
+@keyframes night-on { 0%, 32%, 100% { opacity: 0.08; } 48%, 78% { opacity: 1; } }
+
+/* Cielo: sol, luna y nubes. */
+.district .sky-sun { animation: sun-cycle var(--cycle) ease-in-out infinite; transform-box: view-box; }
+.district .sun-core { fill: #ffe8c7; }
+@keyframes sun-cycle { 0%, 28% { opacity: 1; transform: translateY(0); } 45%, 80% { opacity: 0; transform: translateY(60px); } 100% { opacity: 1; transform: translateY(0); } }
+.district .sky-moon circle { fill: #e9edf6; } .district .sky-moon .moon-cut { fill: #0d1220; }
+.district .sky-moon { opacity: 0; animation: moon-cycle var(--cycle) ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(200, 212, 234, 0.6)); }
+@keyframes moon-cycle { 0%, 35% { opacity: 0; transform: translateY(30px); } 50%, 75% { opacity: 1; transform: none; } 90%, 100% { opacity: 0; } }
+.district .cloud ellipse { fill: rgba(200, 212, 234, 0.12); }
+.district .cloud.c1 { animation: cloud 42s linear infinite; } .district .cloud.c2 { animation: cloud 58s linear -20s infinite; }
+@keyframes cloud { from { transform: translate(-80px, 130px); } to { transform: translate(700px, 110px); } }
+.district .cloud.c2 { transform: translate(-80px, 60px); }
+
+/* Dron de topografía. */
+.district .drone .body { fill: #e9e6df; } .district .drone .arm { stroke: #8e97a6; stroke-width: 1.2; }
+.district .drone .rotor { fill: rgba(200, 212, 234, 0.45); animation: rotor 0.15s linear infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes rotor { 50% { transform: scaleX(0.3); } }
+.district .drone .led { fill: #7cc6a1; animation: beacon 0.9s steps(2) infinite; }
+.district .drone .scan { fill: url(#ds-scan); animation: scan-pulse 2s ease-in-out infinite; }
+@keyframes scan-pulse { 50% { opacity: 0.4; } }
+
+/* Planos: cota, norte y escala. */
+.district .dim2 line { stroke: rgba(236, 238, 242, 0.55); stroke-width: 0.8; }
+.district .dim2 line:first-child { stroke-dasharray: 1; stroke-dashoffset: 1; animation: dim-draw 14s ease infinite; }
+.district .tag.steel rect { stroke: rgba(159, 178, 211, 0.55); } .district .tag.steel text { fill: #c8d4ea; }
+.district .compass circle { fill: rgba(7, 8, 11, 0.6); stroke: rgba(214, 164, 108, 0.5); }
+.district .compass .n { fill: #d6a46c; } .district .compass text { fill: #f2cf9f; font: 600 9px var(--mono); }
+.district .compass { animation: none; }
+.district .scalebar rect { fill: #d6a46c; } .district .scalebar rect.w { fill: rgba(236, 238, 242, 0.25); }
+.district .scalebar text { fill: #8b919c; font: 500 8.5px var(--mono); }
+
+@media (max-width: 960px) {
+  .auth-scene.district { width: min(90vw, 380px); margin: -6px auto -24px; }
+  .district .tag, .district .scalebar, .district .compass { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth .hero::before { animation: none; }
+  .district *, .district { animation: none !important; }
+  .district .floor, .district .sky-moon { opacity: 1; }
+  .district .sky-moon { opacity: 0; }
+}
