@@ -1059,8 +1059,12 @@ img, video, canvas, iframe, table { max-width: 100%; }
   .auth .hero { background: radial-gradient(60% 80% at 50% 30%, rgba(214, 164, 108, 0.14), transparent 70%), var(--bg); }
   .auth .panel { padding: 6px 12px 32px; }
   .auth .auth-card { max-width: 520px; margin: 0 auto; }
-  .viewer .panel { top: auto; right: 0; left: 0; bottom: 0; width: 100%; max-height: 50%; border-radius: 18px 18px 0 0; }
-  .viewer .hud.bl { bottom: calc(50% + 10px); }
+  /* Visor en el teléfono: el modelo ocupa su propio espacio y los controles van debajo. */
+  .viewer { height: min(62vh, 560px); min-height: 360px; }
+  .viewer .hud.tl { top: 10px; left: 10px; right: 10px; justify-content: center; }
+  .viewer .hud.bl { left: 10px; right: 10px; bottom: 10px; padding: 8px 12px !important; gap: 8px 12px !important; justify-content: space-between; }
+  .viewer .hud.bl input[type=range] { flex: 1 1 90px; min-width: 70px; }
+  #v-panel.below { position: static; width: 100%; max-height: none; overflow: visible; margin-top: 14px; padding: 18px; border-radius: var(--radius-lg); }
   .hero-banner { margin-bottom: 14px; }
   .hero-banner-actions, .hero-banner-actions .btn { width: 100%; }
   .hero-banner-actions .btn { justify-content: center; }
@@ -1156,3 +1160,8 @@ img, video, canvas, iframe, table { max-width: 100%; }
   .auth-card.from-right > *, .auth-card.from-left > *, .eyebrow.kinetic .kc { animation: none !important; opacity: 1; transform: none; filter: none; }
   .fx-accent::after { transform: scaleX(1); }
 }
+
+/* Las etiquetas 3D quedan por debajo de los controles del visor. */
+.viewer .label3d { z-index: 1; }
+.viewer .hud, .viewer .panel { z-index: 3; }
+.label3d.floor { opacity: 0.9; }

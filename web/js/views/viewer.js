@@ -26,6 +26,18 @@ export async function render(el, { docId, projectId, massing }) {
     <div class="panel glass-panel" id="v-panel"></div>
   </div>`);
 
+  // Teléfono: el panel de controles va debajo del visor (no encima del modelo).
+  const phone = window.matchMedia('(max-width: 960px)');
+  const placePanel = () => {
+    const panel = $('#v-panel', el);
+    const viewer = $('#viewer', el);
+    if (!panel || !viewer) return;
+    if (phone.matches && panel.parentElement === viewer) { viewer.after(panel); panel.classList.add('below'); }
+    if (!phone.matches && panel.parentElement !== viewer) { viewer.append(panel); panel.classList.remove('below'); }
+  };
+  placePanel();
+  phone.addEventListener('change', placePanel);
+
   const [THREE, { OrbitControls }] = await Promise.all([
     import(THREE_URL), import('/vendor/three/addons/controls/OrbitControls.js'),
   ]);
@@ -37,7 +49,7 @@ export async function render(el, { docId, projectId, massing }) {
   } else {
     await modelMode(THREE, ctx, el, docId);
   }
-  return () => ctx.dispose();
+  return () => { phone.removeEventListener('change', placePanel); ctx.dispose(); };
 }
 
 // ------------------------------------------------------------------ selector
@@ -535,7 +547,8 @@ async function massingMode(THREE, ctx, el, projectId) {
     const every = Math.max(1, Math.ceil(p.floors / 10));
     for (let i = 0; i < p.floors; i++) {
       if (i === 0 || (i + 1) % every === 0 || i === p.floors - 1) {
-        ctx.addLabel(new THREE.Vector3(x + p.footprintWidth / 2 + 0.6, 0.06 + i * fh + fh / 2, z + p.footprintDepth / 2), `N${i + 1}`, 'floor');
+        // Esquina trasera derecha: con la cámara de frente-derecha queda al costado del edificio, no encima.
+        ctx.addLabel(new THREE.Vector3(x + p.footprintWidth / 2 + 0.6, 0.06 + i * fh + fh / 2, z - p.footprintDepth / 2), `N${i + 1}`, 'floor');
       }
     }
     applyClipping(ctx, group);
