@@ -26,7 +26,7 @@ export async function render(el) {
   const pref = u.preferences || {};
 
   mount(el, html`
-  <div class="page-head"><div class="row" style="gap:18px">${avatar(u.fullName, u.avatarColor, 'lg')}
+  <div class="page-head profile-head"><span class="ph-band" aria-hidden="true"></span><div class="row" style="gap:18px"><span class="avatar-ring">${avatar(u.fullName, u.avatarColor, 'lg')}<i aria-hidden="true"></i></span>
     <div><div class="eyebrow gold">${u.organization || 'CIVIA AI'}</div><h1 style="margin-top:8px">${u.fullName}</h1>
     <p class="muted" style="margin-top:4px">${u.email} · miembro desde ${fmtDate(u.createdAt)}</p></div></div></div>
 
@@ -66,7 +66,8 @@ export async function render(el) {
     </div>
 
     <div class="stack lg">
-      <div class="card glow pad">
+      <div class="card glow pad mfa-card ${u.mfaEnabled ? 'on' : ''}">
+        <span class="mfa-shield" aria-hidden="true">${icon('shield')}</span>
         <div class="row between"><div><div class="eyebrow gold">Verificación en dos pasos</div><h3 style="margin-top:8px">${u.mfaEnabled ? 'Activa' : 'Desactivada'}</h3></div>
           <span class="pill ${u.mfaEnabled ? 'ok' : 'warn'}"><span class="dot"></span>${u.mfaEnabled ? 'Protegida' : 'Recomendada'}</span></div>
         <p class="muted" style="font-size:13px;margin:10px 0 16px">Pide un código de tu app de autenticación (Google Authenticator, Authy, 1Password…) al iniciar sesión.</p>
