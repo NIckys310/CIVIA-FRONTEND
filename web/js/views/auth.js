@@ -143,6 +143,45 @@ function architectureScene() {
   </svg>`);
 }
 
+/**
+ * Divide el texto de un título en letras para animarlas una a una (sube, se enfoca y brilla).
+ * Los lectores de pantalla leen el texto completo del atributo aria-label, no las letras sueltas.
+ */
+function kinetic(node) {
+  if (!node || node.dataset.kinetic) return;
+  node.dataset.kinetic = '1';
+  node.setAttribute('aria-label', node.textContent.replace(/\s+/g, ' ').trim());
+  node.classList.add('kinetic');
+  let i = 0;
+  const walk = (parent) => {
+    [...parent.childNodes].forEach((child) => {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const frag = document.createDocumentFragment();
+        // Palabra por palabra (para que no se corten al final de la línea) y letra por letra dentro.
+        child.textContent.split(/(\s+)/).forEach((part) => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { frag.append(' '); return; }
+          const word = document.createElement('span');
+          word.className = 'kw';
+          [...part].forEach((ch) => {
+            const c = document.createElement('span');
+            c.className = 'kc';
+            c.textContent = ch;
+            c.style.setProperty('--ci', i++);
+            word.append(c);
+          });
+          frag.append(word);
+        });
+        child.replaceWith(frag);
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        walk(child);
+      }
+    });
+  };
+  walk(node);
+  node.querySelectorAll('.kc, .kw').forEach((s) => s.setAttribute('aria-hidden', 'true'));
+}
+
 /** Estructura común de las pantallas de acceso: escena de arquitectura y panel con el formulario. */
 function layout(el, panel) {
   mount(el, html`
@@ -154,7 +193,7 @@ function layout(el, panel) {
       ${architectureScene()}
       <div class="hero-copy">
         <div class="eyebrow gold">Arquitectura inteligente</div>
-        <h2 class="display">Del primer trazo a la obra, con un estudio que <span class="chrome-text">piensa contigo</span>.</h2>
+        <h2 class="display">Del primer trazo a la obra, con un estudio que <span class="fx-accent">piensa contigo</span>.</h2>
         <ul class="hero-points">
           <li>${icon('blueprint')}<span>Planos revisados por IA</span></li>
           <li>${icon('cube')}<span>Modelado 3D sin límite de pisos</span></li>
@@ -169,6 +208,9 @@ function layout(el, panel) {
     </section>
     <section class="panel">${panel}</section>
   </div>`);
+
+  // Títulos y etiquetas: las letras entran una a una y la palabra destacada brilla en dorado.
+  el.querySelectorAll('.auth-card h1, .auth-card > .eyebrow, .hero-copy h2, .hero-copy .eyebrow').forEach(kinetic);
 
   // Los campos del formulario entran uno tras otro.
   const form = el.querySelector('.panel form, .panel .auth-card');
@@ -257,14 +299,14 @@ function renderLogin(el, isLogin) {
   const from = lastMode ?? (isLogin ? 'login' : 'register');
   lastMode = isLogin ? 'login' : 'register';
   layout(el, html`
-      <form id="auth-form" class="auth-card" novalidate>
-        <nav class="seg" aria-label="Acceso">
-          <a href="#/login" class="${isLogin ? 'active' : ''}" aria-current="${isLogin ? 'page' : 'false'}">Iniciar sesión</a>
-          <a href="#/register" class="${isLogin ? '' : 'active'}" aria-current="${isLogin ? 'false' : 'page'}">Crear cuenta</a>
-          <i class="seg-pill ${from === 'register' ? 'right' : ''}" aria-hidden="true"></i>
+      <form id="auth-form" class="auth-card ${from !== lastMode ? (isLogin ? 'from-left' : 'from-right') : ''}" novalidate>
+        <nav class="seg ${isLogin ? '' : 'on-right'}" aria-label="Acceso">
+          <a href="#/login" class="${isLogin ? 'active' : ''}" aria-current="${isLogin ? 'page' : 'false'}"><span>Iniciar sesión</span></a>
+          <a href="#/register" class="${isLogin ? '' : 'active'}" aria-current="${isLogin ? 'false' : 'page'}"><span>Crear cuenta</span></a>
+          <i class="seg-pill ${from === 'register' ? 'right' : ''}" aria-hidden="true"><b></b></i>
         </nav>
         <div class="eyebrow gold">${isLogin ? 'Bienvenido(a) de nuevo' : 'Crea tu estudio'}</div>
-        <h1 style="margin:14px 0 8px">${isLogin ? html`Inicia <span class="chrome-text">sesión</span>` : html`Diseña con <span class="chrome-text">inteligencia</span>`}</h1>
+        <h1 style="margin:14px 0 8px">${isLogin ? html`Inicia <span class="fx-accent">sesión</span>` : html`Diseña con <span class="fx-accent">inteligencia</span>`}</h1>
         <p class="muted" style="margin-bottom:28px">${isLogin ? 'Accede a tus proyectos y a CIVIA Copilot.' : 'Tu cuenta queda protegida con Argon2id y sesiones cifradas.'}</p>
         <div class="stack lg">
           ${isLogin ? '' : html`
@@ -295,7 +337,13 @@ function renderLogin(el, isLogin) {
 
   const form = $('#auth-form', el);
   const errorBox = $('#auth-error', el);
-  requestAnimationFrame(() => requestAnimationFrame(() => $('.seg-pill', el)?.classList.toggle('right', !isLogin)));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const pill = $('.seg-pill', el);
+    if (!pill) return;
+    const moving = pill.classList.contains('right') === isLogin;
+    pill.classList.toggle('right', !isLogin);
+    if (moving) { pill.classList.remove('moving'); void pill.offsetWidth; pill.classList.add('moving'); }
+  }));
 
   // Validación en tiempo real de cada campo.
   const fields = [[$('#email', el), wireEmail(el)]];
@@ -358,7 +406,7 @@ function renderForgot(el) {
   layout(el, html`
       <form id="forgot-form" class="auth-card" novalidate>
         <div class="eyebrow gold">Recupera tu cuenta</div>
-        <h1 style="margin:14px 0 8px">¿Olvidaste tu <span class="chrome-text">contraseña</span>?</h1>
+        <h1 style="margin:14px 0 8px">¿Olvidaste tu <span class="fx-accent">contraseña</span>?</h1>
         <p class="muted" style="margin-bottom:28px">Escribe el correo de tu cuenta y te enviaremos un enlace para crear una nueva. El enlace vence en 30 minutos.</p>
         <div class="stack lg" id="forgot-body">
           ${textField('email', 'Correo electrónico', { type: 'email', autocomplete: 'email', ic: 'mail', placeholder: 'tu@correo.com', required: true })}
@@ -409,7 +457,7 @@ function renderReset(el, query) {
     layout(el, html`
       <div class="auth-card">
         <div class="eyebrow gold">Recupera tu cuenta</div>
-        <h1 style="margin:14px 0 8px">Enlace <span class="chrome-text">incompleto</span></h1>
+        <h1 style="margin:14px 0 8px">Enlace <span class="fx-accent">incompleto</span></h1>
         <p class="muted" style="margin-bottom:28px">Abre el enlace completo que te enviamos por correo o solicita uno nuevo.</p>
         <a class="btn primary lg block" href="#/forgot">Solicitar un enlace nuevo ${icon('arrow')}</a>
         <div class="switch"><a href="#/login">Volver a iniciar sesión</a></div>
@@ -420,7 +468,7 @@ function renderReset(el, query) {
   layout(el, html`
       <form id="reset-form" class="auth-card" novalidate>
         <div class="eyebrow gold">Recupera tu cuenta</div>
-        <h1 style="margin:14px 0 8px">Crea una <span class="chrome-text">nueva contraseña</span></h1>
+        <h1 style="margin:14px 0 8px">Crea una <span class="fx-accent">nueva contraseña</span></h1>
         <p class="muted" style="margin-bottom:28px">Al guardarla se cerrarán todas tus sesiones abiertas.</p>
         <div class="stack lg" id="reset-body">
           ${passwordField('password', 'Nueva contraseña', 'new-password', strengthHint())}
