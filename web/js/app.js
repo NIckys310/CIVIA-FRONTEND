@@ -8,7 +8,8 @@ const NAV = [
   { section: 'Estudio' },
   { href: '#/', icon: 'home', label: 'Inicio', match: /^#\/?$/ },
   { href: '#/projects', icon: 'projects', label: 'Proyectos', match: /^#\/projects/ },
-  { href: '#/viewer', icon: 'cube', label: 'Modelado 3D', match: /^#\/(viewer|massing)/ },
+  { href: '#/viewer', icon: 'cube', label: 'Modelado 3D', match: /^#\/(viewer|massing|modeler)/ },
+  { href: '#/calc', icon: 'calc', label: 'Calculadoras', match: /^#\/calc/ },
   { href: '#/camera', icon: 'camera', label: 'Cámara', match: /^#\/camera/ },
   { section: 'Inteligencia' },
   { href: '#/copilot', icon: 'sparkle', label: 'CIVIA Copilot', match: /^#\/copilot/ },
@@ -37,6 +38,8 @@ const ROUTES = [
   [/^\/viewer$/, 'viewer', {}],
   [/^\/viewer\/([\w-]+)$/, 'viewer', (m) => ({ docId: m[1] })],
   [/^\/massing\/([\w-]+)$/, 'viewer', (m) => ({ projectId: m[1], massing: true })],
+  [/^\/modeler(?:\/([\w-]+))?$/, 'modeler', (m) => ({ projectId: m[1] })],
+  [/^\/calc(?:\/([\w-]+))?$/, 'calc', (m) => ({ id: m[1] })],
   [/^\/camera(?:\/([\w-]+))?$/, 'camera', (m) => ({ projectId: m[1] })],
   [/^\/copilot(?:\/([\w-]+))?$/, 'copilot', (m) => ({ conversationId: m[1] })],
   [/^\/library$/, 'library', { view: 'home' }],
@@ -246,6 +249,7 @@ async function route() {
   try {
     const mod = await loadView(match.view);
     clearTimeout(skeleton); // la vista ya puede pintarse: el esqueleto no debe pisarla
+    if (seq !== navSeq) return; // mientras cargaba el módulo se pidió otra sección
     if (target === $('#view') || match.isPublic) {
       cleanup = await mod.render(target, match.params, { refreshNotifications, aiStatus: () => aiStatus });
       restoreDrafts(target);
