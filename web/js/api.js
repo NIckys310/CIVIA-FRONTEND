@@ -307,3 +307,13 @@ export async function downloadPath(path, name) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
+
+/** POST que devuelve un archivo (por ejemplo, una memoria de cálculo en PDF) y lo descarga. */
+export async function downloadPost(path, body, name) {
+  const blob = await request('POST', path, { body, blob: true });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
