@@ -1996,3 +1996,78 @@ img, video, canvas, iframe, table { max-width: 100%; }
 }
 .mobile-nav button::after { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 8px var(--gold); opacity: 0; transform: scale(0.4); transition: transform var(--dur-2) var(--ease-spring), opacity var(--dur-1); }
 .mobile-nav button.active::after { opacity: 1; transform: scale(1); }
+
+/* ---------------------------------------------------------------- segunda capa de movimiento */
+@keyframes icon-draw { 0% { stroke-dashoffset: 1; opacity: 0; } 12% { opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 1; } }
+@keyframes tab-next { from { opacity: 0; transform: translateX(18px); } }
+@keyframes tab-prev { from { opacity: 0; transform: translateX(-18px); } }
+@keyframes cam-flip { 0% { transform: perspective(1200px) rotateY(0); filter: blur(0); } 50% { transform: perspective(1200px) rotateY(88deg); filter: blur(10px); } 100% { transform: perspective(1200px) rotateY(0); filter: blur(0); } }
+@keyframes mode-sweep { from { transform: translateX(-100%); opacity: 1; } 80% { opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+@keyframes qty-flash { 0% { color: var(--gold-2); transform: translateY(-2px); } 100% { transform: none; } }
+@keyframes bell-ring { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 35% { transform: rotate(-11deg); } 55% { transform: rotate(7deg); } 75% { transform: rotate(-4deg); } }
+@keyframes read-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes cover-drift { to { transform: translateY(26px); } }
+@keyframes head-recede { to { opacity: 0.2; transform: translateY(-10px); } }
+@keyframes done-in { from { opacity: 0; transform: scale(0.9); } }
+
+/* Barra de avance entre secciones */
+.route-bar { position: fixed; z-index: 80; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--gold), var(--gold-2)); box-shadow: 0 0 10px var(--gold); transform: scaleX(0); transform-origin: left; opacity: 0; pointer-events: none; }
+.route-bar.run { opacity: 1; transform: scaleX(0.82); transition: transform 1.6s var(--ease-out); }
+.route-bar.end { opacity: 0; transform: scaleX(1); transition: transform 160ms var(--ease-out), opacity 240ms ease 120ms; }
+
+/* Iconos que se trazan como un plano */
+svg.draw :is(path, circle, rect, line, polyline) { stroke-dasharray: 1 1; animation: icon-draw 620ms var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 45ms + 120ms); }
+.reveal:not(.shown) svg.draw :is(path, circle, rect, line, polyline) { animation-play-state: paused; }
+.nav a.active .nav-ico svg :is(path, circle, rect), .mobile-nav a.active svg :is(path, circle, rect), .mobile-nav button.active svg :is(path, circle, rect) { stroke-dasharray: 1 1; animation: icon-draw 460ms var(--ease-out) backwards; }
+
+/* Pestañas de proyecto */
+#tab[data-dir="next"] { animation: tab-next 240ms var(--ease-out); }
+#tab[data-dir="prev"] { animation: tab-prev 240ms var(--ease-out); }
+
+/* Tarjetas y botones */
+.cat-card.tilt:hover { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px); }
+.btn.done { pointer-events: none; }
+.btn.done > * { animation: done-in 200ms var(--ease-out); }
+.done-check { width: 16px; height: 16px; }
+.done-check path { stroke-dasharray: 1 1; animation: icon-draw 340ms var(--ease-out) backwards; }
+@media (hover: hover) and (pointer: fine) {
+  :where(.content, .modal) .btn.primary::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.34), transparent); transform: translateX(-120%); pointer-events: none; }
+  :where(.content, .modal) .btn.primary:hover::after { transform: translateX(300%); transition: transform 620ms var(--ease-out); }
+  .nav a:hover .nav-ico svg { transform: translateX(1px) scale(1.06); }
+  .nav-ico svg { transition: transform 200ms var(--ease-out); }
+}
+
+/* Formularios y diálogos */
+.field > label { transition: color var(--dur-1), transform 180ms var(--ease-out); }
+.field:focus-within > label { transform: translateX(2px); }
+.modal .field { animation: option-in 240ms var(--ease-out) backwards; }
+.modal .field:nth-child(2) { animation-delay: 30ms; } .modal .field:nth-child(3) { animation-delay: 60ms; } .modal .field:nth-child(4) { animation-delay: 90ms; } .modal .field:nth-child(n+5) { animation-delay: 120ms; }
+
+/* Notificaciones pendientes: la campana avisa una sola vez */
+#notif-btn:has(.badge-count:not([hidden])) svg { transform-origin: 50% 12%; animation: bell-ring 800ms ease-in-out 1.4s; }
+.badge-count { animation: check-pop 260ms var(--ease-out); }
+
+/* Fotos y miniaturas */
+.preview img { transition: opacity 320ms ease, filter 320ms ease; }
+.preview img:not(.loaded) { opacity: 0; filter: blur(8px); }
+
+/* Modelador */
+.m-qty-row.changed b { animation: qty-flash 420ms var(--ease-out); }
+
+/* Cámara */
+.camera.flipping video { animation: cam-flip 540ms cubic-bezier(0.77, 0, 0.175, 1); }
+.vf::after { content: ""; position: absolute; inset: 0; opacity: 0; background: linear-gradient(90deg, transparent 30%, color-mix(in srgb, var(--gold) 26%, transparent) 50%, transparent 70%); pointer-events: none; }
+.camera.mode-sweep .vf::after { animation: mode-sweep 600ms cubic-bezier(0.77, 0, 0.175, 1); }
+
+/* Efectos ligados al desplazamiento, donde el navegador los permite */
+@supports (animation-timeline: scroll()) {
+  .content:has(.article)::before { content: ""; position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--gold), var(--gold-2)); transform-origin: left; animation: read-progress linear both; animation-timeline: scroll(root); }
+  [data-project-head] .cover svg { animation: cover-drift linear both; animation-timeline: view(); animation-range: exit 0% exit 100%; }
+  .content > .page-head { animation: head-recede linear both; animation-timeline: view(); animation-range: exit 30% exit 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-bar, .content:has(.article)::before, [data-project-head] .cover svg, .content > .page-head, #tab[data-dir], .modal .field, #notif-btn svg, .m-qty-row.changed b, .camera.flipping video, .camera.mode-sweep .vf::after, .badge-count { animation: none !important; }
+  .preview img:not(.loaded) { opacity: 1; filter: none; }
+  .field:focus-within > label { transform: none; }
+}
