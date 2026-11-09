@@ -90,7 +90,7 @@ function renderShell() {
     <div class="main">
       <header class="topbar">
         <label class="search" for="global-search">${icon('search')}
-          <input id="global-search" placeholder="Busca en la biblioteca o pregunta algo de ingeniería…" autocomplete="off">
+          <input id="global-search" placeholder="${window.innerWidth < 640 ? 'Buscar…' : 'Busca en la biblioteca o pregunta algo de ingeniería…'}" aria-label="Buscar en la biblioteca" autocomplete="off">
           <kbd>/</kbd></label>
         <div class="spacer"></div>
         <button class="btn ghost icon" id="theme-toggle" aria-label="Cambiar tema">${icon(document.documentElement.dataset.theme === 'light' ? 'moon' : 'sun')}</button>

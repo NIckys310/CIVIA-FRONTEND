@@ -282,6 +282,8 @@ export function slideTabs(tabs) {
     ink.style.width = `${r.width}px`;
     ink.style.height = `${r.height}px`;
     ink.style.transform = `translate(${r.left - p.left + tabs.scrollLeft}px, ${r.top - p.top}px)`;
+    // En barras que se desplazan, la pestaña activa queda centrada y nunca cortada.
+    if (tabs.scrollWidth > tabs.clientWidth) tabs.scrollLeft += r.left + r.width / 2 - (p.left + p.width / 2);
   };
   new MutationObserver(place).observe(tabs, { subtree: true, attributes: true, attributeFilter: ['class'] });
   if ('ResizeObserver' in window) new ResizeObserver(place).observe(tabs);
