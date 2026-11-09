@@ -2,7 +2,7 @@
 import { api, hasSessionHint, logout, refresh, server, session, wakeServer } from './api.js';
 import { mountBackground } from './background.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
-import { autoStagger, circularReveal, elevateOnScroll, enableRipples, enableSpotlight, enhanceView, kinetic, leave, moveNavPill } from './motion.js';
+import { autoStagger, circularReveal, dragToDismiss, elevateOnScroll, enableRipples, enableSpotlight, enhanceView, kinetic, leave, moveMobilePill, moveNavPill, resetReveals } from './motion.js';
 
 const NAV = [
   { section: 'Estudio' },
@@ -22,9 +22,12 @@ const MOBILE = [
   { href: '#/', icon: 'home', label: 'Inicio', match: /^#\/?$/ },
   { href: '#/projects', icon: 'projects', label: 'Proyectos', match: /^#\/projects/ },
   { href: '#/camera', icon: 'camera', label: 'Cámara', match: /^#\/camera/ },
+  { href: '#/calc', icon: 'calc', label: 'Cálculos', match: /^#\/calc/ },
   { href: '#/copilot', icon: 'sparkle', label: 'Copilot', match: /^#\/copilot/ },
-  { href: '#/library', icon: 'book', label: 'Biblioteca', match: /^#\/library/ },
 ];
+// Secciones que no caben en la barra: el botón «Más» se marca como activo cuando se está en una de ellas.
+const MORE_MATCH = /^#\/(viewer|massing|modeler|library|profile)/;
+const SECTION_ORDER = ['#/', '#/projects', '#/camera', '#/calc', '#/copilot', '#/viewer', '#/library', '#/profile'];
 
 const ROUTES = [
   [/^\/login$/, 'auth', { mode: 'login' }, true],
@@ -103,7 +106,10 @@ function renderShell() {
   </div>
   <nav class="mobile-nav" aria-label="Navegación móvil">
     ${MOBILE.map((n) => html`<a href="${n.href}" data-nav="${n.match.source}">${icon(n.icon)}<span>${n.label}</span></a>`)}
+    <button type="button" id="nav-more" data-nav="${MORE_MATCH.source}" aria-haspopup="dialog" aria-expanded="false">${icon('menu')}<span>Más</span></button>
   </nav>`);
+
+  $('#nav-more').onclick = toggleSheet;
 
   $('#logout').onclick = async () => { await logout(); location.hash = '#/login'; };
   $('#theme-toggle').onclick = () => {
@@ -179,6 +185,7 @@ async function toggleNotifications() {
     ${n.items.length ? n.items.map((x) => html`<div class="notif ${x.read ? '' : 'unread'}" data-id="${x.id}" data-link="${x.link || ''}">
         <i></i><div><b>${x.title}</b><p>${x.body}</p><div class="hint" style="margin-top:4px">${relTime(x.createdAt)}</div></div></div>`)
       : html`<div class="empty">${icon('bell', 'big')}<p>No tienes notificaciones.</p></div>`}`);
+  drawer.querySelectorAll('.notif').forEach((n, i) => n.style.setProperty('--i', Math.min(i, 8)));
   on(drawer, 'click', '.notif', async (e, el) => {
     api.post(`/notifications/${el.dataset.id}/read`).catch(() => {});
     if (el.dataset.link?.startsWith('#/')) location.hash = el.dataset.link;
@@ -190,11 +197,52 @@ document.addEventListener('mousedown', (e) => {
   if (drawer && !drawer.contains(e.target) && !e.target.closest('#notif-btn')) closeDrawer();
 });
 
+// ------------------------------------------------------------------ menú completo en el teléfono
+let sheet = null;
+function closeSheet() {
+  if (!sheet) return;
+  const { panel, back } = sheet;
+  sheet = null;
+  panel.classList.remove('open');
+  panel.classList.add('closing');
+  back.classList.remove('open');
+  $('#nav-more')?.setAttribute('aria-expanded', 'false');
+  $('#nav-more')?.classList.remove('open');
+  setTimeout(() => { panel.remove(); back.remove(); }, 220);
+}
+function toggleSheet() {
+  if (sheet) { closeSheet(); return; }
+  const current = location.hash || '#/';
+  const back = document.createElement('div');
+  back.className = 'nav-sheet-back';
+  const panel = document.createElement('div');
+  panel.className = 'nav-sheet';
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-modal', 'true');
+  panel.setAttribute('aria-label', 'Todas las secciones');
+  mount(panel, html`<div class="nav-sheet-grip" aria-hidden="true"></div>
+    <div class="eyebrow gold nav-sheet-title">Todas las secciones</div>
+    <div class="nav-sheet-grid">${NAV.filter((n) => n.href).map((n, i) => html`<a class="nav-tile ${n.match.test(current) ? 'active' : ''}" href="${n.href}" style="--i:${i}"><span class="nav-tile-ico">${icon(n.icon)}</span><span>${n.label}</span></a>`)}</div>`);
+  document.body.append(back, panel);
+  void panel.offsetWidth; // el estado inicial debe pintarse para que la transición arranque
+  panel.classList.add('open');
+  back.classList.add('open');
+  sheet = { panel, back };
+  $('#nav-more').setAttribute('aria-expanded', 'true');
+  $('#nav-more').classList.add('open');
+  back.onclick = closeSheet;
+  on(panel, 'click', '.nav-tile', closeSheet);
+  dragToDismiss(panel, $('.nav-sheet-grip', panel), closeSheet);
+  $('.nav-tile', panel).focus({ preventScroll: true });
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
+
 // ------------------------------------------------------------------ enrutador
 const viewModules = {};
 const loadView = (name) => (viewModules[name] ||= import(`./views/${name}.js`));
 
 let navSeq = 0;
+let lastSection = -1;
 
 async function route() {
   const seq = ++navSeq;
@@ -222,6 +270,7 @@ async function route() {
   if (typeof cleanup === 'function') { try { cleanup(); } catch { /* vista ya desmontada */ } }
   cleanup = null;
   if (drawer) { drawer.remove(); drawer = null; }
+  closeSheet();
 
   let target;
   if (match.isPublic) {
@@ -237,6 +286,12 @@ async function route() {
     target.classList.remove('leaving');
     $$('[data-nav]').forEach((a) => a.classList.toggle('active', new RegExp(a.dataset.nav).test(hash)));
     moveNavPill($('.sidebar .nav'));
+    moveMobilePill($('.mobile-nav'));
+    resetReveals();
+    // En el teléfono la sección entra desde el lado hacia el que se avanza en el menú.
+    const section = SECTION_ORDER.findIndex((s) => (s === '#/' ? /^#\/?$/.test(hash) : hash.startsWith(s)));
+    target.dataset.dir = section < 0 || lastSection < 0 || section === lastSection ? '' : section > lastSection ? 'next' : 'prev';
+    lastSection = section;
     target.style.animation = 'none';
     void target.offsetWidth;
     target.style.animation = '';
