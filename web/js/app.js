@@ -2,7 +2,7 @@
 import { api, hasSessionHint, logout, refresh, server, session, wakeServer } from './api.js';
 import { mountBackground } from './background.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
-import { autoStagger, circularReveal, dragToDismiss, drawIcons, elevateOnScroll, enableImageFade, enableNavHaptics, enableRipples, enableSpotlight, enhanceView, kinetic, leave, moveMobilePill, moveNavPill, prepareNavIcons, resetReveals, routeBarDone, routeBarStart } from './motion.js';
+import { autoStagger, circularReveal, dragToDismiss, drawIcons, elevateOnScroll, enableImageFade, enableNavHaptics, enableRipples, enableSpotlight, enhanceView, kinetic, leave, moveMobilePill, moveNavPill, navGlide, prepareNavIcons, resetReveals, routeBarDone, routeBarStart } from './motion.js';
 
 const NAV = [
   { section: 'Estudio' },
@@ -111,6 +111,7 @@ function renderShell() {
 
   $('#nav-more').onclick = toggleSheet;
   prepareNavIcons();
+  navGlide($('.sidebar .nav'));
 
   $('#logout').onclick = async () => { await logout(); location.hash = '#/login'; };
   $('#theme-toggle').onclick = () => {
@@ -226,6 +227,7 @@ function toggleSheet() {
     <div class="nav-sheet-grid">${NAV.filter((n) => n.href).map((n, i) => html`<a class="nav-tile ${n.match.test(current) ? 'active' : ''}" href="${n.href}" style="--i:${i}"><span class="nav-tile-ico">${icon(n.icon)}</span><span>${n.label}</span></a>`)}</div>`);
   document.body.append(back, panel);
   drawIcons(panel);
+  kinetic($('.nav-sheet-title', panel));
   void panel.offsetWidth; // el estado inicial debe pintarse para que la transición arranque
   panel.classList.add('open');
   back.classList.add('open');
@@ -235,7 +237,8 @@ function toggleSheet() {
   back.onclick = closeSheet;
   on(panel, 'click', '.nav-tile', closeSheet);
   dragToDismiss(panel, $('.nav-sheet-grip', panel), closeSheet);
-  $('.nav-tile', panel).focus({ preventScroll: true });
+  panel.tabIndex = -1; // el foco va al panel: en un mosaico parecería una segunda opción activa
+  panel.focus({ preventScroll: true });
 }
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
 
