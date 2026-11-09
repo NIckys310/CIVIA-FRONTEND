@@ -157,6 +157,28 @@ export function moveNavPill(nav) {
   place(nav, pill, true);
 }
 
+/** Resalte que se desliza entre las opciones del menú lateral al pasar el cursor. */
+export function navGlide(nav) {
+  if (!nav || nav.querySelector('.nav-glide') || reducedMotion() || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  const glide = document.createElement('span');
+  glide.className = 'nav-glide';
+  glide.setAttribute('aria-hidden', 'true');
+  nav.prepend(glide);
+  let visible = false;
+  nav.addEventListener('pointerover', (e) => {
+    const link = e.target.closest('a');
+    if (!link) return;
+    const box = link.getBoundingClientRect();
+    // La primera vez aparece en su sitio; después se desliza entre opciones.
+    if (!visible) { glide.style.transition = 'opacity 140ms ease'; requestAnimationFrame(() => requestAnimationFrame(() => { glide.style.transition = ''; })); }
+    glide.style.height = `${box.height}px`;
+    glide.style.transform = `translateY(${box.top - nav.getBoundingClientRect().top}px)`;
+    glide.style.opacity = link.classList.contains('active') ? '0' : '1';
+    visible = true;
+  });
+  nav.addEventListener('pointerleave', () => { glide.style.opacity = '0'; visible = false; });
+}
+
 /** Indicador que se desliza entre las opciones de la barra del teléfono. */
 export function moveMobilePill(nav) {
   if (!nav) return;
@@ -168,7 +190,14 @@ export function moveMobilePill(nav) {
     const p = nav.getBoundingClientRect();
     pill.style.opacity = '1';
     pill.style.width = `${r.width}px`;
-    pill.style.transform = `translateX(${r.left - p.left - nav.clientLeft}px)`;
+    const x = Math.round(r.left - p.left - nav.clientLeft);
+    if (pill.dataset.x && pill.dataset.x !== String(x) && !reducedMotion()) {
+      pill.classList.remove('moving');
+      void pill.offsetWidth;
+      pill.classList.add('moving');
+    }
+    pill.dataset.x = String(x);
+    pill.style.transform = `translateX(${x}px)`;
   };
   if (!pill) {
     pill = document.createElement('span');
@@ -419,10 +448,38 @@ export function slideTabs(tabs) {
   place();
 }
 
+/** La última palabra del título va en dorado, igual que en los títulos que ya la traen destacada. */
+function accentLastWord(h1) {
+  if (h1.dataset.kinetic || h1.children.length) return;
+  const text = h1.textContent.trim();
+  const cut = text.lastIndexOf(' ');
+  if (cut < 0) return;
+  const accent = document.createElement('span');
+  accent.className = 'chrome-text';
+  accent.textContent = text.slice(cut + 1);
+  h1.textContent = text.slice(0, cut + 1);
+  h1.append(accent);
+}
+
+/** La línea de cota bajo el título mide exactamente lo que mide el texto. */
+function measureTitles(root) {
+  const measure = () => root.querySelectorAll('.page-head:not(.profile-head)').forEach((head) => {
+    const h1 = head.querySelector('h1');
+    if (!h1) return;
+    const range = document.createRange();
+    range.selectNodeContents(h1);
+    head.style.setProperty('--title-w', `${Math.ceil(range.getBoundingClientRect().width)}px`);
+  });
+  measure();
+  document.fonts?.ready.then(measure);
+}
+
 /** Mejoras comunes de cada sección: título con letras animadas, pestañas con indicador, cifras que cuentan. */
 export function enhanceView(root) {
   if (!root) return;
-  root.querySelectorAll('.page-head h1, .page-head .eyebrow').forEach((n) => { if (!n.querySelector('*:not(span)')) kinetic(n); });
+  root.querySelectorAll('.page-head h1:not(#v-title)').forEach(accentLastWord);
+  root.querySelectorAll('.content h1:not(.sr-only), .page-head .eyebrow').forEach((n) => { if (!n.querySelector('*:not(span)')) kinetic(n); });
+  measureTitles(root);
   root.querySelectorAll('.page-head').forEach((h) => h.classList.add('ph2'));
   root.querySelectorAll('.tabs').forEach(slideTabs);
   root.querySelectorAll('.usage-val').forEach((v) => countUp(v, 1100));
