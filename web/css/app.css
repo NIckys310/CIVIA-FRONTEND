@@ -2071,3 +2071,71 @@ svg.draw :is(path, circle, rect, line, polyline) { stroke-dasharray: 1 1; animat
   .preview img:not(.loaded) { opacity: 1; filter: none; }
   .field:focus-within > label { transform: none; }
 }
+
+/* ---------------------------------------------------------------- títulos de sección */
+@keyframes title-rise { to { transform: none; } }
+@keyframes title-shine { from { background-position: calc(100% - var(--ci) * 4%) 0; } to { background-position: calc(0% - var(--ci) * 4%) 0; } }
+@keyframes cota-draw { to { clip-path: inset(0 0 0 0); } }
+@keyframes tick-in { from { transform: scaleX(0); } }
+
+.content h1 { font-weight: 300; line-height: 1.05; letter-spacing: -0.032em; text-wrap: balance; }
+.content .page-head h1:not([style*="font-size"]) { font-size: clamp(32px, 3.7vw, 54px); }
+
+/* Cada palabra sube detrás de una máscara, como un rótulo que se descubre. */
+.content h1.kinetic { perspective: none; }
+.content h1.kinetic .kw { display: inline-block; vertical-align: top; overflow: clip; padding: 0.14em 0.04em 0.18em 0; margin: -0.14em -0.04em -0.18em 0; white-space: nowrap; }
+.content h1.kinetic .kc { opacity: 1; filter: none; transform: translateY(125%); animation: title-rise 720ms var(--ease-out) forwards; animation-delay: calc(var(--ci) * 13ms + 40ms); }
+
+/* Palabra destacada: dorado champaña con un único destello al entrar. */
+.content h1.kinetic :is(.chrome-text, .fx-accent) { background: none; color: inherit; font-weight: 400; }
+.content h1.kinetic :is(.chrome-text, .fx-accent) .kc {
+  background: linear-gradient(90deg, var(--gold-2) 0%, var(--gold) 42%, #fff4e2 50%, var(--gold) 58%, var(--gold-2) 100%);
+  background-size: 1200% 100%; background-position: calc(100% - var(--ci) * 4%) 0; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: title-rise 720ms var(--ease-out) forwards, title-shine 1500ms cubic-bezier(0.77, 0, 0.175, 1) 620ms both; animation-delay: calc(var(--ci) * 13ms + 40ms), calc(var(--ci) * 13ms + 620ms); }
+
+/* Rótulo superior precedido por una marca dorada que se traza. */
+.page-head .eyebrow.gold::before { content: ""; display: inline-block; width: 26px; height: 1px; margin-right: 10px; vertical-align: 0.3em; background: var(--gold); transform-origin: left; animation: tick-in 520ms var(--ease-out) backwards; }
+
+/* Línea de cota bajo el título, con sus dos marcas de extremo: la medida exacta del texto. */
+.ph2::after { width: min(var(--title-w, 240px), 100%); height: 9px; bottom: -4px; opacity: 0.72; transform: none;
+  background: linear-gradient(var(--gold), var(--gold)) left center / 100% 1px no-repeat, linear-gradient(var(--gold), var(--gold)) left center / 1px 100% no-repeat, linear-gradient(var(--gold), var(--gold)) right center / 1px 100% no-repeat;
+  clip-path: inset(0 100% 0 0); animation: cota-draw 860ms var(--ease-out) 280ms forwards; }
+
+/* ---------------------------------------------------------------- menú lateral */
+@keyframes nav-ping { from { opacity: 0.75; transform: scale(0.85); } to { opacity: 0; transform: scale(1.45); } }
+.nav-glide { position: absolute; z-index: 0; left: 0; right: 0; top: 0; height: 0; border-radius: 12px; background: var(--glass); box-shadow: inset 0 0 0 1px var(--line); opacity: 0; pointer-events: none; transition: transform 220ms var(--ease-out), height 220ms var(--ease-out), opacity 160ms ease; }
+.nav a { z-index: 1; }
+.nav-ico { transition: transform 0.4s var(--ease-spring), background 0.3s, color 0.3s, box-shadow 0.3s, opacity 200ms ease; }
+.nav-label { transition: transform 0.35s var(--ease-out), letter-spacing 0.35s, opacity 200ms ease; }
+.nav a.active .nav-label { transform: translateX(2px); }
+.nav a.active .nav-ico::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 1.5px var(--gold); opacity: 0; pointer-events: none; animation: nav-ping 620ms var(--ease-out); }
+.nav a:active .nav-ico { transform: scale(0.92); transition-duration: 120ms; }
+.nav-section span { transition: color 200ms ease; }
+.nav-section:hover span { color: var(--gold); }
+@media (hover: hover) and (pointer: fine) {
+  .nav:has(a:hover) a:not(:hover):not(.active) :is(.nav-ico, .nav-label) { opacity: 0.55; }
+}
+
+/* ---------------------------------------------------------------- menú del teléfono */
+@keyframes mn-in { from { opacity: 0; transform: translateY(26px); } }
+@keyframes tile-shine { from { transform: translateX(-120%); } to { transform: translateX(320%); } }
+@media (max-width: 960px) {
+  .mobile-nav { animation: mn-in 420ms var(--ease-out) backwards; }
+  .mobile-nav .mn-pill::before { content: ""; position: absolute; top: 0; left: 50%; width: 20px; height: 2px; margin-left: -10px; border-radius: 2px; background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+  .mobile-nav .mn-pill.moving { animation: pill-stretch 380ms var(--ease-out); }
+  .mobile-nav a span, .mobile-nav button span { transition: transform 240ms var(--ease-out), font-weight 120ms; }
+  .mobile-nav a.active span, .mobile-nav button.active span { font-weight: 600; transform: translateY(-1px); }
+}
+.nav-tile.active::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255, 242, 220, 0.22), transparent); transform: translateX(-120%); pointer-events: none; }
+.nav-sheet.open .nav-tile.active::after { animation: tile-shine 900ms var(--ease-out) 360ms; }
+.nav-tile-ico { transition: transform 240ms var(--ease-out), background var(--dur-1); }
+.nav-tile:active .nav-tile-ico { transform: translateY(-2px) scale(1.06); }
+.nav-tile.active .nav-tile-ico { color: #15110b; background: linear-gradient(145deg, var(--gold-2), var(--gold)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .content h1.kinetic .kc, .content h1.kinetic :is(.chrome-text, .fx-accent) .kc { animation: none !important; transform: none; }
+  .ph2::after { animation: none !important; clip-path: none; }
+  .page-head .eyebrow.gold::before, .nav a.active .nav-ico::after, .mobile-nav, .mobile-nav .mn-pill.moving, .nav-sheet.open .nav-tile.active::after { animation: none !important; }
+  .nav-glide { transition: none; }
+}
+.nav-sheet:focus { outline: none; }
