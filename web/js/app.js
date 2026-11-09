@@ -75,7 +75,7 @@ function renderShell() {
   <div class="shell">
     <aside class="sidebar" aria-label="Navegación">
       <a class="brand" href="#/">
-        <img src="/assets/mark-96.png" alt="" width="40" height="40">
+        <img src="/assets/mark-96.png?v=2" alt="" width="40" height="40">
         <div><div class="name chrome-text">Civia <b class="ai-text">AI</b></div><div class="tag">Arquitectura inteligente</div></div>
       </a>
       <nav class="nav">
