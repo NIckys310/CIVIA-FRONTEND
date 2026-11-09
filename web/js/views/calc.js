@@ -2,6 +2,7 @@
 // vivo con pasos y avisos, y memoria de cálculo en PDF.
 import { api, downloadPost } from '../api.js';
 import { $, debounce, html, icon, mount, on, toast } from '../ui.js';
+import { countUp } from '../motion.js';
 
 let catalogCache = null;
 const catalog = async () => (catalogCache ||= await api.get('/calc'));
@@ -41,8 +42,10 @@ export async function render(el, { id }) {
   const form = $('#calc-form', el);
   const inputs = () => Object.fromEntries([...form.querySelectorAll('[name]')].map((i) => [i.name, Number(i.value)]));
 
+  let firstResult = true;
   const run = async () => {
     const box = $('#calc-result', el);
+    const previous = [...box.querySelectorAll('.val')].map((v) => v.textContent);
     try {
       const r = await api.post(`/calc/${def.id}`, { inputs: inputs() });
       const main = r.values.filter((v) => v.highlight);
@@ -56,6 +59,13 @@ export async function render(el, { id }) {
         <div class="card"><div class="card-head"><h3>Procedimiento</h3></div>
           <ol class="calc-steps">${r.steps.map((s) => html`<li>${s}</li>`)}</ol>
           <p class="hint" style="padding:0 24px 20px">Referencia: ${r.reference}. Cálculo orientativo: el diseño definitivo lo firma el profesional responsable.</p></div>`);
+      // Solo el primer resultado entra animado; al escribir, únicamente se marca la cifra que cambió.
+      box.querySelectorAll('.val').forEach((v, i) => {
+        if (firstResult) countUp(v, 650);
+        else if (previous[i] !== v.textContent) v.classList.add('bump');
+      });
+      firstResult = false;
+      box.classList.add('calc-live');
     } catch (e) {
       mount(box, html`<div class="card pad"><div class="error-text">${e.message}</div></div>`);
     }
