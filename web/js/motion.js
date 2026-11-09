@@ -24,6 +24,38 @@ export function enableRipples(root = document) {
   }, { passive: true });
 }
 
+// ------------------------------------------------------------------ barra de progreso entre secciones
+let routeBarEl = null;
+let routeBarTimer = 0;
+
+export function routeBarStart() {
+  if (reducedMotion()) return;
+  routeBarEl ||= Object.assign(document.body.appendChild(document.createElement('div')), { className: 'route-bar' });
+  clearTimeout(routeBarTimer);
+  routeBarEl.className = 'route-bar';
+  void routeBarEl.offsetWidth;
+  routeBarEl.className = 'route-bar run';
+}
+
+export function routeBarDone() {
+  if (!routeBarEl) return;
+  routeBarEl.className = 'route-bar end';
+  routeBarTimer = setTimeout(() => { if (routeBarEl) routeBarEl.className = 'route-bar'; }, 460);
+}
+
+// ------------------------------------------------------------------ iconos que se trazan como líneas de plano
+const DRAWN = '.cat-card .ico svg, .nav-tile-ico svg, .empty svg.big, .m-props-head svg';
+
+/** Prepara los iconos para trazarse: cada línea mide 1 sin importar su longitud real. */
+export function drawIcons(root) {
+  if (reducedMotion() || !root?.querySelectorAll) return;
+  root.querySelectorAll(DRAWN).forEach((svg) => {
+    if (svg.classList.contains('draw')) return;
+    svg.querySelectorAll('path, circle, rect, line, polyline').forEach((shape) => shape.setAttribute('pathLength', '1'));
+    svg.classList.add('draw');
+  });
+}
+
 /** Hace entrar los hijos de `container` uno tras otro (máximo 14 escalones). */
 export function stagger(container) {
   if (reducedMotion() || !container || container.dataset.staggered) return;
@@ -87,6 +119,8 @@ export function autoStagger(root) {
         if (n.matches(STAGGERED)) stagger(n);
         n.querySelectorAll?.(STAGGERED).forEach(stagger);
         revealBelowFold(n);
+        drawIcons(n);
+        tilt(n, '.cat-card', 4);
       });
     }
   });
@@ -315,6 +349,7 @@ export function kinetic(node) {
 export function tilt(root, selector, max = 6) {
   if (reducedMotion() || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
   root.querySelectorAll(selector).forEach((card) => {
+    if (card.classList.contains('tilt')) return;
     card.classList.add('tilt');
     card.addEventListener('pointermove', (e) => {
       const r = card.getBoundingClientRect();
@@ -392,4 +427,25 @@ export function enhanceView(root) {
   root.querySelectorAll('.tabs').forEach(slideTabs);
   root.querySelectorAll('.usage-val').forEach((v) => countUp(v, 1100));
   revealBelowFold(root);
+  drawIcons(root);
+  tilt(root, '.cat-card', 4);
+}
+
+/** Los iconos del menú se trazan al activarse: deben quedar medidos antes de marcar el activo. */
+export function prepareNavIcons() {
+  document.querySelectorAll('.nav svg, .mobile-nav svg').forEach((svg) => {
+    svg.querySelectorAll('path, circle, rect').forEach((shape) => shape.setAttribute('pathLength', '1'));
+  });
+}
+
+/** Imágenes de archivos y fotos: aparecen enfocándose en lugar de saltar a la vista. */
+export function enableImageFade() {
+  const mark = (e) => { if (e.target?.matches?.('.preview img')) e.target.classList.add('loaded'); };
+  document.addEventListener('load', mark, true);
+  document.addEventListener('error', mark, true);
+}
+
+/** Vibración mínima al tocar las opciones del menú del teléfono. */
+export function enableNavHaptics() {
+  document.addEventListener('click', (e) => { if (e.target.closest?.('.mobile-nav a, .mobile-nav button, .nav-tile')) haptic(6); }, { passive: true });
 }

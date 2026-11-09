@@ -369,6 +369,15 @@ export async function busy(button, fn) {
   }
 }
 
+/** Confirma en el propio botón que la acción terminó bien y lo devuelve a su estado. */
+export function flashDone(button, label = 'Guardado') {
+  if (!button?.isConnected || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const original = button.innerHTML;
+  button.classList.add('done');
+  button.innerHTML = `<svg class="done-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path pathLength="1" d="M5 12.5 10 17.5 19 7"/></svg><span>${esc(label)}</span>`;
+  setTimeout(() => { if (button.isConnected) { button.innerHTML = original; button.classList.remove('done'); } }, 1300);
+}
+
 export const formData = (form) => Object.fromEntries(new FormData(form).entries());
 
 // ------------------------------------------------------------------ portadas arquitectónicas
