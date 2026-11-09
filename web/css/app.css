@@ -1224,12 +1224,6 @@ img, video, canvas, iframe, table { max-width: 100%; }
 .hb-aurora i:first-child { left: -10%; background: radial-gradient(circle, rgba(214, 164, 108, 0.5), transparent 65%); animation: aurora 16s ease-in-out infinite; }
 .hb-aurora i:last-child { right: -15%; background: radial-gradient(circle, rgba(91, 117, 166, 0.55), transparent 65%); animation: aurora 20s ease-in-out infinite reverse; }
 @keyframes aurora { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(8%, 6%) rotate(20deg); } }
-.hb-skyline { position: absolute; right: 2%; bottom: 0; width: min(46%, 440px); height: auto; opacity: 0.55; pointer-events: none; }
-.hb-skyline .sk-line { stroke: rgba(214, 164, 108, 0.75); stroke-width: 1.2; stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw-line 1.8s cubic-bezier(.65, 0, .35, 1) both; }
-.hb-skyline .s1 { animation-delay: 0.2s; stroke: rgba(159, 178, 211, 0.7); } .hb-skyline .s2 { animation-delay: 0.4s; } .hb-skyline .s3 { animation-delay: 0.6s; stroke: rgba(242, 207, 159, 0.9); }
-.hb-skyline .s4 { animation-delay: 0.8s; stroke: rgba(159, 178, 211, 0.7); } .hb-skyline .s5 { animation-delay: 1s; }
-.hb-skyline .sk-win { fill: #ffe2bb; opacity: 0; animation: win-light 5s ease-in-out infinite; }
-.hb-skyline .sk-sun { fill: rgba(242, 207, 159, 0.35); filter: blur(1px); animation: sun-pulse 6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 .hb-title { font-size: clamp(32px, 4.2vw, 52px); }
 .hb-chips { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .hb-chips li { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 99px; font-size: 12.5px; color: var(--text-2);
@@ -1324,12 +1318,10 @@ img, video, canvas, iframe, table { max-width: 100%; }
 .lib-card:hover .lib-go { transform: translateX(4px); color: var(--gold); }
 
 @media (max-width: 960px) {
-  .hb-skyline { width: 70%; opacity: 0.25; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sidebar::after, .brand img, .brand .name, .nav a, .nav-section::after, .nav-pill.moving, .nav-pill.moving i, .engine-orb.live i,
-  .hb-aurora i, .hb-skyline *, .hb-chips li, .kpi3, .kpi3-ico i, .timeline .tl-item, .tl-dot, .cp2-border, .cp2::before, .ai-orb svg, .ai-orb i, .pc2 .cover::before, .empty-mini svg, .live-dot, .cover-pill .dot { animation: none !important; }
-  .hb-skyline .sk-line { stroke-dashoffset: 0; }
+  .hb-aurora i, .hb-chips li, .kpi3, .kpi3-ico i, .timeline .tl-item, .tl-dot, .cp2-border, .cp2::before, .ai-orb svg, .ai-orb i, .pc2 .cover::before, .empty-mini svg, .live-dot, .cover-pill .dot { animation: none !important; }
   .tilt { transform: none !important; }
 }
 
@@ -2139,3 +2131,85 @@ svg.draw :is(path, circle, rect, line, polyline) { stroke-dasharray: 1 1; animat
   .nav-glide { transition: none; }
 }
 .nav-sheet:focus { outline: none; }
+
+/* ---------------------------------------------------------------- ciudad animada del inicio */
+@keyframes hc-draw { to { stroke-dashoffset: 0; } }
+@keyframes hc-solid { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hc-settle { to { opacity: 0.28; } }
+@keyframes hc-floor { from { opacity: 0; transform: translateY(-14px); } }
+@keyframes hc-blink { 0%, 62% { opacity: 1; } 63%, 100% { opacity: 0.12; } }
+@keyframes hc-beacon { 0%, 45%, 100% { opacity: 0.2; } 50%, 60% { opacity: 1; } }
+@keyframes hc-spark { 0%, 86%, 100% { opacity: 0; transform: scale(0.6); } 90%, 95% { opacity: 1; transform: scale(1.3); } }
+@keyframes hc-trolley { from { transform: translateX(-46px); } to { transform: translateX(44px); } }
+@keyframes hc-cable { 0%, 12% { transform: scaleY(0.55); } 48%, 62% { transform: scaleY(1.5); } 100% { transform: scaleY(0.55); } }
+@keyframes hc-load { 0%, 12% { transform: translateY(-27px); } 48%, 62% { transform: translateY(30px); } 100% { transform: translateY(-27px); } }
+@keyframes hc-sway { 0%, 100% { transform: rotate(-1.4deg); } 50% { transform: rotate(1.6deg); } }
+@keyframes hc-smoke { from { opacity: 0.5; transform: translate(0, 0) scale(0.6); } to { opacity: 0; transform: translate(16px, -38px) scale(2.4); } }
+@keyframes hc-right { from { transform: translateX(-120px); } to { transform: translateX(1300px); } }
+@keyframes hc-left { from { transform: translateX(1300px) scaleX(-1); } to { transform: translateX(-120px) scaleX(-1); } }
+@keyframes hc-cloud { from { translate: -60px 0; } to { translate: 60px 0; } }
+@keyframes hc-birds { from { transform: translate(1260px, 70px); } to { transform: translate(300px, 22px); } }
+@keyframes hc-glint { 0%, 70% { transform: translateX(0); } 100% { transform: translateX(190px); } }
+@keyframes hc-sun { from { transform: translateY(46px); opacity: 0.4; } }
+@keyframes hc-twinkle { 50% { opacity: 0.2; } }
+@keyframes hc-scene-in { from { opacity: 0; } }
+
+.hb2 { flex-direction: column; align-items: flex-start; justify-content: flex-end; min-height: clamp(310px, 29vw, 400px); }
+.hb2 .hero-banner-copy, .hb2 .hero-banner-actions { z-index: 2; }
+.hb2 .btn.primary::after, .sheen::after { z-index: -1; }
+.hc { position: absolute; inset: 0 0 0 26%; z-index: 0; pointer-events: none; -webkit-mask-image: linear-gradient(90deg, transparent, #000 44%); mask-image: linear-gradient(90deg, transparent, #000 44%); animation: hc-scene-in 700ms ease; }
+.hc svg { display: block; width: 100%; height: 100%; }
+
+/* Cielo según la hora */
+.hc[data-sky="day"] .hc-s1 { stop-color: #2b4a70; } .hc[data-sky="day"] .hc-s2 { stop-color: #7f97ac; } .hc[data-sky="day"] .hc-s3 { stop-color: #e2c49a; }
+.hc[data-sky="day"] .hc-h1 { stop-color: #fff0d0; stop-opacity: 0.55; } .hc[data-sky="day"] .hc-h2, .hc[data-sky="dusk"] .hc-h2, .hc[data-sky="night"] .hc-h2 { stop-color: #fff0d0; stop-opacity: 0; } .hc[data-sky="day"] .hc-d2 { stop-color: #ffd9a0; }
+.hc[data-sky="dusk"] .hc-s1 { stop-color: #1b1f3d; } .hc[data-sky="dusk"] .hc-s2 { stop-color: #8a4f4e; } .hc[data-sky="dusk"] .hc-s3 { stop-color: #eb9a56; }
+.hc[data-sky="dusk"] .hc-h1 { stop-color: #ffb46a; stop-opacity: 0.7; } .hc[data-sky="dusk"] .hc-d2 { stop-color: #ff9c50; }
+.hc[data-sky="night"] .hc-s1 { stop-color: #060a17; } .hc[data-sky="night"] .hc-s2 { stop-color: #121b33; } .hc[data-sky="night"] .hc-s3 { stop-color: #2a3555; }
+.hc[data-sky="night"] .hc-h1 { stop-color: #c8d4ea; stop-opacity: 0.32; } .hc[data-sky="night"] .hc-d2 { stop-color: #cfd9ea; }
+.hc .hc-c1 { stop-color: #fff; stop-opacity: 0.34; } .hc .hc-c2 { stop-color: #fff; stop-opacity: 0; }
+.hc[data-sky="night"] .hc-c1 { stop-opacity: 0.1; }
+.hc-stars circle { fill: #e8eefb; opacity: 0.8; } .hc-stars .tw { animation: hc-twinkle 3.4s ease-in-out infinite; }
+.hc-sun { animation: hc-sun 1.8s var(--ease-out) backwards; }
+.hc-cloud { animation: hc-cloud 46s ease-in-out infinite alternate; } .hc-cloud.c2 { animation-duration: 62s; animation-direction: alternate-reverse; } .hc-cloud.c3 { animation-duration: 54s; }
+.hc-birds path { fill: none; stroke: rgba(20, 22, 30, 0.7); stroke-width: 1.2; stroke-linecap: round; }
+.hc-birds { animation: hc-birds 34s linear infinite; }
+.hc[data-sky="night"] .hc-birds { display: none; }
+
+/* Edificios: del trazo de plano al volumen */
+.hc-far rect { fill: #33405a; opacity: 0.62; }
+.hc[data-sky="dusk"] .hc-far rect { fill: #4b3a50; } .hc[data-sky="night"] .hc-far rect { fill: #1c2640; opacity: 0.9; }
+.hc-line { fill: none; stroke: var(--gold-2); stroke-width: 1.1; stroke-dasharray: 1 1; stroke-dashoffset: 1; animation: hc-draw 1.1s cubic-bezier(0.77, 0, 0.175, 1) forwards, hc-settle 700ms ease forwards; animation-delay: var(--d), calc(var(--d) + 1.5s); }
+.hc-solid { opacity: 0; animation: hc-solid 800ms ease forwards; animation-delay: calc(var(--d) + 0.75s); }
+.w { fill: rgba(12, 18, 28, 0.55); } .w.on { fill: #ffd9a4; } .w.blink { animation: hc-blink 9s steps(1) infinite; }
+.hc-glint { animation: hc-glint 8s ease-in-out infinite; }
+.hc-beacon { fill: #ff5a4d; animation: hc-beacon 2.4s ease-in-out infinite; }
+
+/* Obra y grúa */
+.hc-floor { animation: hc-floor 520ms var(--ease-out) backwards; animation-delay: calc(var(--f) * 170ms + 900ms); }
+.hc-scaffold path { fill: none; stroke: #7d8592; stroke-width: 0.7; }
+.hc-spark, .hc-cable, .hc-tree { transform-box: fill-box; }
+.hc-spark { fill: #ffe7a8; transform-origin: center; animation: hc-spark 3.1s linear infinite; }
+.hc-crane > rect { fill: #e0a43c; } .hc-cab { fill: #e0a43c; } .hc-lattice path, .hc-jib { fill: none; stroke: #e0a43c; stroke-width: 1; }
+.hc-trolley { animation: hc-trolley 13s ease-in-out infinite alternate; }
+.hc-cable { fill: #3b3f47; transform-origin: top; animation: hc-cable 13s ease-in-out infinite; }
+.hc-load { animation: hc-load 13s ease-in-out infinite; }
+.hc-sling { fill: none; stroke: #3b3f47; stroke-width: 0.8; }
+
+/* Vida en la calle */
+.hc-tree { transform-origin: bottom center; animation: hc-sway 6s ease-in-out infinite; }
+.hc-smoke circle { fill: rgba(230, 230, 235, 0.4); transform-box: fill-box; transform-origin: center; opacity: 0; animation: hc-smoke 4.8s ease-out infinite; }
+.hc-lamp-glow { opacity: 0.85; } .hc[data-sky="day"] .hc-lamp-glow, .hc[data-sky="day"] .hc-beam { opacity: 0; }
+.hc-dash rect { fill: rgba(255, 255, 255, 0.28); }
+.hc-car.a { animation: hc-right 15s linear infinite; } .hc-car.b { animation: hc-right 15s linear -7.5s infinite; } .hc-car.c { animation: hc-left 19s linear -4s infinite; }
+
+.hc.paused *, .hc.hidden-tab * { animation-play-state: paused !important; }
+
+@media (max-width: 760px) {
+  .hb2 { padding-top: 226px; min-height: 0; }
+  .hc { inset: 0 0 auto 0; height: 226px; -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent); mask-image: linear-gradient(180deg, #000 80%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc, .hc * { animation: none !important; }
+  .hc-line { stroke-dashoffset: 0; opacity: 0.28; } .hc-solid { opacity: 1; }
+}
