@@ -160,7 +160,12 @@ export async function render(el, { projectId }) {
     }
     capture();
   };
-  $('#flip', el).onclick = () => { facing = facing === 'environment' ? 'user' : 'environment'; start(); };
+  const replay = (node, cls, ms) => { node.classList.remove(cls); void node.offsetWidth; node.classList.add(cls); setTimeout(() => node.classList.remove(cls), ms); };
+  $('#flip', el).onclick = () => {
+    facing = facing === 'environment' ? 'user' : 'environment';
+    replay(stage, 'flipping', 560);
+    start();
+  };
   $('#gallery', el).addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -339,6 +344,7 @@ export async function render(el, { projectId }) {
     mode = b.dataset.mode;
     el.querySelectorAll('#cam-mode [data-mode]').forEach((x) => x.classList.toggle('active', x === b));
     stage.dataset.mode = mode;
+    replay(stage, 'mode-sweep', 620);
     overlay.hidden = mode !== 'measure' || shot.hidden;
     side();
   });
