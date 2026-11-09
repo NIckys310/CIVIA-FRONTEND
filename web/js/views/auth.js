@@ -55,7 +55,7 @@ function layout(el, panel) {
     <section class="hero" aria-hidden="true">
       <div class="hero-grid"></div>
       <div class="hero-glow"></div>
-      <div class="hero-brand"><img src="/assets/mark-96.png" alt="" width="40" height="40"><span class="chrome-text">Civia <b class="ai-text">AI</b></span></div>
+      <div class="hero-brand"><img src="/assets/mark-96.png?v=2" alt="" width="40" height="40"><span class="chrome-text">Civia <b class="ai-text">AI</b></span></div>
       ${raw(districtScene())}
       <div class="hero-copy">
         <div class="eyebrow gold">Arquitectura inteligente</div>
@@ -67,7 +67,7 @@ function layout(el, panel) {
         </ul>
       </div>
       <div class="brand-mobile">
-        <img src="/assets/mark-256.png" alt="" width="72" height="72">
+        <img src="/assets/mark-256.png?v=2" alt="" width="72" height="72">
         <div class="wordmark chrome-text">Civia <span class="ai-text">AI</span></div>
         <div class="eyebrow">Ingeniería y arquitectura inteligente</div>
       </div>
