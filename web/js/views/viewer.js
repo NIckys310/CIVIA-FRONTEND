@@ -63,6 +63,11 @@ async function picker(el) {
   const models = lists.flat().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   mount(el, html`<div class="page-head"><div><div class="eyebrow gold">Modelado 3D</div><h1>Modelos y volumetrías</h1>
     <p class="muted">Abre un modelo de tus proyectos o genera una volumetría con IA a partir del lote.</p></div></div>
+    <a class="card hover glow modeler-cta" href="#/modeler">
+      <div class="featured-mark">${icon('beam')}</div>
+      <div><div class="eyebrow gold">Nuevo · Modelador paramétrico</div><h2 style="margin-top:8px">Modela estructura y arquitectura</h2>
+        <p class="muted" style="margin-top:6px">Columnas, vigas, losas, zapatas, muros, puertas, ventanas, escaleras y cubiertas con materiales reales, sombras y oclusión ambiental. Cómputo de cantidades, render en alta resolución y exportación a GLB.</p></div>
+      <span class="btn primary">${icon('cube')} Abrir modelador</span></a>
     <div class="split">
       <div class="card"><div class="card-head"><h3>Modelos 3D</h3><span class="pill">${models.length}</span></div>
         <div class="card-body" style="padding:10px">${models.length ? models.map((m) => html`

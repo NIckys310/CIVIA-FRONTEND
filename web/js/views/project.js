@@ -42,6 +42,8 @@ export async function render(el, { id, tab, query }) {
         <div class="row wrap">
           <a class="btn" href="#/copilot?project=${project.id}">${icon('sparkle')} Preguntar a CIVIA</a>
           <a class="btn" href="#/camera/${project.id}">${icon('camera')} Cámara</a>
+          <a class="btn" href="#/modeler/${project.id}">${icon('cube')} Modelar en 3D</a>
+          <button class="btn" id="project-report" data-busy="Generando…">${icon('report')} Informe PDF</button>
           ${canEdit ? html`<button class="btn" id="edit-project">${icon('edit')} Editar</button>` : ''}
         </div>
       </div>
@@ -55,6 +57,10 @@ export async function render(el, { id, tab, query }) {
 
   loadPhases(el, project, canEdit);
   $('#edit-project', el)?.addEventListener('click', () => editProject(project));
+  $('#project-report', el).addEventListener('click', (e) => busy(e.currentTarget, async () => {
+    const name = `informe-${(project.code || project.name).normalize('NFD').replace(/[^\w]+/g, '-').toLowerCase()}.pdf`;
+    try { await downloadPath(`/projects/${project.id}/report.pdf`, name); toast('Informe descargado'); } catch (err) { toast(err.message, 'error'); }
+  }));
   const target = $('#tab', el);
   const views = { overview, files, tasks, budget, spaces, team, log };
   return (views[tab] || overview)(target, project, canEdit, query);
@@ -166,6 +172,11 @@ async function overview(el, project) {
           ${project.description ? html`<div class="sep"></div><div class="md">${markdown(project.description)}</div>` : ''}
         </div>
       </div>
+      <a class="card hover pad row" href="#/modeler/${project.id}" style="gap:16px">
+        <div class="kpi" style="padding:0"><div class="ico" style="position:static">${icon('beam')}</div></div>
+        <div><h3>Modelador estructural y arquitectónico</h3><p class="muted" style="font-size:13px;margin-top:4px">Columnas, vigas, losas, muros, puertas, ventanas, escaleras y cubiertas con cómputo de cantidades.</p></div>
+        <span class="right">${icon('chevron')}</span>
+      </a>
       <a class="card hover pad row" href="#/massing/${project.id}" style="gap:16px">
         <div class="kpi" style="padding:0"><div class="ico" style="position:static">${icon('cube')}</div></div>
         <div><h3>Volumetría con IA</h3><p class="muted" style="font-size:13px;margin-top:4px">Genera la masa máxima del lote según índices y retiros, en 3D.</p></div>
