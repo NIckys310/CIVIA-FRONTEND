@@ -174,7 +174,7 @@ async function overview(el, project) {
       </div>
       <a class="card hover pad row" href="#/modeler/${project.id}" style="gap:16px">
         <div class="kpi" style="padding:0"><div class="ico" style="position:static">${icon('beam')}</div></div>
-        <div><h3>Modelador estructural y arquitectónico</h3><p class="muted" style="font-size:13px;margin-top:4px">Columnas, vigas, losas, muros, puertas, ventanas, escaleras y cubiertas con cómputo de cantidades.</p></div>
+        <div><h3>Modelador estructural y arquitectónico</h3><p class="muted" style="font-size:13px;margin-top:4px">Más de 50 estructuras: cimentaciones, pórticos, cerchas, muros cortina, cubiertas y circulaciones, con cómputo de cantidades.</p></div>
         <span class="right">${icon('chevron')}</span>
       </a>
       <a class="card hover pad row" href="#/massing/${project.id}" style="gap:16px">

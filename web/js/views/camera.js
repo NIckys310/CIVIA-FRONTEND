@@ -20,45 +20,38 @@ export async function render(el, { projectId }) {
   let current = projects.find((p) => p.id === projectId) || projects[0];
 
   mount(el, html`
-  <div class="page-head">
-    <div><div class="eyebrow gold">Cámara</div><h1>Cámara de obra</h1>
-      <p class="muted">Registra el avance, fotografía planos para que la IA los revise y mide con un objeto de referencia.</p></div>
-    <div class="row wrap">
-      <select class="input" id="cam-project" style="width:auto;min-width:220px">${projects.map((p) => html`<option value="${p.id}" ${p.id === current.id ? 'selected' : ''}>${p.name}</option>`)}</select>
-    </div>
-  </div>
-  <div class="split">
-    <div class="stack lg">
-      <div class="tabs" id="cam-mode" style="align-self:flex-start">
+  <section class="camera" id="cam" data-mode="photo" aria-label="Cámara de obra">
+    <h1 class="sr-only">Cámara de obra</h1>
+    <video id="video" playsinline muted autoplay></video>
+    <canvas class="shot" id="shot" hidden></canvas>
+    <canvas class="overlay" id="overlay" hidden></canvas>
+    <div class="vf" aria-hidden="true"><span class="vf-grid"></span></div>
+    <div class="cam-hud">
+      <select class="input" id="cam-project" aria-label="Proyecto">${projects.map((p) => html`<option value="${p.id}" ${p.id === current.id ? 'selected' : ''}>${p.name}</option>`)}</select>
+      <div class="tabs" id="cam-mode">
         <button class="active" data-mode="photo">${icon('camera')} Foto de obra</button>
         <button data-mode="plan">${icon('blueprint')} Foto de plano</button>
         <button data-mode="measure">${icon('ruler')} Medir</button>
       </div>
-      <div class="camera" id="cam">
-        <video id="video" playsinline muted autoplay></video>
-        <canvas class="shot" id="shot" hidden></canvas>
-        <canvas class="overlay" id="overlay" hidden></canvas>
-        <div class="reticle" id="reticle"></div>
-        <div class="vf" aria-hidden="true">
-          <span class="vf-c tl"></span><span class="vf-c tr"></span><span class="vf-c bl"></span><span class="vf-c br"></span>
-          <span class="vf-grid"></span><span class="vf-scan"></span>
-          <span class="vf-tag"><i></i><b id="vf-mode">Foto de obra</b></span>
-        </div>
-        <div class="controls" id="cam-controls">
-          <label class="btn icon glass-panel" title="Elegir de la galería" aria-label="Elegir imagen">${icon('image')}<input type="file" accept="image/*" id="gallery" hidden></label>
-          <button class="shutter" id="shutter" aria-label="Tomar foto"></button>
-          <button class="btn icon glass-panel" id="flip" title="Cambiar cámara" aria-label="Cambiar cámara">${icon('switch')}</button>
-        </div>
-        <div class="empty" id="cam-error" hidden style="position:absolute;inset:0;color:#ddd;pointer-events:none;padding-bottom:110px"></div>
+      <button class="btn icon glass-panel cam-toggle" id="cam-panel-toggle" title="Instrucciones y recientes" aria-label="Instrucciones y recientes" aria-expanded="false">${icon('info')}</button>
+    </div>
+    <div class="controls" id="cam-controls">
+      <label class="btn icon glass-panel" title="Elegir de la galería" aria-label="Elegir imagen">${icon('image')}<input type="file" accept="image/*" id="gallery" hidden></label>
+      <button class="shutter" id="shutter" aria-label="Tomar foto"></button>
+      <button class="btn icon glass-panel" id="flip" title="Cambiar cámara" aria-label="Cambiar cámara">${icon('switch')}</button>
+    </div>
+    <div class="cam-error" id="cam-error" hidden></div>
+    <aside class="cam-panel" id="cam-panel" aria-label="Detalles de la captura">
+      <button class="btn icon sm ghost cam-panel-close" id="cam-panel-close" aria-label="Cerrar panel">${icon('x')}</button>
+      <div id="cam-side"></div>
+      <div class="cam-recent">
+        <div class="cam-recent-head"><h3>Recientes</h3><a class="btn sm ghost" id="to-files">Archivos ${icon('arrow')}</a></div>
+        <div id="recent"></div>
       </div>
-    </div>
-    <div class="stack lg">
-      <div class="card pad" id="cam-side"></div>
-      <div class="card"><div class="card-head"><h3>Recientes</h3><a class="btn sm ghost" id="to-files">Archivos ${icon('arrow')}</a></div>
-        <div class="card-body" id="recent" style="padding:10px"></div></div>
-    </div>
-  </div>`);
+    </aside>
+  </section>`);
 
+  const stage = $('#cam', el);
   const video = $('#video', el);
   const shot = $('#shot', el);
   const overlay = $('#overlay', el);
@@ -70,11 +63,19 @@ export async function render(el, { projectId }) {
   let refLength = null;
   let lines = []; // { a, b, meters }
   let pending = [];
+  let useGps = false;
+
+  function setPanel(open) {
+    stage.classList.toggle('panel-open', open);
+    $('#cam-panel-toggle', el).setAttribute('aria-expanded', String(open));
+  }
+  $('#cam-panel-toggle', el).onclick = () => setPanel(!stage.classList.contains('panel-open'));
+  $('#cam-panel-close', el).onclick = () => setPanel(false);
 
   async function start() {
     stop();
     $('#cam-error', el).hidden = true;
-    $('#reticle', el).hidden = false;
+    $('#cam-controls', el).hidden = false;
     if (!navigator.mediaDevices?.getUserMedia) {
       showError('Este navegador no permite usar la cámara aquí. Usa HTTPS o elige una imagen de la galería.');
       return;
@@ -95,8 +96,7 @@ export async function render(el, { projectId }) {
   function showError(msg) {
     const box = $('#cam-error', el);
     box.hidden = false;
-    $('#reticle', el).hidden = true;
-    box.style.pointerEvents = 'auto';
+    $('#cam-controls', el).hidden = true; // sin imagen en vivo el obturador no sirve y taparía el aviso
     mount(box, html`<div class="cam-denied">
       <span class="cam-denied-ico" aria-hidden="true"><i></i><i></i>${icon('camera')}</span>
       <h3>Cámara no disponible</h3>
@@ -106,21 +106,22 @@ export async function render(el, { projectId }) {
         <button type="button" class="btn glass-btn" id="cam-retry">${icon('refresh')} Reintentar</button>
       </div></div>`);
     $('#cam-pick', box).onclick = () => $('#gallery', el).click();
-    $('#cam-retry', box).onclick = () => { box.hidden = true; $('#reticle', el).hidden = false; start(); };
+    $('#cam-retry', box).onclick = () => start();
   }
 
-  function showCaptured(source, w, h) {
+  function showCaptured(source, w, h, crop = { sx: 0, sy: 0, sw: w, sh: h }) {
     shot.width = w;
     shot.height = h;
-    shot.getContext('2d').drawImage(source, 0, 0, w, h);
+    shot.getContext('2d').drawImage(source, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, w, h);
     shot.hidden = false;
     overlay.hidden = mode !== 'measure';
     overlay.width = w;
     overlay.height = h;
     video.hidden = true;
     $('#cam-error', el).hidden = true;
-    $('#reticle', el).hidden = true;
     $('#cam-controls', el).hidden = true;
+    stage.classList.add('review');
+    setPanel(true);
     stop();
     refPts = [];
     refLength = null;
@@ -130,9 +131,19 @@ export async function render(el, { projectId }) {
     side();
   }
 
+  /** Parte del fotograma que el visor muestra con object-fit: cover: lo que se ve es lo que se guarda. */
+  function visibleCrop(vw, vh) {
+    const box = video.getBoundingClientRect();
+    const view = box.width / box.height;
+    const sw = vw / vh > view ? vh * view : vw;
+    const sh = vw / vh > view ? vh : vw / view;
+    return { sx: (vw - sw) / 2, sy: (vh - sh) / 2, sw, sh };
+  }
+
   function capture() {
     if (!video.videoWidth) return;
-    showCaptured(video, video.videoWidth, video.videoHeight);
+    const crop = visibleCrop(video.videoWidth, video.videoHeight);
+    showCaptured(video, Math.round(crop.sw), Math.round(crop.sh), crop);
     shot.toBlob((b) => { captured = b; }, 'image/jpeg', 0.92);
   }
 
@@ -167,7 +178,8 @@ export async function render(el, { projectId }) {
     captured = null;
     shot.hidden = true;
     overlay.hidden = true;
-    $('#reticle', el).hidden = false;
+    stage.classList.remove('review');
+    setPanel(false);
     $('#cam-controls', el).hidden = false;
     start();
     side();
@@ -236,7 +248,7 @@ export async function render(el, { projectId }) {
           : mode === 'measure'
             ? 'Una hoja carta, una puerta o una baldosa sirven de referencia. Mantén la cámara perpendicular a la superficie que mides.'
             : 'La foto se guarda en el proyecto con fecha y, si lo autorizas, con ubicación.'}</p>
-        <label class="check" style="margin-top:16px"><input type="checkbox" id="geo"> Guardar ubicación GPS</label>`);
+        <label class="check" style="margin-top:16px"><input type="checkbox" id="geo" ${useGps ? 'checked' : ''}> Guardar ubicación GPS</label>`);
       return;
     }
     const mpp = metersPerPx();
@@ -255,7 +267,7 @@ export async function render(el, { projectId }) {
           <span class="mono" style="white-space:nowrap">${fmtNum(l.meters, 2)} m</span></div>`)}</div>` : ''}
         <p class="hint" style="margin-top:12px">Estimación. Confirma en obra con cinta o distanciómetro.</p>` : ''}
       <div class="field" style="margin-top:14px"><label>Nota</label><textarea class="input" id="note" placeholder="${mode === 'plan' ? 'Ej. Planta primer piso, revisión 2' : 'Ej. Fundida de losa N+3.00, eje B-C'}"></textarea></div>
-      <label class="check" style="margin-top:12px"><input type="checkbox" id="geo"> Guardar ubicación GPS</label>
+      <label class="check" style="margin-top:12px"><input type="checkbox" id="geo" ${useGps ? 'checked' : ''}> Guardar ubicación GPS</label>
       <div class="row" style="margin-top:16px">
         <button class="btn" id="retake">${icon('rotate')} Repetir</button>
         <button class="btn primary right" id="save" data-busy="Guardando…">${icon('upload')} ${mode === 'plan' ? 'Guardar y analizar' : 'Guardar'}</button>
@@ -322,15 +334,15 @@ export async function render(el, { projectId }) {
     $('#to-files', el).href = `#/projects/${current.id}/files`;
   }
 
-  on(el, 'click', '[data-mode]', (e, b) => {
+  // El selector se limita a las pestañas: el visor también lleva data-mode y tocarlo no debe cambiar de modo.
+  on(el, 'click', '#cam-mode [data-mode]', (e, b) => {
     mode = b.dataset.mode;
-    el.querySelectorAll('[data-mode]').forEach((x) => x.classList.toggle('active', x === b));
-    const tag = $('#vf-mode', el);
-    if (tag) tag.textContent = b.textContent.trim();
-    $('#cam', el).dataset.mode = mode;
+    el.querySelectorAll('#cam-mode [data-mode]').forEach((x) => x.classList.toggle('active', x === b));
+    stage.dataset.mode = mode;
     overlay.hidden = mode !== 'measure' || shot.hidden;
     side();
   });
+  on(el, 'change', '#geo', (e, input) => { useGps = input.checked; });
   $('#cam-project', el).addEventListener('change', (e) => { current = projects.find((p) => p.id === e.target.value); loadRecent(); });
 
   side();

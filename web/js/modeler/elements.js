@@ -1,6 +1,9 @@
 // Elementos paramétricos del modelador de CIVIA: definición (parámetros con unidades), materiales
 // PBR con texturas procedurales y la geometría de cada tipo. Unidades en metros; eje Y hacia arriba.
 // Esquema de un elemento: { id, type, material, params: {...}, position: [x, y, z], rotation: grados en Y }.
+import { CATEGORIES, OPENING_TYPES, STRUCTURE_TYPES, WALL_TYPES, WINDOW_TYPES, buildStructure, structureQuantity } from './structures.js';
+
+export { CATEGORIES, OPENING_TYPES, WALL_TYPES };
 
 export const MATERIALS = {
   concreto: { label: 'Concreto', color: 0xb9b7b1 },
@@ -11,6 +14,9 @@ export const MATERIALS = {
   bloque: { label: 'Bloque de concreto', color: 0x9c9d9a },
   pintura: { label: 'Pañete y pintura', color: 0xeeebe4 },
   teja: { label: 'Teja de barro', color: 0x9c4a2f },
+  ceramica: { label: 'Cerámica', color: 0xd9d4ca },
+  piedra: { label: 'Piedra natural', color: 0x9a948a },
+  aluminio: { label: 'Aluminio', color: 0xc4c9cf },
 };
 
 const P = (label, unit, def, min, max, step = 0.01) => ({ label, unit, def, min, max, step });
@@ -32,7 +38,7 @@ export const TYPES = {
     params: { width: P('Ancho (X)', 'm', 5, 0.3, 80, 0.05), length: P('Largo (Z)', 'm', 5, 0.3, 80, 0.05), thickness: P('Espesor', 'm', 0.15, 0.05, 1) },
   },
   footing: {
-    label: 'Zapata', icon: 'layers', category: 'Estructura', materials: ['concreto'], material: 'concreto',
+    label: 'Zapata aislada', icon: 'foundation', category: 'Cimentación', materials: ['concreto'], material: 'concreto',
     params: { width: P('Ancho', 'm', 1.6, 0.4, 10, 0.05), length: P('Largo', 'm', 1.6, 0.4, 10, 0.05), thickness: P('Espesor', 'm', 0.4, 0.2, 2, 0.05) },
   },
   wall: {
@@ -40,7 +46,7 @@ export const TYPES = {
     params: { length: P('Longitud', 'm', 4, 0.2, 60, 0.05), height: P('Altura', 'm', 2.6, 0.3, 20, 0.05), thickness: P('Espesor', 'm', 0.15, 0.05, 0.6) },
   },
   door: {
-    label: 'Puerta', icon: 'door', category: 'Carpintería', materials: ['madera', 'acero', 'vidrio'], material: 'madera',
+    label: 'Puerta sencilla', icon: 'door', category: 'Carpintería', materials: ['madera', 'acero', 'vidrio'], material: 'madera',
     params: { width: P('Ancho', 'm', 0.9, 0.6, 3), height: P('Altura', 'm', 2.1, 1.8, 3.5), depth: P('Espesor del muro', 'm', 0.15, 0.05, 0.6) },
   },
   window: {
@@ -48,13 +54,14 @@ export const TYPES = {
     params: { width: P('Ancho', 'm', 1.2, 0.3, 6), height: P('Altura', 'm', 1.2, 0.3, 4), sill: P('Antepecho', 'm', 0.9, 0, 3), depth: P('Espesor del muro', 'm', 0.15, 0.05, 0.6) },
   },
   stair: {
-    label: 'Escalera', icon: 'stairs', category: 'Circulación', materials: ['concreto', 'madera', 'acero'], material: 'concreto',
+    label: 'Escalera recta', icon: 'stairs', category: 'Circulación', materials: ['concreto', 'madera', 'acero'], material: 'concreto',
     params: { width: P('Ancho', 'm', 1.1, 0.6, 4, 0.05), steps: P('Peldaños', '', 16, 2, 40, 1), riser: P('Contrahuella', 'm', 0.175, 0.12, 0.22, 0.005), tread: P('Huella', 'm', 0.28, 0.22, 0.4, 0.005) },
   },
   roof: {
-    label: 'Cubierta', icon: 'roof', category: 'Cerramiento', materials: ['teja', 'concreto', 'acero', 'madera'], material: 'teja',
+    label: 'Cubierta a dos aguas', icon: 'roof', category: 'Cubiertas', materials: ['teja', 'concreto', 'acero', 'madera'], material: 'teja',
     params: { width: P('Ancho (X)', 'm', 8, 1, 60, 0.05), length: P('Largo (Z)', 'm', 10, 1, 80, 0.05), pitch: P('Pendiente', '°', 20, 0, 60, 1), thickness: P('Espesor', 'm', 0.12, 0.03, 0.5) },
   },
+  ...STRUCTURE_TYPES,
 };
 
 let seq = 0;
@@ -155,6 +162,23 @@ const TEXTURES = {
     }
   },
   pintura: (ctx, s) => noise(ctx, s, '#efece5', 255, 4000),
+  ceramica: (ctx, s) => {
+    noise(ctx, s, '#dcd7cd', 255, 3000);
+    ctx.strokeStyle = 'rgba(120,112,100,.7)';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 2; i++) {
+      const v = (i * s) / 2;
+      ctx.beginPath(); ctx.moveTo(v, 0); ctx.lineTo(v, s); ctx.moveTo(0, v); ctx.lineTo(s, v); ctx.stroke();
+    }
+  },
+  piedra: (ctx, s) => {
+    noise(ctx, s, '#9a948a', 255, 12000);
+    for (let i = 0; i < 40; i++) {
+      const v = 90 + Math.floor(Math.random() * 90);
+      ctx.fillStyle = `rgba(${v},${v - 6},${v - 14},0.5)`;
+      ctx.fillRect(Math.random() * s, Math.random() * s, 30 + Math.random() * 70, 16 + Math.random() * 26);
+    }
+  },
 };
 
 /** Materiales PBR compartidos (se crean una vez por escena). */
@@ -165,7 +189,7 @@ export function createMaterials(THREE) {
     if (key === 'vidrio') {
       return new THREE.MeshPhysicalMaterial({ color: def.color, metalness: 0, roughness: 0.04, transmission: 0.92, thickness: 0.02, ior: 1.5, transparent: true, opacity: 0.55, envMapIntensity: 1.4 });
     }
-    if (key === 'acero') return new THREE.MeshStandardMaterial({ color: def.color, metalness: 0.92, roughness: 0.32, envMapIntensity: 1.2 });
+    if (key === 'acero' || key === 'aluminio') return new THREE.MeshStandardMaterial({ color: def.color, metalness: 0.92, roughness: key === 'acero' ? 0.32 : 0.42, envMapIntensity: 1.2 });
     const map = TEXTURES[key] ? canvasTexture(THREE, 256, TEXTURES[key]) : null;
     return new THREE.MeshStandardMaterial({ color: map ? 0xffffff : def.color, map, metalness: 0, roughness: key === 'madera' ? 0.65 : 0.88 });
   };
@@ -201,13 +225,13 @@ function box(THREE, w, h, d, material, x = 0, y = 0, z = 0) {
  * Solo cuentan las que están en su plano (misma orientación y dentro del espesor).
  */
 export function wallOpenings(wall, elements) {
-  if (wall.type !== 'wall') return [];
+  if (!WALL_TYPES.has(wall.type)) return [];
   const rot = ((wall.rotation || 0) * Math.PI) / 180;
   const cos = Math.cos(rot); const sin = Math.sin(rot);
   const T = num(wall, 'thickness');
   const out = [];
   for (const e of elements) {
-    if (e.type !== 'door' && e.type !== 'window') continue;
+    if (!OPENING_TYPES.has(e.type)) continue;
     const sameAxis = Math.abs(Math.sin(((e.rotation || 0) - (wall.rotation || 0)) * Math.PI / 180)) < 0.05;
     if (!sameAxis) continue;
     const dx = e.position[0] - wall.position[0];
@@ -216,7 +240,7 @@ export function wallOpenings(wall, elements) {
     const across = dx * sin + dz * cos;
     if (Math.abs(across) > T / 2 + 0.1) continue;
     const base = e.position[1] - wall.position[1];
-    const sill = e.type === 'window' ? num(e, 'sill') : 0;
+    const sill = WINDOW_TYPES.has(e.type) ? num(e, 'sill') : 0;
     out.push({ x: along, width: num(e, 'width'), bottom: base + sill, height: num(e, 'height') });
   }
   return out;
@@ -253,7 +277,7 @@ export function buildElement(THREE, el, mats, openings = null) {
     }
     case 'slab': add(box(THREE, num(el, 'width'), num(el, 'thickness'), num(el, 'length'), mat)); break;
     case 'footing': add(box(THREE, num(el, 'width'), num(el, 'thickness'), num(el, 'length'), mat)); break;
-    case 'wall': {
+    case 'wall': case 'partition': {
       const L = num(el, 'length'), H = num(el, 'height'), T = num(el, 'thickness');
       // Vanos (puertas y ventanas que cruzan el muro): el muro se arma por tramos alrededor de ellos.
       const holes = (openings || []).filter((o) => o.x + o.width / 2 > -L / 2 && o.x - o.width / 2 < L / 2)
@@ -308,7 +332,7 @@ export function buildElement(THREE, el, mats, openings = null) {
       }
       break;
     }
-    default: break;
+    default: buildStructure(THREE, el, mats, mat, add, box, (key) => num(el, key)); break;
   }
   group.position.set(...(el.position || [0, 0, 0]));
   group.rotation.y = ((el.rotation || 0) * Math.PI) / 180;
@@ -320,9 +344,24 @@ export function buildElement(THREE, el, mats, openings = null) {
 // ------------------------------------------------------------------ cantidades (igual que el backend)
 
 export function quantities(elements) {
-  const t = { concrete: 0, steel: 0, masonry: 0, glass: 0, wood: 0, roof: 0, doors: 0, windows: 0 };
+  const t = { concrete: 0, steel: 0, masonry: 0, glass: 0, wood: 0, roof: 0, finish: 0, doors: 0, windows: 0 };
+  const volume = (el, q) => {
+    if (el.material === 'acero') t.steel += q * 7850;
+    else if (el.material === 'madera') t.wood += q;
+    else t.concrete += q;
+  };
   for (const el of elements) {
+    if (!TYPES[el.type]) continue;
     const p = (k) => num(el, k);
+    const extra = structureQuantity(el, p);
+    if (extra) {
+      if (extra.bucket === 'volume') volume(el, extra.q);
+      else if (extra.bucket === 'wall') { if (el.material === 'concreto') t.concrete += extra.q * extra.t; else t.masonry += extra.q; }
+      else if (extra.bucket === 'door') t.doors += 1;
+      else if (extra.bucket === 'window') { t.windows += 1; t.glass += extra.q; }
+      else t[extra.bucket] += extra.q;
+      continue;
+    }
     let q = 0;
     switch (el.type) {
       case 'column': q = (el.params.shape === 'circular' ? Math.PI * (p('b') / 2) ** 2 : p('b') * p('h')) * p('height'); break;
@@ -338,9 +377,7 @@ export function quantities(elements) {
     else if (el.type === 'roof') t.roof += q;
     else if (el.type === 'door') t.doors += 1;
     else if (el.type === 'window') { t.windows += 1; t.glass += q; }
-    else if (el.material === 'acero') t.steel += q * 7850;
-    else if (el.material === 'madera') t.wood += q;
-    else t.concrete += q;
+    else volume(el, q);
   }
   return t;
 }

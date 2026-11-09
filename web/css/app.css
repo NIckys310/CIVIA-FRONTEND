@@ -518,12 +518,6 @@ input[type="range"] { accent-color: var(--gold); }
 .label3d { position: absolute; transform: translate(-50%, -120%); padding: 4px 9px; border-radius: 8px; font: 500 11.5px var(--mono); white-space: nowrap; pointer-events: none; background: rgba(7, 8, 11, 0.85); border: 1px solid var(--gold); color: var(--gold-2); }
 .label3d.note { border-color: var(--steel); color: var(--steel-2); pointer-events: auto; cursor: pointer; font-family: var(--font); max-width: 220px; white-space: normal; }
 
-.camera { position: relative; border-radius: var(--radius-lg); overflow: hidden; background: #000; border: 1px solid var(--line); aspect-ratio: 4 / 3; max-height: 72vh; width: 100%; }
-.camera video, .camera canvas.shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-.camera canvas.overlay { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; touch-action: none; cursor: crosshair; }
-.camera .reticle { position: absolute; inset: 0; pointer-events: none; display: grid; place-items: center; }
-.camera .reticle::before { content: ""; width: 64%; height: 64%; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 8px; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.12); }
-.camera .controls { position: absolute; z-index: 2; left: 0; right: 0; bottom: 18px; display: flex; justify-content: center; align-items: center; gap: 22px; }
 .shutter { width: 68px; height: 68px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.85); background: transparent; display: grid; place-items: center; cursor: pointer; }
 .shutter::after { content: ""; width: 54px; height: 54px; border-radius: 50%; background: #fff; transition: transform 0.15s; }
 .shutter:active::after { transform: scale(0.9); background: var(--gold-2); }
@@ -1378,25 +1372,7 @@ img, video, canvas, iframe, table { max-width: 100%; }
 .tabs button svg, .tabs a svg { transition: transform 0.4s var(--ease-spring); }
 .tabs .active svg { transform: scale(1.12); }
 
-/* ---------------- Cámara: visor con esquinas, retícula, barrido y etiqueta en vivo. */
-.camera { box-shadow: 0 40px 90px -50px rgba(0, 0, 0, 0.95), inset 0 0 0 1px rgba(214, 164, 108, 0.08); }
-.vf { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
-.vf-c { position: absolute; width: 34px; height: 34px; border: 2px solid var(--gold); filter: drop-shadow(0 0 6px rgba(214, 164, 108, 0.6)); animation: vf-breathe 3s ease-in-out infinite; }
-.vf-c.tl { top: 18px; left: 18px; border-right: 0; border-bottom: 0; border-radius: 10px 0 0 0; }
-.vf-c.tr { top: 18px; right: 18px; border-left: 0; border-bottom: 0; border-radius: 0 10px 0 0; }
-.vf-c.bl { bottom: 18px; left: 18px; border-right: 0; border-top: 0; border-radius: 0 0 0 10px; }
-.vf-c.br { bottom: 18px; right: 18px; border-left: 0; border-top: 0; border-radius: 0 0 10px 0; }
-@keyframes vf-breathe { 50% { transform: scale(0.92); opacity: 0.7; } }
-.vf-grid { position: absolute; inset: 0; background-image: linear-gradient(90deg, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.1) 33.33%, transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.1) 66.66%, transparent calc(66.66% + 0.5px)),
-  linear-gradient(180deg, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.1) 33.33%, transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.1) 66.66%, transparent calc(66.66% + 0.5px)); }
-.vf-scan { position: absolute; left: 6%; right: 6%; top: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(214, 164, 108, 0.8), transparent); box-shadow: 0 0 18px 2px rgba(214, 164, 108, 0.35); animation: vf-scan 3.6s ease-in-out infinite; }
-@keyframes vf-scan { 0% { top: 8%; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { top: 92%; opacity: 0; } }
-.camera[data-mode="plan"] .vf-scan { background: linear-gradient(90deg, transparent, rgba(159, 178, 211, 0.9), transparent); box-shadow: 0 0 18px 2px rgba(159, 178, 211, 0.35); }
-.camera[data-mode="measure"] .vf-scan { display: none; }
-.vf-tag { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 99px; font: 500 11px var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
-  color: #fff; background: rgba(7, 8, 11, 0.6); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(8px); }
-.vf-tag i { width: 7px; height: 7px; border-radius: 50%; background: #e57a6e; box-shadow: 0 0 8px #e57a6e; animation: dot-pulse 1.2s ease-in-out infinite; }
-.camera .controls { z-index: 3; }
+/* ---------------- Cámara: obturador y flash. El visor a pantalla completa va al final. */
 /* Obturador: el círculo interior queda centrado de forma absoluta (no depende del relleno del botón
    ni de los elementos que se le agregan); un arco dorado gira alrededor, un halo respira y al
    disparar el centro se hunde, destella y la imagen hace un flash. */
@@ -1415,11 +1391,8 @@ img, video, canvas, iframe, table { max-width: 100%; }
 .shutter:active::after, .shutter.snap::after { transform: scale(0.82); background: radial-gradient(circle at 35% 30%, #fff8ec, var(--gold-2) 60%, var(--gold)); }
 .shutter.snap { animation: shutter-pop 0.45s var(--ease-spring); }
 @keyframes shutter-pop { 40% { transform: scale(0.92); } 100% { transform: scale(1); } }
-.camera .controls { align-items: center; }
 .camera .flash { position: absolute; inset: 0; z-index: 5; background: #fff; pointer-events: none; animation: cam-flash 0.45s ease-out forwards; }
 @keyframes cam-flash { from { opacity: 0.85; } to { opacity: 0; } }
-#cam-error:not([hidden]) ~ .vf, #cam-error:not([hidden]) + .vf { display: none; }
-.camera:has(#cam-error:not([hidden])) .vf { display: none; }
 .cam-denied { position: relative; z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 420px; text-align: center; color: var(--text-2); }
 .cam-denied h3 { color: var(--text); font-family: var(--display); font-weight: 400; font-size: 20px; }
 .cam-denied p { font-size: 13.5px; }
@@ -1490,7 +1463,7 @@ img, video, canvas, iframe, table { max-width: 100%; }
 .usage .usage-val { background: linear-gradient(180deg, #fff 20%, #b9c0cc); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ph2::after, .ph2 p.muted, .ph2 > :last-child, .content .card, .tab-ink, .vf-c, .vf-scan, .vf-tag i, .shutter::before, .shutter::after, .cam-denied-ico *, .wl-logo *, .welcome2 *, .composer2 .box::before,
+  .ph2::after, .ph2 p.muted, .ph2 > :last-child, .content .card, .tab-ink, .shutter::before, .shutter::after, .cam-denied-ico *, .wl-logo *, .welcome2 *, .composer2 .box::before,
   .msg, #list .pc3, .ph-band::after, .avatar-ring::before, .avatar-ring i, .mfa-shield svg, .ph2 .eyebrow.kinetic .kc { animation: none !important; }
   .ph2::after { transform: scaleX(1); }
 }
@@ -1812,3 +1785,100 @@ img, video, canvas, iframe, table { max-width: 100%; }
 @media (max-width: 960px) { .calc-layout { grid-template-columns: 1fr; } .calc-form { position: static; } }
 .modeler-cta { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 22px; align-items: center; padding: 24px 26px; margin-bottom: 18px; }
 @media (max-width: 640px) { .modeler-cta { grid-template-columns: 1fr; } }
+
+/* ---------------------------------------------------------------- correcciones de encuadre */
+/* Un degradado recortado al texto no se pinta a través de hijos transformados: cada letra lleva el suyo. */
+.kinetic .chrome-text { background: none; color: inherit; }
+.kinetic .chrome-text .kc { background: var(--chrome); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* Las barras se desplazan: sus botones conservan su ancho en lugar de recortar el texto. */
+.tabs > button, .tabs > a, .m-toolbar > * { flex: none; }
+
+/* ---------------------------------------------------------------- cámara a pantalla completa */
+.main:has(.camera) .topbar { display: none; }
+.content:has(.camera) { padding: 0; max-width: none; animation: none; }
+.camera { position: relative; width: 100%; height: 100vh; height: 100dvh; overflow: hidden; background: #050608; isolation: isolate; }
+.camera video, .camera canvas.shot, .camera canvas.overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.camera video { object-fit: cover; }
+.camera canvas.shot, .camera canvas.overlay { object-fit: contain; }
+.camera canvas.overlay { z-index: 1; touch-action: none; cursor: crosshair; }
+
+.vf { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.vf::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5, 6, 8, 0.62), transparent 22%, transparent 72%, rgba(5, 6, 8, 0.72)); }
+.vf-grid { position: absolute; inset: 0; opacity: 0.8; background-image:
+  linear-gradient(90deg, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.12) 33.33%, transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.12) 66.66%, transparent calc(66.66% + 0.5px)),
+  linear-gradient(180deg, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.12) 33.33%, transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.12) 66.66%, transparent calc(66.66% + 0.5px)); }
+.camera.review .vf, .camera:has(.cam-error:not([hidden])) .vf { display: none; }
+
+.cam-hud { position: absolute; z-index: 3; top: calc(16px + env(safe-area-inset-top)); left: 20px; right: 20px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; transition: right var(--dur-2) var(--ease-out); }
+.cam-hud select.input { justify-self: start; width: auto; min-width: 200px; max-width: 280px; min-height: 42px; color: #fff; background-color: rgba(7, 8, 11, 0.58); border-color: rgba(255, 255, 255, 0.16); backdrop-filter: blur(14px); }
+.cam-hud select.input option { color: #eceef2; background: #12141a; }
+.cam-hud .tabs { background: rgba(7, 8, 11, 0.58); border-color: rgba(255, 255, 255, 0.16); backdrop-filter: blur(14px); }
+.cam-hud .tabs button { color: rgba(255, 255, 255, 0.76); }
+.cam-hud .tabs button.active { color: var(--gold-2); }
+.cam-toggle { justify-self: end; }
+.camera.panel-open .cam-hud { right: 396px; }
+
+.camera .controls { position: absolute; z-index: 3; left: 0; right: 0; bottom: calc(30px + env(safe-area-inset-bottom)); display: flex; justify-content: center; align-items: center; gap: clamp(40px, 8vw, 96px); transition: right var(--dur-2) var(--ease-out); }
+.camera.panel-open .controls { right: 392px; }
+.camera .controls .btn.icon { width: 48px; height: 48px; border-radius: 50%; }
+
+.cam-error { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 120px 24px; pointer-events: auto; }
+.cam-denied h3 { color: #fff; }
+.cam-denied p { color: #c8ccd4; }
+
+.cam-panel { position: absolute; z-index: 4; top: 16px; right: 16px; bottom: 16px; width: 360px; display: flex; flex-direction: column; gap: 20px; padding: 20px; overflow-y: auto; border-radius: var(--radius-lg); border: 1px solid var(--line-2); background: color-mix(in srgb, var(--panel) 90%, transparent); backdrop-filter: blur(22px) saturate(140%); box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9); transform: translateX(calc(100% + 24px)); visibility: hidden; transition: transform var(--dur-3) var(--ease-out), visibility var(--dur-3); }
+.camera.panel-open .cam-panel { transform: none; visibility: visible; }
+.cam-panel-close { position: absolute; top: 12px; right: 12px; z-index: 1; }
+.camera.review .cam-panel-close, .camera.review .cam-recent { display: none; }
+.cam-recent-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; padding-top: 18px; border-top: 1px solid var(--line); }
+.camera.review canvas.shot, .camera.review canvas.overlay { width: calc(100% - 392px); }
+
+@media (max-width: 960px) {
+  .cam-hud { top: calc(10px + env(safe-area-inset-top)); left: 12px; right: 12px; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .cam-hud select.input { justify-self: stretch; width: 100%; min-width: 0; max-width: none; }
+  .cam-hud .tabs { grid-column: 1 / -1; grid-row: 2; }
+  .cam-hud .tabs button { flex: 1 0 auto; justify-content: center; padding-left: 8px; padding-right: 8px; font-size: 12.5px; }
+  .camera.panel-open .cam-hud { right: 12px; }
+  .camera .controls { bottom: calc(100px + env(safe-area-inset-bottom)); gap: clamp(36px, 14vw, 72px); }
+  .camera.panel-open .controls { right: 0; }
+  .cam-error { padding: 130px 24px 190px; }
+  .cam-panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 66dvh; padding-bottom: calc(20px + env(safe-area-inset-bottom)); border-width: 1px 0 0; border-radius: 22px 22px 0 0; transform: translateY(100%); }
+  .camera.review .cam-panel { height: 46dvh; }
+  .camera.review canvas.shot, .camera.review canvas.overlay { width: 100%; height: 54dvh; }
+  body:has(.camera.panel-open) .mobile-nav { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .cam-panel, .cam-hud, .camera .controls { transition: none; } }
+
+/* ---------------------------------------------------------------- modelador: encuadre y biblioteca */
+.m-lib-head { position: sticky; top: 0; z-index: 2; display: grid; gap: 10px; padding: 14px 12px 10px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.m-group > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; padding: 10px 14px; cursor: pointer; list-style: none; }
+.m-group > summary::-webkit-details-marker { display: none; }
+.m-group > summary::after { content: ""; width: 7px; height: 7px; margin-left: 2px; border-right: 1.5px solid var(--text-3); border-bottom: 1.5px solid var(--text-3); transform: rotate(-45deg); transition: transform var(--dur-1) var(--ease-out); }
+.m-group[open] > summary::after { transform: rotate(45deg); }
+.m-group > summary small { margin-left: auto; font: 500 10px var(--mono); letter-spacing: 0; color: var(--text-3); }
+.m-group > .m-grid { padding-bottom: 8px; }
+.m-tool { align-content: start; min-height: 72px; }
+.m-tool span { line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
+.m-tool[hidden] { display: none; }
+@media (min-width: 1201px) {
+  .content:has(.modeler) { display: flex; flex-direction: column; height: calc(100vh - 64px); height: calc(100dvh - 64px); max-width: none; padding-top: 18px; padding-bottom: 16px; }
+  .content:has(.modeler) > .modeler { flex: 1; min-height: 0; height: auto; }
+}
+@media (max-width: 960px) {
+  .m-lib .m-grid { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+  .m-stage { height: 60dvh; }
+  .page-head:has(#m-save) > .row { width: 100%; }
+  .page-head:has(#m-save) .hint { flex: 1 0 100%; }
+  .page-head:has(#m-save) .btn { flex: 1; justify-content: center; }
+}
+
+/* ---------------------------------------------------------------- correcciones de encuadre en móvil */
+.m-toolbar { scrollbar-width: none; }
+.m-toolbar::-webkit-scrollbar { display: none; }
+.row > .btn, .card-head > .btn, .page-head .btn { flex-shrink: 0; }
+@media (max-width: 640px) {
+  .stepper { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; overflow: visible; }
+  .stepper .step { min-width: 0; }
+  .stepper .step span { display: block; line-height: 1.25; }
+}
+.modal { max-height: calc(100dvh - 40px); }
