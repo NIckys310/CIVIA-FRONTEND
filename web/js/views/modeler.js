@@ -3,7 +3,7 @@
 // cómputo de cantidades, exportación a GLB y capturas de alta resolución.
 import { api, upload } from '../api.js';
 import { $, confirmDialog, fmtNum, html, icon, mount, on, toast } from '../ui.js';
-import { MATERIALS, TYPES, buildElement, createElement, createMaterials, quantities, sampleModel, wallOpenings } from '../modeler/elements.js';
+import { CATEGORIES, MATERIALS, OPENING_TYPES, TYPES, WALL_TYPES, buildElement, createElement, createMaterials, quantities, sampleModel, wallOpenings } from '../modeler/elements.js';
 
 const V = '/vendor/three';
 
@@ -24,9 +24,13 @@ export async function render(el, { projectId }) {
   </div>
   <div class="modeler">
     <aside class="card m-lib" aria-label="Elementos">
-      <div class="eyebrow gold" style="padding:14px 14px 6px">Elementos</div>
-      ${Object.entries(groupBy(TYPES)).map(([cat, types]) => html`<div class="m-cat">${cat}</div>
-        <div class="m-grid">${types.map(([k, t]) => html`<button class="m-tool" data-add="${k}" ${canEdit ? '' : 'disabled'} title="Agregar ${t.label.toLowerCase()}">${icon(t.icon)}<span>${t.label}</span></button>`)}</div>`)}
+      <div class="m-lib-head">
+        <div class="eyebrow gold">Elementos</div>
+        <input class="input sm" id="m-find" type="search" placeholder="Buscar elemento…" aria-label="Buscar elemento">
+      </div>
+      ${groupBy(TYPES).map(([cat, types], i) => html`<details class="m-group" ${i < 2 ? 'open' : ''}><summary class="m-cat">${cat}<small>${types.length}</small></summary>
+        <div class="m-grid">${types.map(([k, t]) => html`<button class="m-tool" data-add="${k}" data-name="${t.label.toLowerCase()}" ${canEdit ? '' : 'disabled'} title="Agregar ${t.label.toLowerCase()}">${icon(t.icon)}<span>${t.label}</span></button>`)}</div></details>`)}
+      <p class="hint" id="m-find-none" hidden style="padding:6px 14px">Ningún elemento coincide.</p>
       <div class="m-cat">Trabajo</div>
       <div class="m-row"><label class="hint" for="m-level">Nivel</label><input class="input sm" id="m-level" type="number" step="0.1" value="0"><span class="hint">m</span></div>
       <div class="m-row"><label class="hint" for="m-snap">Rejilla</label>
@@ -185,7 +189,7 @@ export async function render(el, { projectId }) {
   function refreshElement(id) {
     // Mover o cambiar una puerta o ventana cambia los vanos de los muros: se reconstruye todo.
     const changed = model.elements.find((x) => x.id === id);
-    if (!changed || changed.type === 'door' || changed.type === 'window' || changed.type === 'wall') {
+    if (!changed || OPENING_TYPES.has(changed.type) || WALL_TYPES.has(changed.type)) {
       rebuild();
       if (selected) select(selected);
       return;
@@ -231,7 +235,7 @@ export async function render(el, { projectId }) {
     e.position = pos;
     e.rotation = rot;
     o.position.set(...pos);
-    if (['door', 'window', 'wall'].includes(e.type)) { rebuild(); select(e.id); } // vanos de los muros
+    if (OPENING_TYPES.has(e.type) || WALL_TYPES.has(e.type)) { rebuild(); select(e.id); } // vanos de los muros
     dirty = true;
     setStatus('Cambios sin guardar');
     drawProps();
@@ -303,7 +307,7 @@ export async function render(el, { projectId }) {
     const row = (label, value, unit) => html`<div class="m-qty-row"><span>${label}</span><b>${value}</b><small>${unit}</small></div>`;
     mount(box, html`${row('Elementos', model.elements.length, '')}${row('Concreto', fmtNum(q.concrete, 2), 'm³')}
       ${row('Acero', fmtNum(q.steel, 0), 'kg')}${row('Mampostería', fmtNum(q.masonry, 1), 'm²')}${row('Cubierta', fmtNum(q.roof, 1), 'm²')}
-      ${row('Vidrio', fmtNum(q.glass, 1), 'm²')}${row('Puertas · ventanas', `${q.doors} · ${q.windows}`, '')}`);
+      ${row('Vidrio', fmtNum(q.glass, 1), 'm²')}${row('Madera', fmtNum(q.wood, 2), 'm³')}${row('Acabados', fmtNum(q.finish, 1), 'm²')}${row('Puertas · ventanas', `${q.doors} · ${q.windows}`, '')}`);
   }
 
   // ------------------------------------------------------------------ colocar elementos
@@ -381,6 +385,20 @@ export async function render(el, { projectId }) {
   });
 
   on(el, 'click', '[data-add]', (ev, b) => startPlacing(b.dataset.add));
+  const groups = [...el.querySelectorAll('.m-group')];
+  const initiallyOpen = new Map(groups.map((g) => [g, g.open]));
+  $('#m-find', el).addEventListener('input', (ev) => {
+    const q = ev.target.value.trim().toLowerCase();
+    let any = false;
+    for (const g of groups) {
+      let match = false;
+      g.querySelectorAll('.m-tool').forEach((b) => { b.hidden = Boolean(q) && !b.dataset.name.includes(q); match ||= !b.hidden; });
+      g.hidden = !match;
+      g.open = q ? match : initiallyOpen.get(g);
+      any ||= match;
+    }
+    $('#m-find-none', el).hidden = any;
+  });
 
   const onKey = (ev) => {
     if (/input|select|textarea/i.test(document.activeElement?.tagName || '')) return;
@@ -566,7 +584,7 @@ async function pickProject(el) {
 function groupBy(types) {
   const out = {};
   for (const [k, t] of Object.entries(types)) (out[t.category] ||= []).push([k, t]);
-  return out;
+  return CATEGORIES.filter((c) => out[c]).map((c) => [c, out[c]]);
 }
 
 function skyTexture(THREE) {
