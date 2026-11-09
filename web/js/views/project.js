@@ -19,13 +19,30 @@ const kindIcon = (d) => {
 };
 
 export async function render(el, { id, tab, query }) {
+  const views = { overview, files, tasks, budget, spaces, team, log };
+  // Misma cabecera: solo cambia la pestaña, y entra desde el lado hacia el que se avanzó.
+  const head = el.querySelector(`[data-project-head="${id}"]`);
+  const links = [...el.querySelectorAll('#project-tabs a')];
+  const from = links.findIndex((a) => a.classList.contains('active'));
+  const to = TABS.findIndex(([k]) => k === tab);
+  // Volver a pedir la misma pestaña es una recarga (p. ej. tras editar el proyecto): se pinta todo.
+  if (head && to >= 0 && from !== to) {
+    links.forEach((a, i) => a.classList.toggle('active', i === to));
+    const pane = $('#tab', el);
+    const refreshed = await api.get(`/projects/${id}`);
+    pane.dataset.dir = to >= from ? 'next' : 'prev';
+    pane.style.animation = 'none';
+    void pane.offsetWidth;
+    pane.style.animation = '';
+    return (views[tab] || overview)(pane, refreshed, refreshed.role !== 'VIEWER', query);
+  }
   mount(el, html`<div class="card skeleton" style="height:180px"></div>`);
   const project = await api.get(`/projects/${id}`);
   const canEdit = project.role !== 'VIEWER';
 
   mount(el, html`
   <a href="#/projects" class="btn ghost sm" style="margin:-8px 0 14px -8px">${icon('back')} Proyectos</a>
-  <div class="card" style="overflow:hidden;margin-bottom:18px">
+  <div class="card" data-project-head="${project.id}" style="overflow:hidden;margin-bottom:18px">
     <div class="cover" style="height:170px">${coverArt(project.id, project.coverColor)}</div>
     <div style="padding:0 26px 24px;margin-top:-34px;position:relative">
       <div class="row between wrap" style="align-items:flex-end;gap:18px">
@@ -50,7 +67,7 @@ export async function render(el, { id, tab, query }) {
       <div class="stepper" id="phases" style="margin-top:24px"></div>
     </div>
   </div>
-  <div class="tabs" style="margin-bottom:18px" role="tablist">
+  <div class="tabs" id="project-tabs" style="margin-bottom:18px" role="tablist">
     ${TABS.map(([k, label, ic]) => html`<a href="#/projects/${id}/${k}" class="${k === tab ? 'active' : ''}" role="tab">${icon(ic)}${label}</a>`)}
   </div>
   <div id="tab"></div>`);
@@ -62,7 +79,6 @@ export async function render(el, { id, tab, query }) {
     try { await downloadPath(`/projects/${project.id}/report.pdf`, name); toast('Informe descargado'); } catch (err) { toast(err.message, 'error'); }
   }));
   const target = $('#tab', el);
-  const views = { overview, files, tasks, budget, spaces, team, log };
   return (views[tab] || overview)(target, project, canEdit, query);
 }
 
