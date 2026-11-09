@@ -6,7 +6,7 @@ const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 /** true si la persona pidió menos movimiento en su sistema. */
 export const reducedMotion = () => reduce.matches;
 
-const PRESSABLE = '.btn, .chip, .nav a, .mobile-nav a, .tabs a, .tabs button';
+const PRESSABLE = '.btn, .chip, .nav a, .mobile-nav a, .mobile-nav button, .nav-tile, .tabs a, .tabs button';
 
 /** Onda dorada en el punto donde se pulsa un botón, chip o enlace de navegación. */
 export function enableRipples(root = document) {
@@ -29,6 +29,8 @@ export function stagger(container) {
   if (reducedMotion() || !container || container.dataset.staggered) return;
   container.dataset.staggered = '1';
   [...container.children].forEach((child, i) => {
+    // Lo que está fuera de pantalla entra cuando se llega a ello, no mientras nadie lo ve.
+    if (child.getBoundingClientRect().top > window.innerHeight) { revealLater(child); return; }
     child.style.setProperty('--i', Math.min(i, 14));
     child.classList.add('enter');
     child.addEventListener('animationend', () => child.classList.remove('enter'), { once: true });
@@ -36,6 +38,44 @@ export function stagger(container) {
 }
 
 const STAGGERED = '.grid, .kpi-grid, .cat-filter, .chips#suggested';
+// Paneles de trabajo que siempre deben estar a la vista.
+const NEVER_REVEAL = '.modeler, .camera, .chat, .modal, .calc-form, .calc-live, .skeleton, .view-skeleton, .reveal';
+
+let revealObserver = null;
+let revealBatch = 0;
+
+/** Olvida las tarjetas de la sección anterior. */
+export function resetReveals() {
+  revealObserver?.disconnect();
+  revealObserver = null;
+}
+
+function revealLater(el) {
+  if (reducedMotion() || !('IntersectionObserver' in window)) return;
+  revealObserver ||= new IntersectionObserver((entries) => {
+    revealBatch = 0;
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      const item = e.target;
+      revealObserver?.unobserve(item);
+      item.style.transitionDelay = `${Math.min(revealBatch++, 4) * 50}ms`;
+      item.classList.add('shown');
+      // Al terminar se limpia para que la tarjeta recupere sus transiciones propias.
+      setTimeout(() => { item.classList.remove('reveal', 'shown'); item.style.transitionDelay = ''; }, 800);
+    }
+  }, { rootMargin: '0px 0px -6% 0px', threshold: 0.04 });
+  el.classList.add('reveal');
+  revealObserver.observe(el);
+}
+
+function revealBelowFold(node) {
+  if (reducedMotion()) return;
+  const cards = [...(node.matches?.('.card') ? [node] : []), ...(node.querySelectorAll?.('.card') || [])];
+  for (const c of cards) {
+    if (c.closest(NEVER_REVEAL)) continue;
+    if (c.getBoundingClientRect().top > window.innerHeight * 0.98) revealLater(c);
+  }
+}
 
 /** Aplica la entrada escalonada a cada cuadrícula que aparece dentro de `root` (vistas que cargan datos después). */
 export function autoStagger(root) {
@@ -46,6 +86,7 @@ export function autoStagger(root) {
         if (n.nodeType !== 1) return;
         if (n.matches(STAGGERED)) stagger(n);
         n.querySelectorAll?.(STAGGERED).forEach(stagger);
+        revealBelowFold(n);
       });
     }
   });
@@ -80,6 +121,58 @@ export function moveNavPill(nav) {
     if ('ResizeObserver' in window) new ResizeObserver(sync).observe(nav);
   }
   place(nav, pill, true);
+}
+
+/** Indicador que se desliza entre las opciones de la barra del teléfono. */
+export function moveMobilePill(nav) {
+  if (!nav) return;
+  let pill = nav.querySelector('.mn-pill');
+  const sync = () => {
+    const active = nav.querySelector('.active');
+    if (!active) { pill.style.opacity = '0'; return; }
+    const r = active.getBoundingClientRect();
+    const p = nav.getBoundingClientRect();
+    pill.style.opacity = '1';
+    pill.style.width = `${r.width}px`;
+    pill.style.transform = `translateX(${r.left - p.left - nav.clientLeft}px)`;
+  };
+  if (!pill) {
+    pill = document.createElement('span');
+    pill.className = 'mn-pill';
+    pill.setAttribute('aria-hidden', 'true');
+    nav.prepend(pill);
+    pill.style.transition = 'none';
+    requestAnimationFrame(() => requestAnimationFrame(() => { pill.style.transition = ''; }));
+    if ('ResizeObserver' in window) new ResizeObserver(sync).observe(nav);
+  }
+  sync();
+}
+
+/** Permite cerrar una hoja arrastrándola hacia abajo; un gesto rápido basta aunque sea corto. */
+export function dragToDismiss(sheet, handle, close) {
+  let startY = null; let startAt = 0; let moved = 0;
+  handle.addEventListener('pointerdown', (e) => {
+    if (startY !== null) return; // un segundo dedo no debe hacer saltar la hoja
+    startY = e.clientY; startAt = performance.now(); moved = 0;
+    handle.setPointerCapture(e.pointerId);
+    sheet.style.transition = 'none';
+  });
+  handle.addEventListener('pointermove', (e) => {
+    if (startY === null) return;
+    moved = e.clientY - startY;
+    // Hacia arriba opone resistencia en lugar de frenar en seco.
+    sheet.style.transform = `translateY(${moved > 0 ? moved : -Math.sqrt(-moved)}px)`;
+  });
+  const release = () => {
+    if (startY === null) return;
+    const velocity = moved / (performance.now() - startAt);
+    startY = null;
+    sheet.style.transition = '';
+    sheet.style.transform = '';
+    if (moved > 90 || velocity > 0.5) close();
+  };
+  handle.addEventListener('pointerup', release);
+  handle.addEventListener('pointercancel', release);
 }
 
 function place(nav, pill, animate) {
@@ -298,4 +391,5 @@ export function enhanceView(root) {
   root.querySelectorAll('.page-head').forEach((h) => h.classList.add('ph2'));
   root.querySelectorAll('.tabs').forEach(slideTabs);
   root.querySelectorAll('.usage-val').forEach((v) => countUp(v, 1100));
+  revealBelowFold(root);
 }
