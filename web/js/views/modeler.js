@@ -2,7 +2,7 @@
 // ventanas, escaleras, cubiertas) con materiales PBR, sombras suaves, oclusión ambiental, vistas,
 // cómputo de cantidades, exportación a GLB y capturas de alta resolución.
 import { api, upload } from '../api.js';
-import { $, confirmDialog, fmtNum, html, icon, mount, on, toast } from '../ui.js';
+import { $, confirmDialog, flashDone, fmtNum, html, icon, mount, on, toast } from '../ui.js';
 import { CATEGORIES, MATERIALS, OPENING_TYPES, TYPES, WALL_TYPES, buildElement, createElement, createMaterials, quantities, sampleModel, wallOpenings } from '../modeler/elements.js';
 
 const V = '/vendor/three';
@@ -152,8 +152,43 @@ export async function render(el, { projectId }) {
 
   let raf = 0;
   let quality = true;
-  const loop = () => {
+  // Animaciones de la escena: vuelo de cámara entre vistas y entrada de elementos.
+  const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const inOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+  const outCubic = (t) => 1 - (1 - t) ** 3;
+  let flight = null;
+  let drops = [];
+  orbit.addEventListener('start', () => { flight = null; }); // quien orbita manda sobre la animación
+  const flyTo = (position, target) => {
+    if (calm()) { camera.position.copy(position); orbit.target.copy(target); return; }
+    flight = { at: performance.now(), from: camera.position.clone(), to: position, fromT: orbit.target.clone(), toT: target };
+  };
+  const dropIn = (object) => {
+    if (!object || calm()) return;
+    drops.push({ object, at: performance.now(), y: object.position.y });
+    object.position.y += 0.45;
+    object.scale.setScalar(0.96);
+  };
+  const stepAnimations = (now) => {
+    if (flight) {
+      const t = Math.min(1, Math.max(0, now - flight.at) / 720);
+      camera.position.lerpVectors(flight.from, flight.to, inOut(t));
+      orbit.target.lerpVectors(flight.fromT, flight.toT, inOut(t));
+      if (t === 1) flight = null;
+    }
+    if (drops.length) {
+      drops = drops.filter((d) => {
+        const t = Math.min(1, Math.max(0, now - d.at) / 300);
+        const e = outCubic(t);
+        d.object.position.y = d.y + 0.45 * (1 - e);
+        d.object.scale.setScalar(0.96 + 0.04 * e);
+        return t < 1;
+      });
+    }
+  };
+  const loop = (now = performance.now()) => {
     raf = requestAnimationFrame(loop);
+    stepAnimations(now);
     orbit.update();
     if (quality) composer.render(); else renderer.render(scene, camera);
   };
@@ -167,6 +202,8 @@ export async function render(el, { projectId }) {
   const undo = [];
   const redo = [];
   const objects = new Map();
+  let lastQuantities = {};
+  let lastSignature = '';
 
   const setStatus = (text) => { $('#m-status', el).textContent = text; };
   const snapStep = () => Number($('#m-snap', el).value);
@@ -289,6 +326,7 @@ export async function render(el, { projectId }) {
     copy.position = [e.position[0] + snapStep() * 4, e.position[1], e.position[2] + snapStep() * 4];
     change(() => model.elements.push(copy));
     refreshElement(copy.id);
+    dropIn(objects.get(copy.id));
     select(copy.id);
   }
 
@@ -304,7 +342,17 @@ export async function render(el, { projectId }) {
     const box = $('#m-qty', el);
     if (!box) return;
     const q = quantities(model.elements);
-    const row = (label, value, unit) => html`<div class="m-qty-row"><span>${label}</span><b>${value}</b><small>${unit}</small></div>`;
+    // Si nada cambió no se repinta: un segundo pintado borraría el resaltado.
+    const signature = JSON.stringify([model.elements.length, q]);
+    if (signature === lastSignature && box.childElementCount) return;
+    lastSignature = signature;
+    // El panel se vuelve a crear al seleccionar: los valores anteriores se recuerdan aparte.
+    const shown = lastQuantities;
+    lastQuantities = {};
+    const row = (label, value, unit) => {
+      lastQuantities[label] = String(value);
+      return html`<div class="m-qty-row ${label in shown && shown[label] !== String(value) ? 'changed' : ''}"><span>${label}</span><b>${value}</b><small>${unit}</small></div>`;
+    };
     mount(box, html`${row('Elementos', model.elements.length, '')}${row('Concreto', fmtNum(q.concrete, 2), 'm³')}
       ${row('Acero', fmtNum(q.steel, 0), 'kg')}${row('Mampostería', fmtNum(q.masonry, 1), 'm²')}${row('Cubierta', fmtNum(q.roof, 1), 'm²')}
       ${row('Vidrio', fmtNum(q.glass, 1), 'm²')}${row('Madera', fmtNum(q.wood, 2), 'm³')}${row('Acabados', fmtNum(q.finish, 1), 'm²')}${row('Puertas · ventanas', `${q.doors} · ${q.windows}`, '')}`);
@@ -371,6 +419,7 @@ export async function render(el, { projectId }) {
       e.rotation = Math.round(THREE.MathUtils.radToDeg(placing.ghost.rotation.y));
       change(() => model.elements.push(e));
       refreshElement(e.id);
+      dropIn(objects.get(e.id));
       const type = placing.type;
       cancelPlacing();
       select(e.id);
@@ -445,17 +494,18 @@ export async function render(el, { projectId }) {
     if (b.isEmpty()) b.set(new THREE.Vector3(-5, 0, -5), new THREE.Vector3(5, 3, 5));
     return b;
   }
-  function view(kind) {
+  function view(kind, animate = false) {
     const b = bounds();
     const c = b.getCenter(new THREE.Vector3());
     const s = b.getSize(new THREE.Vector3());
     const r = Math.max(s.x, s.y, s.z, 4);
     const pos = { persp: [c.x + r * 1.2, c.y + r * 0.85, c.z + r * 1.3], top: [c.x, c.y + r * 2.6, c.z + 0.001], front: [c.x, c.y + s.y * 0.2, c.z + r * 2.2], side: [c.x + r * 2.2, c.y + s.y * 0.2, c.z] }[kind];
+    if (animate) { flyTo(new THREE.Vector3(...pos), c); return; }
     camera.position.set(...pos);
     orbit.target.copy(c);
     orbit.update();
   }
-  on(el, 'click', '[data-view]', (ev, b) => view(b.dataset.view));
+  on(el, 'click', '[data-view]', (ev, b) => view(b.dataset.view, true));
 
   // ------------------------------------------------------------------ guardar, exportar, render
   async function save() {
@@ -468,6 +518,7 @@ export async function render(el, { projectId }) {
       revision = r.revision;
       dirty = false;
       setStatus(`Guardado · revisión ${revision}`);
+      flashDone(btn);
       toast('Modelo guardado');
     } catch (e) {
       setStatus('No se pudo guardar');

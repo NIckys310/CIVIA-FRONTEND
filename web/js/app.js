@@ -2,7 +2,7 @@
 import { api, hasSessionHint, logout, refresh, server, session, wakeServer } from './api.js';
 import { mountBackground } from './background.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
-import { autoStagger, circularReveal, dragToDismiss, elevateOnScroll, enableRipples, enableSpotlight, enhanceView, kinetic, leave, moveMobilePill, moveNavPill, resetReveals } from './motion.js';
+import { autoStagger, circularReveal, dragToDismiss, drawIcons, elevateOnScroll, enableImageFade, enableNavHaptics, enableRipples, enableSpotlight, enhanceView, kinetic, leave, moveMobilePill, moveNavPill, prepareNavIcons, resetReveals, routeBarDone, routeBarStart } from './motion.js';
 
 const NAV = [
   { section: 'Estudio' },
@@ -110,6 +110,7 @@ function renderShell() {
   </nav>`);
 
   $('#nav-more').onclick = toggleSheet;
+  prepareNavIcons();
 
   $('#logout').onclick = async () => { await logout(); location.hash = '#/login'; };
   $('#theme-toggle').onclick = () => {
@@ -224,6 +225,7 @@ function toggleSheet() {
     <div class="eyebrow gold nav-sheet-title">Todas las secciones</div>
     <div class="nav-sheet-grid">${NAV.filter((n) => n.href).map((n, i) => html`<a class="nav-tile ${n.match.test(current) ? 'active' : ''}" href="${n.href}" style="--i:${i}"><span class="nav-tile-ico">${icon(n.icon)}</span><span>${n.label}</span></a>`)}</div>`);
   document.body.append(back, panel);
+  drawIcons(panel);
   void panel.offsetWidth; // el estado inicial debe pintarse para que la transición arranque
   panel.classList.add('open');
   back.classList.add('open');
@@ -243,6 +245,7 @@ const loadView = (name) => (viewModules[name] ||= import(`./views/${name}.js`));
 
 let navSeq = 0;
 let lastSection = -1;
+let lastProject = null; // entre pestañas del mismo proyecto la cabecera no se vuelve a pintar
 
 async function route() {
   const seq = ++navSeq;
@@ -272,13 +275,17 @@ async function route() {
   if (drawer) { drawer.remove(); drawer = null; }
   closeSheet();
 
+  // Cambiar de pestaña dentro de un proyecto solo reemplaza el contenido de la pestaña.
+  const stay = match.view === 'project' && shellReady && lastProject === match.params.id && Boolean($(`[data-project-head="${match.params.id}"]`));
+  if (!match.isPublic && !stay) routeBarStart();
+
   let target;
   if (match.isPublic) {
     shellReady = false;
     target = app;
   } else {
     if (shellReady) {
-      await leave($('#view'));
+      if (!stay) await leave($('#view'));
       // Si mientras tanto se pidió otra sección, esta navegación ya no aplica.
       if (seq !== navSeq) return;
     } else renderShell();
@@ -287,17 +294,19 @@ async function route() {
     $$('[data-nav]').forEach((a) => a.classList.toggle('active', new RegExp(a.dataset.nav).test(hash)));
     moveNavPill($('.sidebar .nav'));
     moveMobilePill($('.mobile-nav'));
-    resetReveals();
+    if (!stay) resetReveals();
     // En el teléfono la sección entra desde el lado hacia el que se avanza en el menú.
     const section = SECTION_ORDER.findIndex((s) => (s === '#/' ? /^#\/?$/.test(hash) : hash.startsWith(s)));
     target.dataset.dir = section < 0 || lastSection < 0 || section === lastSection ? '' : section > lastSection ? 'next' : 'prev';
     lastSection = section;
-    target.style.animation = 'none';
-    void target.offsetWidth;
-    target.style.animation = '';
+    if (!stay) {
+      target.style.animation = 'none';
+      void target.offsetWidth;
+      target.style.animation = '';
+    }
   }
   // Si la sección tarda, se muestra un esqueleto en lugar de una pantalla vacía.
-  const skeleton = match.isPublic ? 0 : setTimeout(() => {
+  const skeleton = match.isPublic || stay ? 0 : setTimeout(() => {
     if (seq === navSeq) mount(target, html`<div class="view-skeleton" aria-busy="true"><div class="skeleton sk-title"></div>
       <div class="sk-row">${Array.from({ length: 4 }, () => html`<div class="skeleton sk-card"></div>`)}</div></div>`);
   }, 160);
@@ -317,7 +326,9 @@ async function route() {
     $('#retry-view', target)?.addEventListener('click', route);
   }
   clearTimeout(skeleton);
-  window.scrollTo({ top: 0, behavior: 'instant' }); // una sección nueva empieza arriba, sin desplazamiento animado
+  lastProject = match.view === 'project' ? match.params.id : null;
+  routeBarDone();
+  if (!stay) window.scrollTo({ top: 0, behavior: 'instant' }); // una sección nueva empieza arriba, sin desplazamiento animado
   hideSplash();
 }
 
@@ -363,6 +374,8 @@ document.addEventListener('click', async (e) => {
 
 // ------------------------------------------------------------------ arranque
 enableRipples();
+enableImageFade();
+enableNavHaptics();
 enableSpotlight();
 window.addEventListener('hashchange', route);
 window.addEventListener('unhandledrejection', (e) => {
