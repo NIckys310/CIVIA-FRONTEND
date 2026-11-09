@@ -1,8 +1,9 @@
-// Panel de inicio (Interfaz 2.1): bienvenida con skyline animado, indicadores con profundidad,
+// Panel de inicio (Interfaz 2.1): bienvenida con ciudad animada, indicadores con profundidad,
 // proyectos con inclinación 3D, Copilot con borde vivo, tareas y actividad.
 import { api, session } from '../api.js';
 import { $, coverArt, fmtBytes, fmtNum, html, icon, mount, raw, relTime, STATUS_LABEL } from '../ui.js';
 import { countUp, kinetic, revealOnScroll, tilt, typewriterPlaceholder } from '../motion.js';
+import { cityScene, startCity } from './hero-city.js';
 
 function greeting() {
   const h = new Date().getHours();
@@ -11,20 +12,6 @@ function greeting() {
 
 const today = () => new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
 const plural = (n, one, many) => `${fmtNum(n, 0)} ${n === 1 ? one : many}`;
-
-/** Skyline de líneas que se dibuja solo, con ventanas que se encienden (decorativo). */
-const skyline = () => raw(`<svg class="hb-skyline" viewBox="0 0 420 200" aria-hidden="true" fill="none">
-  <path class="sk-line" pathLength="1" d="M0 190H420"/>
-  <path class="sk-line s1" pathLength="1" d="M30 190V120H80V190"/>
-  <path class="sk-line s2" pathLength="1" d="M95 190V70L135 50L175 70V190"/>
-  <path class="sk-line s3" pathLength="1" d="M190 190V30H250V190M220 30V12"/>
-  <path class="sk-line s4" pathLength="1" d="M265 190V95H320V190"/>
-  <path class="sk-line s5" pathLength="1" d="M335 190V130L365 112L395 130V190"/>
-  ${[[106, 86], [126, 86], [146, 86], [106, 110], [146, 110], [126, 134], [200, 48], [222, 48], [236, 72], [200, 96], [222, 120], [236, 144],
-    [276, 112], [298, 136], [276, 160], [40, 136], [62, 160], [346, 148], [372, 166]]
-    .map(([x, y], i) => `<rect class="sk-win" x="${x}" y="${y}" width="9" height="12" rx="1" style="animation-delay:${(1.6 + (i * 0.37) % 3).toFixed(2)}s"/>`).join('')}
-  <circle class="sk-sun" cx="372" cy="46" r="16"/>
-</svg>`);
 
 function summaryChips(d) {
   const chips = [
@@ -41,7 +28,7 @@ export async function render(el, _params, ctx = {}) {
     <section class="hero-banner hb2">
       <div class="hero-banner-grid" aria-hidden="true"></div>
       <div class="hb-aurora" aria-hidden="true"><i></i><i></i></div>
-      ${skyline()}
+      ${raw(cityScene())}
       <div class="hero-banner-copy">
         <div class="eyebrow gold hb-date">${today()}</div>
         <h1 class="hb-title">${greeting()}, <span class="fx-accent">${first}</span></h1>
@@ -53,8 +40,11 @@ export async function render(el, _params, ctx = {}) {
       </div>
     </section>`;
 
-  mount(el, html`${head(html`<p class="muted">Preparando tu estudio…</p>`)}
-    <div class="kpi-row">${Array.from({ length: 5 }, () => html`<div class="card skeleton" style="height:140px"></div>`)}</div>`);
+  // El encabezado se pinta una sola vez: la ciudad no debe volver a dibujarse al llegar los datos.
+  mount(el, html`${head(html`<div id="hb-summary"><p class="muted">Preparando tu estudio…</p></div>`)}
+    <div id="dash-body"><div class="kpi-row">${Array.from({ length: 5 }, () => html`<div class="card skeleton" style="height:140px"></div>`)}</div></div>`);
+  const stopCity = startCity($('.hb2', el));
+  kinetic($('.hb-title', el));
 
   const d = await api.get('/dashboard');
   const kpi = (label, value, sub, ic, href, i) => html`<a class="card kpi kpi3" href="${href}" style="--ki:${i}">
@@ -64,9 +54,8 @@ export async function render(el, _params, ctx = {}) {
     <span class="kpi3-line" aria-hidden="true"></span></a>`;
 
   const engine = ctx.aiStatus?.();
-  mount(el, html`
-  ${head(summaryChips(d))}
-
+  mount($('#hb-summary', el), summaryChips(d));
+  mount($('#dash-body', el), html`
   <div class="kpi-row">
     ${kpi('Proyectos', d.projects, 'activos', 'projects', '#/projects', 0)}
     ${kpi('Planos', d.plans, 'arquitectónicos y técnicos', 'blueprint', '#/projects', 1)}
@@ -148,5 +137,5 @@ export async function render(el, _params, ctx = {}) {
   const ask = (q) => { sessionStorage.setItem('civia-copilot-draft', q); location.hash = '#/copilot'; };
   $('#ask', el).addEventListener('submit', (e) => { e.preventDefault(); const q = e.target.q.value.trim(); if (q) ask(q); });
   el.querySelectorAll('[data-q]').forEach((b) => { b.onclick = () => ask(b.dataset.q); });
-  return () => { stopType(); stopReveal(); };
+  return () => { stopType(); stopReveal(); stopCity(); };
 }
