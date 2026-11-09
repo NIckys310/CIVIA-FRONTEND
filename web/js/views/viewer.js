@@ -66,7 +66,7 @@ async function picker(el) {
     <a class="card hover glow modeler-cta" href="#/modeler">
       <div class="featured-mark">${icon('beam')}</div>
       <div><div class="eyebrow gold">Nuevo · Modelador paramétrico</div><h2 style="margin-top:8px">Modela estructura y arquitectura</h2>
-        <p class="muted" style="margin-top:6px">Columnas, vigas, losas, zapatas, muros, puertas, ventanas, escaleras y cubiertas con materiales reales, sombras y oclusión ambiental. Cómputo de cantidades, render en alta resolución y exportación a GLB.</p></div>
+        <p class="muted" style="margin-top:6px">Más de 50 estructuras: cimentaciones, pórticos, cerchas, arcos, muros cortina, cubiertas, escaleras y ascensores con materiales reales, sombras y oclusión ambiental. Cómputo de cantidades, render en alta resolución y exportación a GLB.</p></div>
       <span class="btn primary">${icon('cube')} Abrir modelador</span></a>
     <div class="split">
       <div class="card"><div class="card-head"><h3>Modelos 3D</h3><span class="pill">${models.length}</span></div>
