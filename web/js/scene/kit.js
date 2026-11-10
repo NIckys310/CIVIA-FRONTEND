@@ -25,11 +25,48 @@ function grainTexture(THREE, base, lines, alpha = 0.18) {
   return t;
 }
 
+function noiseTexture(THREE, size, paint, repeat) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  paint(c.getContext('2d'), size);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  t.repeat.set(repeat, repeat);
+  return t;
+}
+
+function speckle(g, size, base, tones, count, min = 1, max = 3) {
+  g.fillStyle = base;
+  g.fillRect(0, 0, size, size);
+  for (let i = 0; i < count; i++) {
+    g.fillStyle = tones[i % tones.length];
+    const w = min + Math.random() * (max - min);
+    g.fillRect(Math.random() * size, Math.random() * size, w, w);
+  }
+}
+
 /** Materiales compartidos. setGlow(g) ajusta las ventanas encendidas según la hora. */
 export function kitMaterials(THREE) {
   const std = (color, roughness = 0.85, metalness = 0, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness, metalness, ...extra });
   const wood = grainTexture(THREE, '#9a5a34', 'rgba(60,30,12,');
   wood.repeat.set(1, 1);
+  const grassMap = noiseTexture(THREE, 512, (g, n) => {
+    speckle(g, n, '#4b6f37', ['rgba(88,124,58,.55)', 'rgba(52,82,38,.6)', 'rgba(110,140,70,.35)', 'rgba(40,64,30,.5)'], 26000, 1, 3);
+  }, 90);
+  const asphaltMap = noiseTexture(THREE, 512, (g, n) => {
+    speckle(g, n, '#33363b', ['rgba(80,82,86,.5)', 'rgba(20,21,24,.6)', 'rgba(120,120,118,.25)'], 30000, 1, 2);
+  }, 30);
+  const paverMap = noiseTexture(THREE, 512, (g, n) => {
+    speckle(g, n, '#9d9a92', ['rgba(120,116,108,.5)', 'rgba(170,166,158,.4)'], 9000, 1, 3);
+    g.strokeStyle = 'rgba(60,58,54,.55)';
+    g.lineWidth = 3;
+    for (let i = 0; i <= 8; i++) { const v = (i * n) / 8; g.beginPath(); g.moveTo(v, 0); g.lineTo(v, n); g.moveTo(0, v); g.lineTo(n, v); g.stroke(); }
+  }, 18);
+  const concreteMap = noiseTexture(THREE, 256, (g, n) => {
+    speckle(g, n, '#bdb9b1', ['rgba(150,146,140,.35)', 'rgba(210,206,198,.35)', 'rgba(120,116,110,.25)'], 9000, 1, 3);
+  }, 1);
   const lit = [
     std(0x2e261d, 0.9, 0, { emissive: 0xffc480, emissiveIntensity: 1 }),
     std(0x2b261f, 0.9, 0, { emissive: 0xffe1b3, emissiveIntensity: 1 }),
@@ -37,8 +74,8 @@ export function kitMaterials(THREE) {
   ];
   const lamps = std(0xfff3d6, 0.4, 0, { emissive: 0xffdca8, emissiveIntensity: 1 });
   const m = {
-    plaster: std(0xeceae4, 0.82),
-    concrete: std(0xb9b5ad, 0.9),
+    plaster: std(0xf1efea, 0.8, 0, { map: concreteMap }),
+    concrete: std(0xffffff, 0.9, 0, { map: concreteMap }),
     pillar: std(0x8f8b84, 0.85),
     dark: std(0x1f2329, 0.5, 0.55),
     navy: std(0x262d3b, 0.7, 0.05),
@@ -49,13 +86,13 @@ export function kitMaterials(THREE) {
     interiorDark: std(0x171b22, 0.95),
     lit,
     lamps,
-    grass: std(0x4d7a3d, 1),
-    hedge: std(0x2f5a2c, 1, 0, { flatShading: true }),
-    leaves: [std(0x3d6b35, 1, 0, { flatShading: true }), std(0x4f7e3c, 1, 0, { flatShading: true }), std(0x5b8a43, 1, 0, { flatShading: true })],
+    grass: std(0xffffff, 1, 0, { map: grassMap }),
+    hedge: std(0x35602f, 1),
+    leaves: [std(0x35592c, 0.95), std(0x42683a, 0.95), std(0x557a40, 0.95), std(0x2c4a26, 0.95)],
     trunk: std(0x4a3a2a, 1),
-    asphalt: std(0x2b2e33, 0.95),
+    asphalt: std(0xffffff, 0.92, 0, { map: asphaltMap }),
     sidewalk: std(0xa9a69e, 0.95),
-    paver: std(0x8f8d88, 0.9),
+    paver: std(0xffffff, 0.88, 0, { map: paverMap }),
     marking: std(0xe9e6dc, 0.8),
     pot: std(0xe8e6e0, 0.7),
     tire: std(0x111214, 0.9),
@@ -126,17 +163,35 @@ function plant(THREE, parent, M, r, x, y, z, s = 1) {
 
 export function tree(THREE, M, r, s = 1) {
   const g = new THREE.Group();
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12 * s, 0.18 * s, 3.2 * s, 8), M.trunk);
-  trunk.position.y = 1.6 * s;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.1 * s, 0.2 * s, 3.4 * s, 10), M.trunk);
+  trunk.position.y = 1.7 * s;
   trunk.castShadow = true;
   g.add(trunk);
-  for (let i = 0; i < 6; i++) {
-    const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry((1.0 + r() * 0.7) * s, 1), M.leaves[i % 3]);
-    leaf.position.set((r() - 0.5) * 2 * s, (3.4 + r() * 1.8) * s, (r() - 0.5) * 2 * s);
+  for (const side of [-1, 1]) {
+    const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.05 * s, 0.08 * s, 1.6 * s, 6), M.trunk);
+    branch.position.set(side * 0.35 * s, 2.9 * s, 0);
+    branch.rotation.z = -side * 0.7;
+    g.add(branch);
+  }
+  // Copa: varias esferas con la superficie irregular, para que se lea como follaje y no como un sólido.
+  const clusters = 9 + Math.floor(r() * 4);
+  for (let i = 0; i < clusters; i++) {
+    const geo = new THREE.SphereGeometry(1, 14, 10);
+    const pos = geo.attributes.position;
+    for (let k = 0; k < pos.count; k++) {
+      const f = 0.82 + r() * 0.3;
+      pos.setXYZ(k, pos.getX(k) * f, pos.getY(k) * f * 0.85, pos.getZ(k) * f);
+    }
+    geo.computeVertexNormals();
+    const leaf = new THREE.Mesh(geo, M.leaves[Math.floor(r() * M.leaves.length)]);
+    const a = (i / clusters) * Math.PI * 2;
+    const ring = i === 0 ? 0 : 0.9 + r() * 0.7;
+    leaf.position.set(Math.cos(a) * ring * s, (3.9 + r() * 1.6 + (i === 0 ? 0.8 : 0)) * s, Math.sin(a) * ring * s);
+    leaf.scale.setScalar((0.95 + r() * 0.6) * s);
     leaf.castShadow = true;
+    leaf.receiveShadow = true;
     g.add(leaf);
   }
-  g.userData.sway = r() * 6;
   return g;
 }
 

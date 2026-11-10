@@ -4,9 +4,9 @@
 const MODES = {
   // Cielo en degradado (cenit, franja media y horizonte) con un halo alrededor del sol. El acimut se mide
   // desde +Z (la fachada principal): de día el sol ilumina el frente; al atardecer queda detrás de los edificios.
-  day: { elevation: 40, azimuth: 330, top: 0x3f6fb0, mid: 0x86aed6, bottom: 0xdfe9f2, halo: 0xfff4dc, exposure: 0.85, sun: 2.8, sunColor: 0xfff1e0, hemi: 0.75, fog: 0xc9d6e2, glow: 0.12 },
-  dusk: { elevation: 6, azimuth: 200, top: 0x1c2a55, mid: 0x7a6390, bottom: 0xf3a86a, halo: 0xffc58a, exposure: 0.9, sun: 1.6, sunColor: 0xffaa6a, hemi: 0.5, fog: 0x6e5d72, glow: 1.6 },
-  night: { elevation: 25, azimuth: 160, top: 0x070d24, mid: 0x1b2a5c, bottom: 0x4a5f9e, halo: 0x9fb4ff, exposure: 1, sun: 0.45, sunColor: 0x9fb4ff, hemi: 0.28, fog: 0x1b2448, glow: 2.6 },
+  day: { elevation: 40, azimuth: 330, top: 0x3f6fb0, mid: 0x86aed6, bottom: 0xdfe9f2, halo: 0xfff4dc, exposure: 1.25, sun: 3.2, sunColor: 0xfff1e0, hemi: 0.75, fog: 0xc9d6e2, glow: 0.12 },
+  dusk: { elevation: 6, azimuth: 200, top: 0x1c2a55, mid: 0x7a6390, bottom: 0xf3a86a, halo: 0xffc58a, exposure: 1.3, sun: 1.8, sunColor: 0xffaa6a, hemi: 0.5, fog: 0x6e5d72, glow: 1.6 },
+  night: { elevation: 25, azimuth: 160, top: 0x070d24, mid: 0x1b2a5c, bottom: 0x4a5f9e, halo: 0x9fb4ff, exposure: 1.35, sun: 0.5, sunColor: 0x9fb4ff, hemi: 0.28, fog: 0x1b2448, glow: 2.6 },
 };
 
 export const TIME_LABELS = { day: 'Día', dusk: 'Atardecer', night: 'Noche' };
@@ -47,9 +47,13 @@ export function createEnvironment(THREE, Sky, renderer, scene, { mode = 'dusk', 
   sky.frustumCulled = false;
   scene.add(sky);
 
+  // Mapeo de tonos AgX: colores y luces altas más parecidos a una fotografía que ACES.
+  renderer.toneMapping = THREE.AgXToneMapping;
+  const toneBefore = THREE.ACESFilmicToneMapping;
   const sun = new THREE.DirectionalLight(0xffffff, 2);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(4096, 4096);
+  sun.shadow.radius = 3;
   sun.shadow.bias = -0.0003;
   sun.shadow.normalBias = 0.03;
   Object.assign(sun.shadow.camera, { left: -shadowSize, right: shadowSize, top: shadowSize, bottom: -shadowSize, near: 1, far: 400 });
@@ -101,6 +105,7 @@ export function createEnvironment(THREE, Sky, renderer, scene, { mode = 'dusk', 
     get mode() { return current; },
     glow: () => glow,
     dispose() {
+      renderer.toneMapping = toneBefore;
       envTarget?.dispose();
       pmrem.dispose();
       sky.geometry.dispose();
