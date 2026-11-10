@@ -126,9 +126,20 @@ function watchStrength(el, email = () => '') {
   return ctl;
 }
 
+async function renderVerify(el, query) {
+  let ok = false;
+  try { await api.post('/auth/email/verify', { token: query.get('token') || '' }); ok = true; } catch { /* se informa abajo */ }
+  layout(el, html`<div class="auth-card">
+    <div class="eyebrow gold">Tu cuenta</div>
+    <h1 style="margin:14px 0 8px">${ok ? html`Correo <span class="fx-accent">confirmado</span>` : html`Enlace <span class="fx-accent">no válido</span>`}</h1>
+    <p class="muted" style="margin-bottom:28px">${ok ? 'Ya puedes usar todas las funciones de CIVIA AI.' : 'Venció o ya se usó. Reenvía otro desde tu perfil.'}</p>
+    <a class="btn primary lg block" href="#/">Ir a CIVIA ${icon('arrow')}</a></div>`);
+}
+
 export function render(el, params) {
   if (params.mode === 'forgot') return renderForgot(el);
   if (params.mode === 'reset') return renderReset(el, params.query);
+  if (params.mode === 'verify') return renderVerify(el, params.query);
   return renderLogin(el, params.mode === 'login');
 }
 
