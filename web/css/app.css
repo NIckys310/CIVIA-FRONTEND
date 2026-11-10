@@ -2213,3 +2213,15 @@ svg.draw :is(path, circle, rect, line, polyline) { stroke-dasharray: 1 1; animat
   .hc, .hc * { animation: none !important; }
   .hc-line { stroke-dashoffset: 0; opacity: 0.28; } .hc-solid { opacity: 1; }
 }
+
+/* ---------------------------------------------------------------- notas sobre planos y trabajo en equipo */
+.pin-stage { position: relative; display: inline-block; max-width: 100%; }
+.pin-stage img { display: block; max-width: 100%; }
+.pin-layer { position: absolute; inset: 0; }
+.pin-layer.marking { cursor: crosshair; outline: 2px dashed color-mix(in srgb, var(--gold) 70%, transparent); outline-offset: -2px; }
+.pin { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid #fff; background: var(--gold); color: #15110b; font: 600 11px var(--font); cursor: pointer; box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.8); animation: check-pop 260ms var(--ease-out); }
+.pin { line-height: 22px; } .pin span { display: block; transform: rotate(45deg); }
+.pin.done { background: var(--ok); opacity: 0.75; }
+.pin-bar { margin-top: 10px; gap: 12px; flex-wrap: wrap; }
+.m-remote { position: absolute; z-index: 3; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 10px 14px; max-width: calc(100% - 24px); font-size: 13px; animation: option-in 260ms var(--ease-out); }
+.m-remote svg { width: 18px; height: 18px; color: var(--gold); flex: none; }
