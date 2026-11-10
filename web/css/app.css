@@ -2225,3 +2225,34 @@ svg.draw :is(path, circle, rect, line, polyline) { stroke-dasharray: 1 1; animat
 .pin-bar { margin-top: 10px; gap: 12px; flex-wrap: wrap; }
 .m-remote { position: absolute; z-index: 3; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 10px 14px; max-width: calc(100% - 24px); font-size: 13px; animation: option-in 260ms var(--ease-out); }
 .m-remote svg { width: 18px; height: 18px; color: var(--gold); flex: none; }
+
+/* ---------------------------------------------------------------- acceso: manzana urbana en 3D */
+.hero-city { position: absolute; inset: 0; z-index: 0; opacity: 0; transition: opacity 900ms ease; }
+.hero-city canvas { display: block; width: 100%; height: 100%; }
+.hero-city.ready { opacity: 1; }
+.hero-city::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(7, 8, 11, 0.35), transparent 18%, transparent 62%, rgba(7, 8, 11, 0.9)), linear-gradient(90deg, transparent 78%, var(--bg)); }
+.auth .hero.has-city .auth-scene, .auth .hero.has-city .hero-grid, .auth .hero.has-city .hero-glow { display: none; }
+.auth .hero .hero-brand, .auth .hero .hero-copy, .auth .hero .brand-mobile { z-index: 2; }
+@media (max-width: 900px) {
+  .auth .hero { position: relative; }
+  .hero-city { inset: auto 0 0 0; top: 150px; height: auto; }
+  .auth .hero.has-city { min-height: 430px; }
+  .hero-city::after { background: linear-gradient(180deg, var(--bg), transparent 22%, transparent 70%, var(--bg)); }
+}
+
+/* ---------------------------------------------------------------- modelador: presentación y revisión */
+.modeler.presenting { grid-template-columns: minmax(0, 1fr); }
+.modeler.presenting > .m-lib, .modeler.presenting > .m-props, .modeler.presenting .m-toolbar > :not(#m-present) , .modeler.presenting .m-toolbar .m-sep { display: none; }
+.content:has(.modeler.presenting) > .page-head { display: none; }
+.m-stage:fullscreen { border-radius: 0; }
+.m-present { position: absolute; z-index: 3; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 6px 8px; max-width: calc(100% - 24px); overflow-x: auto; scrollbar-width: none; animation: option-in 260ms var(--ease-out); }
+.m-present > *, .m-present .row > * { flex: none; }
+.m-present .btn.active { color: var(--gold-2); background: var(--glass-2); }
+.m-stage.touring .m-toolbar { opacity: 0.25; }
+.check-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 52vh; overflow: auto; }
+.check-results li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); font-size: 13px; animation: option-in 240ms var(--ease-out) backwards; }
+.check-results li svg { width: 16px; height: 16px; margin-top: 1px; }
+.check-results li.ok svg { color: var(--ok); }
+.check-results li.warn { border-color: color-mix(in srgb, var(--warn) 45%, transparent); } .check-results li.warn svg { color: var(--warn); }
+.check-results li.error { border-color: color-mix(in srgb, var(--danger) 55%, transparent); } .check-results li.error svg { color: var(--danger); }
+@media (max-width: 960px) { .m-present { bottom: 10px; } }
