@@ -86,6 +86,9 @@ export function generateBuilding(options = {}) {
           add('wall', [x, y0, front], { length: +(bx - col).toFixed(3), height: wallH, thickness: 0.15 }, { material: 'pintura' });
           add('door', [x - bx / 4, y0, front], { width: 1.0, height: 2.2, depth: 0.15 });
           add('sliding_window', [x + bx / 6, y0, front], { width: 2.2, height: 1.6, sill: 0.6, depth: 0.15 });
+        } else if (kind !== 'house' && nx > 2 && i % 3 === 1) {
+          // Paño de madera entre ventanales, como en las fachadas de referencia.
+          add('cladding', [x, y0, front], { length: +(bx - col).toFixed(3), height: wallH, thickness: 0.04 }, { material: 'madera' });
         } else {
           add('curtain_wall', [x, y0, front], { length: +(bx - col).toFixed(3), height: wallH, modX: 1.3, modY: Math.min(1.5, wallH), mullion: 0.06, depth: 0.12 });
         }
