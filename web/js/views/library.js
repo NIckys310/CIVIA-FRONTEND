@@ -63,7 +63,7 @@ export async function render(el, params) {
   if (view === 'home' || view === 'search') {
     mount(el, html`${nav('home')}${askBox(params.q || '')}
       <div id="related" style="margin-top:22px"></div>
-      ${view === 'home' ? html`<div id="featured" style="margin-top:22px"></div>
+      ${view === 'home' ? html`<div id="pending-articles"></div><div id="featured" style="margin-top:22px"></div>
       <div class="row between" style="margin:30px 0 16px"><div class="eyebrow gold">Categorías</div>
         <button class="btn sm" id="new-article">${icon('plus')} Aportar un artículo</button></div>
       <div class="grid g4">${cats.map((c) => html`<a class="card hover cat-card" href="#/library/c/${c.id}">
@@ -71,6 +71,7 @@ export async function render(el, params) {
         <h3>${c.name}</h3><p>${c.description}</p><div class="hint" style="margin-top:12px">${c.articles} artículos</div></a>`)}</div>` : ''}`);
     bindAsk(el);
     $('#new-article', el)?.addEventListener('click', () => newArticle(cats));
+    if (view === 'home') loadPending(el);
     // Tamaño de la biblioteca y búsquedas recientes de la persona (para retomarlas con un clic).
     api.get('/library/stats').then((st) => {
       const t = $('#lib-stats', el);
@@ -188,6 +189,19 @@ export async function render(el, params) {
 }
 
 /** Crear un artículo o, si se pasa `existing`, editar uno propio. */
+/** Artículos en revisión: los propios, o todos si la persona puede aprobarlos. */
+async function loadPending(el) {
+  const box = $('#pending-articles', el);
+  const { canApprove, items } = await api.get('/library/pending').catch(() => ({ items: [] }));
+  if (!box || !items.length) return;
+  mount(box, html`<div class="card" style="margin-top:22px"><div class="card-head"><h3>En revisión</h3><span class="pill">${items.length}</span></div>
+    <div class="card-body stack">${items.map((a) => html`<div class="row between wrap"><a href="#/library/a/${a.slug}">${a.title}</a>
+      ${canApprove ? html`<button class="btn sm primary" data-approve="${a.slug}">${icon('check')} Aprobar</button>` : html`<span class="hint">Pendiente de aprobación</span>`}</div>`)}</div></div>`);
+  on(box, 'click', '[data-approve]', async (e, b) => {
+    try { await api.post(`/library/articles/${b.dataset.approve}/approve`); categoriesCache = null; toast('Artículo publicado'); loadPending(el); if (items.length === 1) mount(box, html``); } catch (err) { toast(err.message, 'error'); }
+  });
+}
+
 function newArticle(cats, existing = null) {
   const v = existing || { title: '', category: cats[0]?.id, tags: [], summary: '', body: '' };
   const m = modal({
@@ -209,7 +223,7 @@ function newArticle(cats, existing = null) {
     const a = existing ? await api.put(`/library/articles/${existing.slug}`, payload) : await api.post('/library/articles', payload);
     categoriesCache = null;
     m.close();
-    toast(existing ? 'Artículo actualizado' : 'Artículo publicado en la biblioteca');
+    toast(a.pending ? 'Enviado a revisión. Se publicará cuando lo aprueben.' : existing ? 'Artículo actualizado' : 'Artículo publicado en la biblioteca');
     if (existing) window.dispatchEvent(new HashChangeEvent('hashchange'));
     else location.hash = `#/library/a/${a.slug}`;
   };
