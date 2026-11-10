@@ -583,6 +583,27 @@ export async function render(el, { projectId }) {
     toast('Modelo exportado en formato IFC');
   };
 
+  // Trabajo en equipo: si otra persona guarda, se avisa en lugar de descubrirlo con un conflicto al guardar.
+  let remoteNotice = null;
+  const watchRemote = setInterval(async () => {
+    if (document.hidden || remoteNotice) return;
+    try {
+      const r = await api.get(`/projects/${projectId}/model/revision`);
+      if (r.revision <= revision) return;
+      remoteNotice = document.createElement('div');
+      remoteNotice.className = 'm-remote glass-panel';
+      mount(remoteNotice, html`${icon('users')}<span><b>${r.updatedBy || 'Otra persona'}</b> guardó cambios en el modelo.${dirty ? ' Tienes cambios sin guardar.' : ''}</span>
+        <button class="btn sm primary" data-reload>Ver su versión</button>`);
+      stage.append(remoteNotice);
+      remoteNotice.querySelector('[data-reload]').onclick = async () => {
+        if (dirty && !(await confirmDialog('Cargar la versión guardada', 'Perderás tus cambios sin guardar.', 'Cargar'))) return;
+        dirty = false;
+        try { localStorage.removeItem(draftKey); } catch { /* modo privado */ }
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      };
+    } catch { /* sin conexión: se reintenta */ }
+  }, 15000);
+
   const beforeUnload = (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } };
   window.addEventListener('beforeunload', beforeUnload);
 
@@ -621,6 +642,7 @@ export async function render(el, { projectId }) {
     cancelAnimationFrame(raf);
     ro.disconnect();
     document.removeEventListener('keydown', onKey);
+    clearInterval(watchRemote);
     window.removeEventListener('beforeunload', beforeUnload);
     gizmo.dispose();
     orbit.dispose();
