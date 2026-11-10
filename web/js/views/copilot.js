@@ -26,7 +26,7 @@ export async function render(el, { conversationId, query }) {
       <div class="card-head" style="padding:12px 18px">
         <div class="row" style="min-width:0">
           <button class="btn ghost icon sm history-toggle" id="history-toggle" aria-label="Ver conversaciones" aria-expanded="false">${icon('history')}</button>
-          <img src="/assets/mark-96.png" alt="" width="30" height="30" style="mix-blend-mode:screen;border-radius:8px">
+          <img src="/assets/mark-96.png?v=2" alt="" width="30" height="30" style="mix-blend-mode:screen;border-radius:8px">
           <div><div style="font:500 15px var(--display)">CIVIA <span class="ai-text">Copilot</span></div>
           <div class="hint">${status.llm ? `${status.engine} · respuestas en tiempo real` : 'Motor local · biblioteca con citas'}</div></div>
         </div>
@@ -171,7 +171,7 @@ export async function render(el, { conversationId, query }) {
 
   const msgHtml = (m) => (m.role === 'user'
     ? html`<div class="msg user"><div class="bubble">${m.content}</div></div>`
-    : html`<div class="msg ai" data-mid="${m.id || ''}"><div class="who"><img src="/assets/mark-96.png" alt=""></div><div>
+    : html`<div class="msg ai" data-mid="${m.id || ''}"><div class="who"><img src="/assets/mark-96.png?v=2" alt=""></div><div>
         <div class="md">${markdown(m.content)}</div>
         ${sourcesHtml(m.sources)}
         ${m.suggestions?.length ? html`<div class="chips" style="margin-top:12px">${m.suggestions.map((s) => html`<button class="chip" data-suggest="${s}">${icon('sparkle')}${s}</button>`)}</div>` : ''}
@@ -190,7 +190,7 @@ export async function render(el, { conversationId, query }) {
       <div class="wl-logo" aria-hidden="true">
         <span class="wl-ring r1"></span><span class="wl-ring r2"></span><span class="wl-ring r3"></span>
         ${Array.from({ length: 8 }, (_, i) => html`<span class="wl-dot" style="--d:${i}"></span>`)}
-        <img src="/assets/mark-256.png" alt="" width="120" height="120">
+        <img src="/assets/mark-256.png?v=2" alt="" width="120" height="120">
       </div>
       <h2 class="display wl-title" style="font-size:30px">¿En qué <span class="fx-accent">trabajamos</span> hoy?</h2>
       <p>Pregunta lo que necesites: estructuras, geotecnia, hidráulica, vías, presupuestos, normativa o cualquier otro tema. Elige un proyecto para que CIVIA conozca su contexto y te diga qué le falta.</p>
@@ -231,7 +231,7 @@ export async function render(el, { conversationId, query }) {
     const node = document.createElement('div');
     node.className = 'msg live';
     node.setAttribute('aria-busy', 'true'); // los lectores de pantalla leen la respuesta cuando termina
-    node.innerHTML = html`<div class="who"><img src="/assets/mark-96.png" alt=""></div>
+    node.innerHTML = html`<div class="who"><img src="/assets/mark-96.png?v=2" alt=""></div>
       <div><div class="md"><div class="typing"><i></i><i></i><i></i></div></div></div>`.s;
     box.appendChild(node);
     const target = node.querySelector('.md');

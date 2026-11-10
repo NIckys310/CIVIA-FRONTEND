@@ -55,7 +55,7 @@ function layout(el, panel) {
     <section class="hero" aria-hidden="true">
       <div class="hero-grid"></div>
       <div class="hero-glow"></div>
-      <div class="hero-brand"><img src="/assets/mark-96.png" alt="" width="40" height="40"><span class="chrome-text">Civia <b class="ai-text">AI</b></span></div>
+      <div class="hero-brand"><img src="/assets/mark-96.png?v=2" alt="" width="40" height="40"><span class="chrome-text">Civia <b class="ai-text">AI</b></span></div>
       ${raw(districtScene())}
       <div class="hero-copy">
         <div class="eyebrow gold">Arquitectura inteligente</div>
@@ -67,7 +67,7 @@ function layout(el, panel) {
         </ul>
       </div>
       <div class="brand-mobile">
-        <img src="/assets/mark-256.png" alt="" width="72" height="72">
+        <img src="/assets/mark-256.png?v=2" alt="" width="72" height="72">
         <div class="wordmark chrome-text">Civia <span class="ai-text">AI</span></div>
         <div class="eyebrow">Ingeniería y arquitectura inteligente</div>
       </div>
@@ -126,9 +126,20 @@ function watchStrength(el, email = () => '') {
   return ctl;
 }
 
+async function renderVerify(el, query) {
+  let ok = false;
+  try { await api.post('/auth/email/verify', { token: query.get('token') || '' }); ok = true; } catch { /* se informa abajo */ }
+  layout(el, html`<div class="auth-card">
+    <div class="eyebrow gold">Tu cuenta</div>
+    <h1 style="margin:14px 0 8px">${ok ? html`Correo <span class="fx-accent">confirmado</span>` : html`Enlace <span class="fx-accent">no válido</span>`}</h1>
+    <p class="muted" style="margin-bottom:28px">${ok ? 'Ya puedes usar todas las funciones de CIVIA AI.' : 'Venció o ya se usó. Reenvía otro desde tu perfil.'}</p>
+    <a class="btn primary lg block" href="#/">Ir a CIVIA ${icon('arrow')}</a></div>`);
+}
+
 export function render(el, params) {
   if (params.mode === 'forgot') return renderForgot(el);
   if (params.mode === 'reset') return renderReset(el, params.query);
+  if (params.mode === 'verify') return renderVerify(el, params.query);
   return renderLogin(el, params.mode === 'login');
 }
 

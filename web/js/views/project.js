@@ -540,7 +540,7 @@ async function budget(el, project, canEdit) {
     <div class="card">
       <div class="card-head"><h3>Capítulos e ítems</h3>
         <div class="row">${canEdit && !b.chapters.length ? html`<button class="btn sm" data-template>${icon('clipboard')} Usar plantilla</button>` : ''}
-          ${canEdit ? html`<button class="btn sm primary" data-chapter>${icon('plus')} Capítulo</button>` : ''}
+          ${canEdit ? html`<button class="btn sm" data-from-model data-busy="Calculando…">${icon('cube')} Desde el modelo 3D</button><button class="btn sm primary" data-chapter>${icon('plus')} Capítulo</button>` : ''}
           <button class="btn sm ghost" data-export>${icon('download')} CSV</button></div></div>
       ${b.chapters.length ? html`<div class="table-wrap"><table class="table">
         <thead><tr><th>Código</th><th>Descripción</th><th>Und</th><th class="num">Cantidad</th><th class="num">V. unitario</th><th class="num">Total</th><th></th></tr></thead>
@@ -576,6 +576,9 @@ async function budget(el, project, canEdit) {
 
   const base = `/projects/${project.id}/budget`;
   on(el, 'click', '[data-template]', async () => { b = await api.post(`${base}/template`); draw(); });
+  on(el, 'click', '[data-from-model]', async () => {
+    try { b = await api.post(`${base}/from-model`); draw(); toast('Cantidades del modelo 3D cargadas. Escribe los valores unitarios.'); } catch (e) { toast(e.message, 'error'); }
+  });
   on(el, 'click', '[data-export]', () => downloadPath(`${base}/export.csv`, `presupuesto-${project.code || 'proyecto'}.csv`));
   on(el, 'click', '[data-chapter]', () => {
     const m = modal({ title: 'Nuevo capítulo', body: html`<div class="field"><label>Nombre</label><input class="input" id="ch-name" placeholder="Estructura"></div>`,
