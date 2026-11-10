@@ -130,6 +130,7 @@ export async function startPresentation(ctx) {
     <button type="button" class="btn sm ghost active" data-people>${icon('users')} Personas</button>
     <button type="button" class="btn sm ghost" data-tour>${icon('compass')} Recorrido</button>
     <button type="button" class="btn sm ghost" data-full>${icon('expand')} Pantalla completa</button>
+    <button type="button" class="btn sm ghost" data-photo>${icon('camera')} Render fotorrealista</button>
     <button type="button" class="btn sm primary" data-exit>${icon('x')} Salir</button>`);
   stage.append(panel);
   applyTime(sky.mode);
@@ -141,6 +142,7 @@ export async function startPresentation(ctx) {
     else if (t.hasAttribute('data-people')) { people.group.visible = !people.group.visible; t.classList.toggle('active', people.group.visible); }
     else if (t.hasAttribute('data-tour')) { if (tour) stopTour(); else startTour(); t.classList.toggle('active', Boolean(tour)); }
     else if (t.hasAttribute('data-full')) { if (document.fullscreenElement) document.exitFullscreen(); else stage.requestFullscreen?.(); }
+    else if (t.hasAttribute('data-photo')) startPhoto();
     else if (t.hasAttribute('data-exit')) exit();
   });
   const onKey = (e) => { if (e.key === 'Escape' && tour) { stopTour(); panel.querySelector('[data-tour]').classList.remove('active'); } };
@@ -152,8 +154,52 @@ export async function startPresentation(ctx) {
   orbit.target.set(c.x, size.y * 0.45, c.z);
   orbit.update();
 
+  // Render fotorrealista: la escena se congela y el trazado de rayos converge muestra a muestra.
+  let photo = null;
+  const photoBox = document.createElement('div');
+  photoBox.className = 'm-photo glass-panel';
+  photoBox.hidden = true;
+  stage.append(photoBox);
+  async function startPhoto() {
+    if (photo || tour) return;
+    mount(photoBox, html`<div class="m-photo-head"><b>Render fotorrealista</b><span id="ph-count">Preparando la escena…</span></div>
+      <div class="m-photo-bar"><i id="ph-bar"></i></div>
+      <div class="row"><button type="button" class="btn sm" data-ph-save disabled>${icon('download')} Descargar PNG</button><button type="button" class="btn sm ghost" data-ph-close>${icon('x')} Volver</button></div>`);
+    photoBox.hidden = false;
+    panel.hidden = true;
+    const { startPhotoreal } = await import('./photoreal.js');
+    try {
+      photo = await startPhotoreal({
+        THREE, renderer, scene, camera, orbit, mode: sky.mode, sunDir: sky.sun.position.clone().sub(sky.sun.target.position),
+        hide: [sky.sky],
+        onProgress: (f, n) => {
+          photoBox.querySelector('#ph-bar').style.transform = `scaleX(${f})`;
+          photoBox.querySelector('#ph-count').textContent = f >= 1 ? `Listo · ${n} muestras` : `Calculando luz · ${n} muestras`;
+          photoBox.querySelector('[data-ph-save]').disabled = n < 24;
+        },
+      });
+    } catch (e) {
+      photoBox.querySelector('#ph-count').textContent = 'Este dispositivo no admite el trazado de rayos.';
+      console.error(e);
+    }
+    photoBox.querySelector('[data-ph-close]').onclick = stopPhoto;
+    photoBox.querySelector('[data-ph-save]').onclick = () => {
+      const a = document.createElement('a');
+      a.href = photo.snapshot();
+      a.download = 'render-civia.png';
+      a.click();
+    };
+  }
+  function stopPhoto() {
+    photo?.stop();
+    photo = null;
+    photoBox.hidden = true;
+    panel.hidden = false;
+  }
+
   const look = new THREE.Vector3();
   function update(dt) {
+    if (photo) { photo.step(); return; }
     cars.update(dt);
     if (people.group.visible) people.update(dt);
     if (tour) {
@@ -168,6 +214,8 @@ export async function startPresentation(ctx) {
   }
 
   function exit() {
+    stopPhoto();
+    photoBox.remove();
     if (document.fullscreenElement) document.exitFullscreen();
     stopTour();
     document.removeEventListener('keydown', onKey);
@@ -187,5 +235,5 @@ export async function startPresentation(ctx) {
     panel.remove();
     onExit?.();
   }
-  return { update, exit };
+  return { update, exit, get tracing() { return Boolean(photo); } };
 }

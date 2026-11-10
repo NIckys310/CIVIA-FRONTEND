@@ -200,6 +200,7 @@ export async function render(el, { projectId }) {
     loop.last = now;
     presentation?.update(dt);
     orbit.update();
+    if (presentation?.tracing) return; // el trazado de rayos dibuja directamente en el lienzo
     if (quality) composer.render(); else renderer.render(scene, camera);
   };
   loop();
