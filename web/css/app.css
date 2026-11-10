@@ -2256,3 +2256,8 @@ svg.draw :is(path, circle, rect, line, polyline) { stroke-dasharray: 1 1; animat
 .check-results li.warn { border-color: color-mix(in srgb, var(--warn) 45%, transparent); } .check-results li.warn svg { color: var(--warn); }
 .check-results li.error { border-color: color-mix(in srgb, var(--danger) 55%, transparent); } .check-results li.error svg { color: var(--danger); }
 @media (max-width: 960px) { .m-present { bottom: 10px; } }
+.m-photo { position: absolute; z-index: 4; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(420px, calc(100% - 24px)); display: grid; gap: 10px; padding: 12px 14px; animation: option-in 260ms var(--ease-out); }
+.m-photo-head { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.m-photo-head span { color: var(--text-2); font-variant-numeric: tabular-nums; }
+.m-photo-bar { height: 3px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.m-photo-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-2)); transform: scaleX(0); transform-origin: left; transition: transform 200ms linear; }
