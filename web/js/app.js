@@ -35,6 +35,7 @@ const ROUTES = [
   [/^\/forgot$/, 'auth', { mode: 'forgot' }, true],
   // 'always': el enlace del correo funciona aunque haya una sesión abierta en este navegador.
   [/^\/reset$/, 'auth', { mode: 'reset' }, 'always'],
+  [/^\/verify$/, 'auth', { mode: 'verify' }, 'always'],
   [/^\/?$/, 'dashboard'],
   [/^\/projects$/, 'projects'],
   [/^\/projects\/([\w-]+)(?:\/(\w+))?$/, 'project', (m) => ({ id: m[1], tab: m[2] || 'overview' })],

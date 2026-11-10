@@ -66,6 +66,9 @@ export async function render(el) {
     </div>
 
     <div class="stack lg">
+      ${u.emailVerified ? '' : html`<div class="card pad"><div class="eyebrow gold">Correo sin confirmar</div>
+        <p class="muted" style="margin:8px 0 14px;font-size:13px">Confirma ${u.email} para proteger tu cuenta.</p>
+        <button class="btn block" id="resend-verify">${icon('mail')} Reenviar enlace</button></div>`}
       <div class="card glow pad mfa-card ${u.mfaEnabled ? 'on' : ''}">
         <span class="mfa-shield" aria-hidden="true">${icon('shield')}</span>
         <div class="row between"><div><div class="eyebrow gold">Verificación en dos pasos</div><h3 style="margin-top:8px">${u.mfaEnabled ? 'Activa' : 'Desactivada'}</h3></div>
@@ -154,6 +157,10 @@ export async function render(el) {
     }
   };
 
+  $('#resend-verify', el)?.addEventListener('click', async () => {
+    await api.post('/auth/email/resend');
+    toast('Si tu correo está activo, te enviamos un enlace. Revisa tu bandeja.');
+  });
   $('#mfa', el).onclick = async () => {
     if (u.mfaEnabled) {
       const m = modal({ title: 'Desactivar verificación en dos pasos', body: html`<div class="field"><label>Confirma tu contraseña</label><input class="input" type="password" id="mfa-pw"></div>`,

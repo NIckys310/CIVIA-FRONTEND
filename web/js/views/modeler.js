@@ -19,6 +19,7 @@ export async function render(el, { projectId }) {
       <span class="hint" id="m-status">Cargando…</span>
       <button class="btn" id="m-shot">${icon('camera')} Render</button>
       <button class="btn" id="m-glb">${icon('download')} GLB</button>
+      <button class="btn" id="m-ifc" title="Formato BIM para Revit, ArchiCAD y similares">${icon('download')} IFC</button>
       ${canEdit ? html`<button class="btn primary" id="m-save" data-busy="Guardando…">${icon('save')} Guardar</button>` : ''}
     </div>
   </div>
@@ -568,6 +569,18 @@ export async function render(el, { projectId }) {
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     }, (err) => toast(err.message || 'No se pudo exportar', 'error'), { binary: true });
+  };
+
+  $('#m-ifc', el).onclick = async () => {
+    if (!model.elements.length || !objects.size) { toast(model.elements.length ? 'El modelo aún está cargando.' : 'Agrega elementos antes de exportar.', 'info'); return; }
+    const { exportIfc } = await import('../modeler/ifc.js');
+    const ifc = exportIfc(THREE, model.elements, objects, { project: project.name, label: (t) => TYPES[t]?.label || t });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([ifc], { type: 'application/x-step' }));
+    a.download = `modelo-${slug(project.name)}.ifc`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast('Modelo exportado en formato IFC');
   };
 
   const beforeUnload = (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } };
