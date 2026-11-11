@@ -2235,9 +2235,36 @@ svg.draw :is(path, circle, rect, line, polyline) { stroke-dasharray: 1 1; animat
 .auth .hero .hero-brand, .auth .hero .hero-copy, .auth .hero .brand-mobile { z-index: 2; }
 @media (max-width: 900px) {
   .auth .hero { position: relative; }
-  .hero-city { inset: auto 0 0 0; top: 150px; height: auto; }
-  .auth .hero.has-city { min-height: 430px; }
-  .hero-city::after { background: linear-gradient(180deg, var(--bg), transparent 22%, transparent 70%, var(--bg)); }
+  /* La escena ocupa todo el encabezado: la marca flota sobre el cielo real, sin caja ni corte. */
+  .hero-city { inset: 0; height: auto; }
+  .auth .hero.has-city { min-height: 460px; background: var(--bg); }
+  .hero-city::after {
+    background:
+      radial-gradient(70% 34% at 50% 15%, rgba(7, 8, 11, 0.55), transparent 75%),
+      linear-gradient(180deg, rgba(7, 8, 11, 0.62) 0%, rgba(7, 8, 11, 0.18) 26%, transparent 42%, transparent 70%, var(--bg) 100%);
+  }
+  .auth .hero.has-city .brand-mobile { padding-top: 26px; }
+  .auth .hero.has-city .brand-mobile .wordmark { text-shadow: none; }
+  .auth .hero.has-city .brand-mobile .eyebrow { color: rgba(236, 230, 220, 0.82); text-shadow: 0 1px 10px rgba(0, 0, 0, 0.7); }
+}
+
+/* Marca del acceso: entra desenfocada y sube, luego respira con un resplandor dorado; el lema se abre. */
+.auth .brand-mobile .wordmark { position: relative; animation: wordmark-in 1.3s var(--ease-out) 0.15s both, wordmark-glow 6s ease-in-out 1.6s infinite; }
+.auth .brand-mobile .eyebrow { animation: tagline-in 1.6s var(--ease-out) 0.55s both; }
+.auth .brand-mobile::after {
+  content: ""; justify-self: center; width: 120px; height: 1px; margin-top: 2px;
+  background: linear-gradient(90deg, transparent, rgba(214, 164, 108, 0.9), transparent);
+  animation: rule-in 1.2s var(--ease-out) 0.9s both;
+}
+@keyframes wordmark-in { from { opacity: 0; transform: translateY(14px) scale(0.98); filter: blur(10px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes wordmark-glow {
+  0%, 100% { filter: drop-shadow(0 2px 18px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 0 rgba(214, 164, 108, 0)); }
+  50% { filter: drop-shadow(0 2px 18px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 22px rgba(214, 164, 108, 0.45)); }
+}
+@keyframes tagline-in { from { opacity: 0; letter-spacing: 0.9em; filter: blur(4px); } to { opacity: 1; letter-spacing: 0.34em; filter: none; } }
+@keyframes rule-in { from { opacity: 0; transform: scaleX(0); } to { opacity: 1; transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .auth .brand-mobile .wordmark, .auth .brand-mobile .eyebrow, .auth .brand-mobile::after { animation: none; }
 }
 
 /* ---------------------------------------------------------------- modelador: presentación y revisión */
