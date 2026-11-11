@@ -157,7 +157,7 @@ export function createEnvironment(THREE, _unused, renderer, scene, { mode = 'dus
     uniforms.gain.value = m.gain;
     const h = horizonColor(texture, m.gain);
     uniforms.ground.value.copy(h).multiplyScalar(0.45);
-    scene.fog.color.copy(h);
+    scene.fog?.color.copy(h);
     hemi.color.copy(h).multiplyScalar(1 / Math.max(0.001, Math.max(h.r, h.g, h.b)));
     rebuildEnv();
   }
@@ -183,7 +183,7 @@ export function createEnvironment(THREE, _unused, renderer, scene, { mode = 'dus
     uniforms.top.value.setHex(m.fallback.top);
     uniforms.mid.value.setHex(m.fallback.mid);
     uniforms.bottom.value.setHex(m.fallback.bottom);
-    scene.fog.color.setHex(m.fallback.bottom);
+    scene.fog?.color.setHex(m.fallback.bottom);
     ready = loadSky(THREE, m.sky).then((tex) => { if (my === token) applyPhoto(m, tex); }).catch(() => {
       if (my !== token) return;
       uniforms.hasMap.value = 0;
