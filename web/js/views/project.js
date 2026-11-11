@@ -369,6 +369,50 @@ async function files(el, project, canEdit) {
   }
 }
 
+/** Notas ubicadas sobre una imagen de plano: se guardan como anotaciones con coordenadas relativas (0–1). */
+async function planNotes(root, d) {
+  const layer = $('#pin-layer', root);
+  const toggle = $('#pin-mode', root);
+  let marking = false;
+  const draw = async () => {
+    const notes = await api.get(`/documents/${d.id}/annotations`);
+    mount(layer, html`${notes.map((n, i) => html`<button type="button" class="pin ${n.resolved ? 'done' : ''}" style="left:${n.x * 100}%;top:${n.y * 100}%"
+      data-pin="${n.id}" data-resolved="${n.resolved ? '1' : ''}" title="${n.text}${n.authorName ? ` — ${n.authorName}` : ''}"><span>${i + 1}</span></button>`)}`);
+  };
+  toggle.onclick = () => {
+    marking = !marking;
+    toggle.setAttribute('aria-pressed', String(marking));
+    toggle.classList.toggle('primary', marking);
+    layer.classList.toggle('marking', marking);
+    $('#pin-hint', root).textContent = marking ? 'Toca el punto del plano donde va la nota.' : 'Las notas quedan sobre el punto exacto del plano.';
+  };
+  layer.addEventListener('click', async (e) => {
+    const pin = e.target.closest('[data-pin]');
+    if (pin) {
+      const resolved = !pin.dataset.resolved;
+      if (await confirmDialog('Nota del plano', `${pin.title}`, resolved ? 'Marcar resuelta' : 'Reabrir')) {
+        await api.patch(`/documents/${d.id}/annotations/${pin.dataset.pin}`, { resolved });
+        draw();
+      }
+      return;
+    }
+    if (!marking) return;
+    const r = layer.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width; const y = (e.clientY - r.top) / r.height;
+    const m = modal({ title: 'Nueva nota en el plano', body: html`<div class="field"><label>Nota</label><textarea class="input" id="pin-text" placeholder="Ej. Verificar luz de la viga en el eje C"></textarea></div>`,
+      foot: html`<button class="btn primary" data-ok>Guardar nota</button>` });
+    m.el.querySelector('[data-ok]').onclick = async () => {
+      const text = $('#pin-text', m.el).value.trim();
+      if (!text) return;
+      await api.post(`/documents/${d.id}/annotations`, { x, y, z: 0, text });
+      m.close();
+      toggle.click();
+      draw();
+    };
+  });
+  draw();
+}
+
 async function openDocument(d, project, canEdit, onChange) {
   const previewable = d.mediaType.startsWith('image/') || d.mediaType === 'application/pdf';
   const m = modal({
@@ -404,7 +448,12 @@ async function openDocument(d, project, canEdit, onChange) {
   if (previewable) {
     fileUrl(d.id, d).then((url) => {
       mount($('#pv', m.el), d.mediaType === 'application/pdf'
-        ? html`<iframe src="${url}" title="${d.name}"></iframe>` : html`<img src="${url}" alt="${d.name}">`);
+        ? html`<iframe src="${url}" title="${d.name}"></iframe>`
+        : html`<div class="pin-stage" id="pin-stage"><img src="${url}" alt="${d.name}"><div class="pin-layer" id="pin-layer"></div></div>
+          <div class="row pin-bar"><button type="button" class="btn sm" id="pin-mode" aria-pressed="false">${icon('pin')} Marcar en el plano</button>
+          <span class="hint" id="pin-hint">Las notas quedan sobre el punto exacto del plano.</span></div>`);
+      if (!d.mediaType.startsWith('image/')) return;
+      planNotes(m.el, d);
     }).catch((e) => mount($('#pv', m.el), html`<p class="error-text">${e.message}</p>`));
   }
   const loadComments = async () => {

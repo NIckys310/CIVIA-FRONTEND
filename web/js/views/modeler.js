@@ -2,7 +2,7 @@
 // ventanas, escaleras, cubiertas) con materiales PBR, sombras suaves, oclusión ambiental, vistas,
 // cómputo de cantidades, exportación a GLB y capturas de alta resolución.
 import { api, upload } from '../api.js';
-import { $, confirmDialog, flashDone, fmtNum, html, icon, mount, on, toast } from '../ui.js';
+import { $, confirmDialog, flashDone, fmtNum, html, icon, modal, mount, on, toast } from '../ui.js';
 import { CATEGORIES, MATERIALS, OPENING_TYPES, TYPES, WALL_TYPES, buildElement, createElement, createMaterials, quantities, sampleModel, wallOpenings } from '../modeler/elements.js';
 
 const V = '/vendor/three';
@@ -36,7 +36,9 @@ export async function render(el, { projectId }) {
       <div class="m-row"><label class="hint" for="m-level">Nivel</label><input class="input sm" id="m-level" type="number" step="0.1" value="0"><span class="hint">m</span></div>
       <div class="m-row"><label class="hint" for="m-snap">Rejilla</label>
         <select class="input sm" id="m-snap"><option value="0.05">5 cm</option><option value="0.1">10 cm</option><option value="0.25" selected>25 cm</option><option value="0.5">50 cm</option><option value="1">1 m</option></select></div>
-      ${canEdit ? html`<button class="btn sm block" id="m-sample" style="margin:10px 14px 0;width:calc(100% - 28px)">${icon('sparkle')} Estructura de ejemplo</button>` : ''}
+      ${canEdit ? html`<button class="btn sm primary block" id="m-generate" style="margin:10px 14px 0;width:calc(100% - 28px)">${icon('sparkle')} Generar edificio con IA</button>
+        <button class="btn sm block" id="m-sample" style="margin:8px 14px 0;width:calc(100% - 28px)">${icon('columns')} Estructura de ejemplo</button>` : ''}
+      <button class="btn sm block" id="m-check" style="margin:8px 14px 0;width:calc(100% - 28px)">${icon('shield')} Revisar estructura</button>
     </aside>
     <div class="m-stage" id="m-stage">
       <div class="m-toolbar glass-panel">
@@ -50,6 +52,8 @@ export async function render(el, { projectId }) {
         <span class="m-sep"></span>
         <button class="btn ghost icon sm" id="m-undo" title="Deshacer (Ctrl+Z)">${icon('undo')}</button>
         <button class="btn ghost icon sm" id="m-redo" title="Rehacer (Ctrl+Y)">${icon('redo')}</button>
+        <span class="m-sep"></span>
+        <button class="btn ghost sm" id="m-present" title="Render con cielo, terreno, personas y recorrido">${icon('sun')} Presentación</button>
         <span class="m-sep"></span>
         <label class="m-switch" title="Oclusión ambiental y sombras de alta calidad"><input type="checkbox" id="m-quality" checked> Render</label>
         <label class="m-switch"><input type="checkbox" id="m-grid" checked> Rejilla</label>
@@ -93,7 +97,8 @@ export async function render(el, { projectId }) {
   orbit.target.set(5, 1.5, 2);
   orbit.maxPolarAngle = Math.PI * 0.497;
 
-  scene.add(new THREE.HemisphereLight(0xdfe7f2, 0x2f2a24, 0.35));
+  const hemi = new THREE.HemisphereLight(0xdfe7f2, 0x2f2a24, 0.35);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffeedd, 2.2);
   sun.position.set(25, 35, 18);
   sun.castShadow = true;
@@ -187,10 +192,15 @@ export async function render(el, { projectId }) {
       });
     }
   };
+  let presentation = null; // modo presentación activo (cielo, terreno, personas y recorrido)
   const loop = (now = performance.now()) => {
     raf = requestAnimationFrame(loop);
     stepAnimations(now);
+    const dt = Math.min(0.05, (now - (loop.last || now)) / 1000);
+    loop.last = now;
+    presentation?.update(dt);
     orbit.update();
+    if (presentation?.tracing) return; // el trazado de rayos dibuja directamente en el lienzo
     if (quality) composer.render(); else renderer.render(scene, camera);
   };
   loop();
@@ -528,6 +538,77 @@ export async function render(el, { projectId }) {
   }
   $('#m-save', el)?.addEventListener('click', save);
 
+  // ------------------------------------------------------------------ presentación, generador y revisión
+  $('#m-present', el).onclick = async () => {
+    if (presentation) { presentation.exit(); return; }
+    if (placing) cancelPlacing();
+    select(null);
+    const { startPresentation } = await import('../modeler/presentation.js');
+    presentation = await startPresentation({
+      THREE, renderer, scene, camera, orbit, composer, stage, mats, bounds,
+      hidden: [grid, ground, sun, hemi, gizmo.getHelper ? gizmo.getHelper() : gizmo],
+      onExit: () => { presentation = null; el.querySelector('.modeler')?.classList.remove('presenting'); view('persp', true); },
+    });
+    el.querySelector('.modeler')?.classList.add('presenting');
+  };
+
+  async function showCheck(result, title = 'Revisión estructural') {
+    const list = (items, cls, ic) => items.map((t) => html`<li class="${cls}">${icon(ic)}<span>${t}</span></li>`);
+    const m = modal({ title, eyebrow: result.passed ? 'Sin errores estructurales' : `${result.errors.length} error(es) por corregir`,
+      body: html`<ul class="check-results">${list(result.errors, 'error', 'alert')}${list(result.warnings, 'warn', 'info')}${list(result.ok, 'ok', 'check')}</ul>
+        <p class="hint" style="margin-top:14px">Verificación geométrica de predimensionamiento (apoyos, luces, voladizos y continuidad de cargas). El diseño estructural definitivo lo firma el ingeniero responsable.</p>`,
+      foot: html`<button class="btn primary" data-close>Entendido</button>` });
+    m.el.querySelector('[data-close]').onclick = m.close;
+  }
+  $('#m-check', el).onclick = async () => {
+    const { checkStructure } = await import('../modeler/structure-check.js');
+    showCheck(checkStructure(model.elements));
+  };
+
+  $('#m-generate', el)?.addEventListener('click', async () => {
+    const G = await import('../modeler/generator.js');
+    const m = modal({
+      title: 'Generar edificio con IA', eyebrow: 'Diseño estructural automático',
+      body: html`<form id="gen-form" class="form-grid">
+        <div class="field full"><label>Describe el edificio</label><textarea class="input" name="prompt" placeholder="Ej. edificio de apartamentos de 6 pisos de 24 x 14 con balcones"></textarea>
+          <div class="hint">Puedes escribirlo o elegir abajo. La IA arma columnas, vigas, losas, cimentación, escaleras, fachadas y cubierta, y revisa que no haya errores estructurales.</div></div>
+        <div class="field"><label>Tipo</label><select class="input" name="kind">${Object.entries(G.KINDS).map(([k, v]) => html`<option value="${k}">${v.label}</option>`)}</select></div>
+        <div class="field"><label>Pisos</label><input class="input" type="number" name="floors" min="1" max="40" value="4"></div>
+        <div class="field"><label>Frente (m)</label><input class="input" type="number" name="width" min="6" max="60" step="0.5" value="24"></div>
+        <div class="field"><label>Fondo (m)</label><input class="input" type="number" name="depth" min="6" max="40" step="0.5" value="14"></div>
+        <label class="check full"><input type="checkbox" name="replace" checked> Reemplazar el modelo actual</label>
+      </form>`,
+      foot: html`<button class="btn primary" data-ok>${icon('sparkle')} Generar</button>`,
+    });
+    const form = $('#gen-form', m.el);
+    form.prompt.addEventListener('input', () => {
+      const p = G.parsePrompt(form.prompt.value);
+      form.kind.value = p.kind;
+      if (p.floors) form.floors.value = p.floors;
+      if (p.width) form.width.value = p.width;
+      if (p.depth) form.depth.value = p.depth;
+    });
+    form.kind.addEventListener('change', () => {
+      const k = G.KINDS[form.kind.value];
+      form.floors.value = k.floors; form.width.value = k.width; form.depth.value = k.depth;
+    });
+    m.el.querySelector('[data-ok]').onclick = async () => {
+      const prompt = G.parsePrompt(form.prompt.value);
+      const { model: generated, summary } = G.generateBuilding({
+        kind: form.kind.value, floors: Number(form.floors.value), width: Number(form.width.value), depth: Number(form.depth.value), balconies: prompt.balconies,
+      });
+      const replace = form.replace.checked;
+      change(() => { model.elements = replace ? generated.elements : model.elements.concat(generated.elements); });
+      m.close();
+      rebuild();
+      view('persp', true);
+      const { checkStructure } = await import('../modeler/structure-check.js');
+      const result = checkStructure(model.elements);
+      result.ok.unshift(`${summary.kind}: ${summary.floors} pisos, ${summary.width} × ${summary.depth} m, altura ${summary.height.toFixed(1)} m. Malla de ${summary.grid}; columnas de ${summary.column}, vigas de ${summary.beam}, losas de ${summary.slab} y ${summary.foundation}.`);
+      showCheck(result, 'Edificio generado');
+    };
+  });
+
   $('#m-sample', el)?.addEventListener('click', async () => {
     if (model.elements.length && !(await confirmDialog('Estructura de ejemplo', 'Se agregará un pórtico de ejemplo al modelo actual.', 'Agregar'))) return;
     const sample = sampleModel();
@@ -583,6 +664,27 @@ export async function render(el, { projectId }) {
     toast('Modelo exportado en formato IFC');
   };
 
+  // Trabajo en equipo: si otra persona guarda, se avisa en lugar de descubrirlo con un conflicto al guardar.
+  let remoteNotice = null;
+  const watchRemote = setInterval(async () => {
+    if (document.hidden || remoteNotice) return;
+    try {
+      const r = await api.get(`/projects/${projectId}/model/revision`);
+      if (r.revision <= revision) return;
+      remoteNotice = document.createElement('div');
+      remoteNotice.className = 'm-remote glass-panel';
+      mount(remoteNotice, html`${icon('users')}<span><b>${r.updatedBy || 'Otra persona'}</b> guardó cambios en el modelo.${dirty ? ' Tienes cambios sin guardar.' : ''}</span>
+        <button class="btn sm primary" data-reload>Ver su versión</button>`);
+      stage.append(remoteNotice);
+      remoteNotice.querySelector('[data-reload]').onclick = async () => {
+        if (dirty && !(await confirmDialog('Cargar la versión guardada', 'Perderás tus cambios sin guardar.', 'Cargar'))) return;
+        dirty = false;
+        try { localStorage.removeItem(draftKey); } catch { /* modo privado */ }
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      };
+    } catch { /* sin conexión: se reintenta */ }
+  }, 15000);
+
   const beforeUnload = (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } };
   window.addEventListener('beforeunload', beforeUnload);
 
@@ -621,6 +723,8 @@ export async function render(el, { projectId }) {
     cancelAnimationFrame(raf);
     ro.disconnect();
     document.removeEventListener('keydown', onKey);
+    clearInterval(watchRemote);
+    presentation?.exit();
     window.removeEventListener('beforeunload', beforeUnload);
     gizmo.dispose();
     orbit.dispose();
