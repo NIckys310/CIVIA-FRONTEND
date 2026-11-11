@@ -75,6 +75,8 @@ function layout(el, panel) {
     <section class="panel">${panel}</section>
   </div>`);
 
+  // Manzana urbana en 3D detrás del formulario (si no hay WebGL queda la ilustración vectorial).
+  import('./auth-city.js').then((m) => m.mountCity(el.querySelector('.auth .hero'))).catch(() => {});
   // Títulos y etiquetas: las letras entran una a una y la palabra destacada brilla en dorado.
   el.querySelectorAll('.auth-card h1, .auth-card > .eyebrow, .hero-copy h2, .hero-copy .eyebrow').forEach(kinetic);
 
