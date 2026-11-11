@@ -131,7 +131,8 @@ export async function render(el, { projectId }) {
   scene.add(gizmo.getHelper ? gizmo.getHelper() : gizmo);
   gizmo.addEventListener('dragging-changed', (e) => { orbit.enabled = !e.value; if (!e.value) commitTransform(); });
 
-  const composer = new EffectComposer(renderer);
+  // Búfer con MSAA ×4 en coma flotante: bordes suaves y sin parpadeo aunque haya posprocesado.
+  const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }));
   composer.addPass(new RenderPass(scene, camera));
   const ao = new GTAOPass(scene, camera, 1, 1);
   ao.updateGtaoMaterial({ radius: 0.6, distanceExponent: 1.4, thickness: 1.2, scale: 1.1 });
@@ -148,6 +149,7 @@ export async function render(el, { projectId }) {
   const resize = () => {
     const w = stage.clientWidth; const h = stage.clientHeight;
     renderer.setSize(w, h, false);
+    composer.setPixelRatio(renderer.getPixelRatio());
     composer.setSize(w, h);
     camera.aspect = w / Math.max(1, h);
     camera.updateProjectionMatrix();
@@ -545,7 +547,7 @@ export async function render(el, { projectId }) {
     select(null);
     const { startPresentation } = await import('../modeler/presentation.js');
     presentation = await startPresentation({
-      THREE, renderer, scene, camera, orbit, composer, stage, mats, bounds,
+      THREE, renderer, scene, camera, orbit, composer, ao, stage, mats, bounds,
       hidden: [grid, ground, sun, hemi, gizmo.getHelper ? gizmo.getHelper() : gizmo],
       onExit: () => { presentation = null; el.querySelector('.modeler')?.classList.remove('presenting'); view('persp', true); },
     });

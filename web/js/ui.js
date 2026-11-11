@@ -174,6 +174,24 @@ const P = {
   road: '<path d="M8 3 4 21M16 3l4 18"/><path d="M12 4v3M12 10.5v3M12 17v3"/>',
   drop: '<path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z"/><path d="M9 15a3 3 0 0 0 3 3"/>',
   mountain: '<path d="m2 20 7-12 4 6 3-4 6 10z"/><path d="m9 8 2 3.5"/>',
+  // Mobiliario
+  kitchen: '<path d="M3 11h18v9H3z"/><path d="M3 14h18M9 14v6M15 14v6"/><path d="M5 4h14v4H5z"/><path d="M14 11V9.5a1.5 1.5 0 0 1 3 0"/>',
+  fridge: '<rect x="6" y="2.5" width="12" height="19" rx="1.5"/><path d="M6 9h12M9 5.5v1.5M9 11.5v3"/>',
+  stove: '<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 9h16"/><circle cx="8.5" cy="6" r="1.2"/><circle cx="15.5" cy="6" r="1.2"/><rect x="7" y="12" width="10" height="6" rx="1"/>',
+  toilet: '<path d="M7 3h10v6H7z"/><path d="M5 9h14a6 6 0 0 1-6 6h-2a6 6 0 0 1-6-6z"/><path d="M9 15l-1 6h8l-1-6"/>',
+  sink: '<path d="M3 11h18v2a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5z"/><path d="M12 11V6a2 2 0 0 1 4 0"/><path d="M10 21h4M12 18v3"/>',
+  shower: '<path d="M5 21V6a3 3 0 0 1 6 0"/><path d="M8 9h6l-1 2H9z"/><path d="M9.5 14v.5M12 14v1M14.5 14v.5M10.5 17v.5M13.5 17v.5"/>',
+  bath: '<path d="M3 12h18v3a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5z"/><path d="M6 12V5.5a2 2 0 0 1 3.7-1"/><path d="M7 20l-1 2M17 20l1 2"/>',
+  bed: '<path d="M3 19V6M21 19v-5M3 14h18M3 11h18v3"/><path d="M6 11V9a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 12 9v2"/>',
+  drawer: '<rect x="5" y="4" width="14" height="14" rx="1.5"/><path d="M5 11h14M10.5 7.5h3M10.5 14.5h3M7 18v2M17 18v2"/>',
+  wardrobe: '<rect x="4" y="2.5" width="16" height="18" rx="1"/><path d="M12 2.5v18M10 10v3M14 10v3M6 20.5V22M18 20.5V22"/>',
+  desk: '<path d="M3 9h18M5 9v11M19 9v11M13 9v6h6"/><rect x="8" y="3" width="8" height="5" rx=".5"/>',
+  sofa: '<path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3"/><path d="M3 13a2 2 0 0 1 4 0v1h10v-1a2 2 0 0 1 4 0v5H3z"/><path d="M5 18v2M19 18v2"/>',
+  table: '<path d="M2 9h20M5 9l-1 11M19 9l1 11M7 14h10"/>',
+  tv: '<rect x="2.5" y="4" width="19" height="12" rx="1"/><path d="M8 20h8M12 16v4"/>',
+  shelf: '<path d="M4 3v18M20 3v18M4 8h16M4 14h16M4 20h16"/><path d="M7 8V4.5M9 8V5M14 14v-4M16.5 14l1-3.5"/>',
+  rug: '<rect x="4" y="5" width="16" height="14" rx="1"/><rect x="7" y="8" width="10" height="8"/><path d="M2 7h2M2 12h2M2 17h2M20 7h2M20 12h2M20 17h2"/>',
+  plant: '<path d="M8 15h8l-1 6H9z"/><path d="M12 15V8M12 11c-3 0-5-2-5-5 3 0 5 2 5 5zM12 9c0-3 2-5 5-5 0 3-2 5-5 5z"/>',
 };
 
 export function icon(name, cls = '') {

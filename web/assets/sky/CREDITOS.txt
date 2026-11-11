@@ -1,0 +1,9 @@
+Cielos fotográficos (HDRI) — Poly Haven, licencia CC0 (dominio público)
+
+day.jpg    kloofendal_48d_partly_cloudy_puresky — Greg Zaal   https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky
+dusk.jpg   qwantani_dusk_2_puresky              — Greg Zaal, Jarod Guest   https://polyhaven.com/a/qwantani_dusk_2_puresky
+night.jpg  qwantani_night_puresky               — Greg Zaal, Jarod Guest   https://polyhaven.com/a/qwantani_night_puresky
+
+Preparación: panorámica 4K girada para alinear el sol con la luz de la escena, normalizada por la mediana
+del hemisferio superior y codificada como y = x / (1 + x) en sRGB (solo el hemisferio superior, 4096 × 1024).
+environment.js invierte esa curva en el shader para recuperar el rango alto antes del mapeo de tonos.

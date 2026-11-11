@@ -5,7 +5,7 @@ import { html, icon, mount } from '../ui.js';
 const V = '/vendor/three';
 
 export async function startPresentation(ctx) {
-  const { THREE, renderer, scene, camera, orbit, composer, stage, mats, bounds, hidden, onExit } = ctx;
+  const { THREE, renderer, scene, camera, orbit, composer, ao, stage, mats, bounds, hidden, onExit } = ctx;
   const [{ UnrealBloomPass }, env, kit] = await Promise.all([
     import(`${V}/addons/postprocessing/UnrealBloomPass.js`), import('../scene/environment.js'), import('../scene/kit.js'),
   ]);
@@ -20,7 +20,13 @@ export async function startPresentation(ctx) {
   // Lo que solo sirve para editar se oculta y se recuerda para restaurarlo.
   const restore = hidden.map((o) => [o, o.visible]);
   hidden.forEach((o) => { o.visible = false; });
-  const previous = { background: scene.background, environment: scene.environment, intensity: scene.environmentIntensity, exposure: renderer.toneMappingExposure, fog: scene.fog, maxDistance: orbit.maxDistance };
+  const previous = { background: scene.background, environment: scene.environment, intensity: scene.environmentIntensity, exposure: renderer.toneMappingExposure, fog: scene.fog, maxDistance: orbit.maxDistance, near: camera.near, far: camera.far, ao: ao?.enabled };
+  // Escena grande: plano cercano más lejos (sin parpadeo de superficies) y sin la oclusión ambiental de
+  // pantalla, calibrada para la escala de un edificio, que en una manzana entera dibuja halos.
+  camera.near = 0.25;
+  camera.far = 6000;
+  camera.updateProjectionMatrix();
+  if (ao) ao.enabled = false;
   scene.background = null;
   const sky = env.createEnvironment(THREE, null, renderer, scene, { mode: env.currentTimeOfDay(), shadowSize: radius + 40 });
   sky.sun.target.position.copy(c);
@@ -41,7 +47,8 @@ export async function startPresentation(ctx) {
   plot.receiveShadow = true;
   site.add(plot);
   const streetZ = b.max.z + 14;
-  const road = kit.street(THREE, M, r, { length: Math.max(260, radius * 10), z: streetZ });
+  // Árboles solo en el andén del lado del edificio: el del frente es donde se para la cámara.
+  const road = kit.street(THREE, M, r, { length: Math.max(260, radius * 10), z: streetZ, treeSides: [-1] });
   road.position.x = c.x;
   site.add(road);
   for (let i = 0; i < 12; i++) {
@@ -63,7 +70,20 @@ export async function startPresentation(ctx) {
     n.rotation.y = side * 0;
     site.add(n);
   }
+  // Vida de calle frente al lote: bancas, materas, bolardos, canecas, paradero y paso de cebra.
+  {
+    const [wA] = road.userData.walks;
+    const place = (o, x, y, z, rot = 0) => { o.position.set(x, y, z); o.rotation.y = rot; site.add(o); return o; };
+    for (const sx of [-1, 1]) place(kit.bench(THREE, M), c.x + sx * (size.x / 2 + 3), 0.15, wA - 0.9);
+    for (const sx of [-1, 1]) place(kit.planter(THREE, M, r), c.x + sx * (size.x / 2 + 6.5), 0.15, wA - 0.9);
+    for (let x = -3; x <= 3; x += 2) place(kit.bollard(THREE, M), c.x + x, 0.15, wA + 1.3);
+    place(kit.trashBin(THREE, M), c.x + size.x / 2 + 1.4, 0.15, wA - 1);
+    place(kit.busStop(THREE, M), c.x - size.x / 2 - 14, 0.15, wA - 0.8);
+    site.add(kit.crosswalk(THREE, M, c.x + size.x / 2 + 9, streetZ));
+  }
   scene.add(site);
+  // Lo estático se fusiona por material: el recorrido y la órbita van fluidos aunque la escena sea grande.
+  kit.mergeStatic(THREE, site);
 
   const cars = kit.traffic(THREE, M, r, road.userData.lanes.map((z) => z), Math.max(260, radius * 10), 6);
   cars.group.position.x = c.x;
@@ -77,9 +97,21 @@ export async function startPresentation(ctx) {
     [[c.x - L, walkA], [c.x + L, walkA]], [[c.x + L, walkB], [c.x - L, walkB]], ring,
     [[c.x - 2, walkA], [c.x - 2, b.max.z + 2], [c.x + 2, b.max.z + 2], [c.x + 2, walkA]],
   ];
-  const people = kit.crowd(THREE, r, routes, 22);
+  const people = kit.crowd(THREE, r, routes, 22, road.userData.groundAt);
   people.group.visible = true;
   site.add(people.group);
+  // Personas en reposo: sentadas en las bancas, esperando el bus, conversando y con el celular.
+  const bx = size.x / 2;
+  const idle = kit.idlePeople(THREE, r, [
+    { x: c.x - bx - 3.3, z: walkA - 0.95, rot: 0, kind: 'sit' }, { x: c.x + bx + 2.7, z: walkA - 0.95, rot: 0, kind: 'sit' },
+    { x: c.x + bx + 3.4, z: walkA - 0.95, rot: 0, kind: 'sit' },
+    { x: c.x - bx - 14.4, z: walkA - 1.1, rot: 0, kind: 'sit' }, { x: c.x - bx - 12.6, z: walkA + 0.2, rot: -0.5, kind: 'phone' },
+    ...kit.chatSpots(r, c.x + bx + 5, b.max.z + 3, 3), ...kit.chatSpots(r, c.x - bx - 6, b.max.z + 2, 2),
+    { x: c.x + 1.5, z: walkA + 0.6, rot: 2.8, kind: 'phone' },
+  ].map((s) => ({ y: 0.15, ...s })));
+  people.group.add(idle.group);
+  const walkUpdate = people.update;
+  people.update = (dt) => { walkUpdate(dt); idle.update(dt); };
 
   // Ventanas del modelo encendidas al atardecer y de noche.
   const glass = mats.get('vidrio');
@@ -148,10 +180,15 @@ export async function startPresentation(ctx) {
   const onKey = (e) => { if (e.key === 'Escape' && tour) { stopTour(); panel.querySelector('[data-tour]').classList.remove('active'); } };
   document.addEventListener('keydown', onKey);
 
-  // Vista inicial: a la altura del andén, como una foto de render.
-  const far = Math.max(radius, size.y) * 1.35 + 10;
-  camera.position.set(c.x - far * 0.75, Math.max(5, size.y * 0.35), b.max.z + far);
-  orbit.target.set(c.x, size.y * 0.45, c.z);
+  // Vista inicial como fotografía de arquitectura: desde el andén de enfrente, en vista de tres cuartos,
+  // con la cámara a nivel (verticales rectas) y distancia suficiente para que quepa todo el edificio con
+  // aire alrededor.
+  const halfFov = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const camY = Math.min(Math.max(1.7, size.y * 0.32), 14);
+  const dist = Math.max(radius * 1.6, (size.y * 1.12 - camY) / halfFov, (Math.max(size.x, size.z) * 0.75) / (halfFov * camera.aspect), 22);
+  const ang = THREE.MathUtils.degToRad(28);
+  camera.position.set(c.x - Math.sin(ang) * dist, camY, Math.max(c.z + Math.cos(ang) * dist, streetZ + 9));
+  orbit.target.set(c.x, camY, c.z);
   orbit.update();
 
   // Render fotorrealista: la escena se congela y el trazado de rayos converge muestra a muestra.
@@ -170,7 +207,7 @@ export async function startPresentation(ctx) {
     const { startPhotoreal } = await import('./photoreal.js');
     try {
       photo = await startPhotoreal({
-        THREE, renderer, scene, camera, orbit, mode: sky.mode, sunDir: sky.sun.position.clone().sub(sky.sun.target.position),
+        THREE, renderer, scene, camera, orbit, sky: sky.equirect(1024),
         hide: [sky.sky],
         onProgress: (f, n) => {
           photoBox.querySelector('#ph-bar').style.transform = `scaleX(${f})`;
@@ -230,6 +267,10 @@ export async function startPresentation(ctx) {
     scene.fog = previous.fog;
     renderer.toneMappingExposure = previous.exposure;
     orbit.maxDistance = previous.maxDistance;
+    camera.near = previous.near;
+    camera.far = previous.far;
+    camera.updateProjectionMatrix();
+    if (ao) ao.enabled = previous.ao;
     if (glass.emissive) { glass.emissive.setHex(glassBefore.emissive ?? 0); glass.emissiveIntensity = glassBefore.intensity ?? 1; }
     restore.forEach(([o, v]) => { o.visible = v; });
     panel.remove();
