@@ -74,6 +74,15 @@ export function buildCity(THREE, kit, scene, sky, { small = false } = {}) {
 
   const road = kit.street(THREE, M, r, { length: 260, z: 24 });
   city.add(road);
+
+  // Vida de calle: paradero de bus, bancas, materas, bolardos, canecas y paso de cebra.
+  const place = (o, x, y, z, rot = 0) => { o.position.set(x, y, z); o.rotation.y = rot; city.add(o); return o; };
+  place(kit.busStop(THREE, M), -18, 0.15, 17.4);
+  for (const x of [-12, 12]) place(kit.bench(THREE, M), x, 0.02, 10.5);
+  for (const x of [-21, 21]) place(kit.planter(THREE, M, r), x, 0.02, 8);
+  for (let x = -5; x <= 5; x += 2.5) place(kit.bollard(THREE, M), x, 0.15, 19.6);
+  for (const x of [-14.2, 9.8, 26]) place(kit.trashBin(THREE, M), x, 0.15, 17.6);
+  city.add(kit.crosswalk(THREE, M, 8, 24));
   scene.add(city);
   // Todo lo estático se fusiona por material: la escena completa se dibuja en pocas llamadas.
   kit.mergeStatic(THREE, city);
@@ -85,8 +94,18 @@ export function buildCity(THREE, kit, scene, sky, { small = false } = {}) {
     [[-110, walkA], [110, walkA]], [[110, walkB], [-110, walkB]],
     [[-44, 12], [44, 12]], [[-6, 8], [-6, 14.5], [6, 14.5], [6, 8]],
     [[20, 9], [38, 9], [38, 13], [20, 13]], [[-50, 34], [50, 34]],
-  ], small ? 16 : 30);
+  ], small ? 16 : 30, road.userData.groundAt);
   scene.add(people.group);
+  // Personas en reposo: esperando el bus, conversando en la plaza, con el celular y en las bancas.
+  const idle = kit.idlePeople(THREE, r, [
+    { x: -18.5, z: 17.1, rot: 0, kind: 'sit', y: 0.15 }, { x: -16.6, z: 18.3, rot: -0.4, kind: 'phone', y: 0.15 }, { x: -19.9, z: 18.6, rot: 0.3, kind: 'stand', y: 0.15 },
+    { x: -12.4, z: 10.5, rot: 0, kind: 'sit', y: 0.02 }, { x: -11.6, z: 10.5, rot: 0, kind: 'sit', y: 0.02 }, { x: 12.3, z: 10.5, rot: 0, kind: 'sit', y: 0.02 },
+    ...kit.chatSpots(r, -7, 9, 3), ...kit.chatSpots(r, 17, 12.5, 2), ...kit.chatSpots(r, 4, 15, 4),
+    { x: 23, z: 16.5, rot: 2.6, kind: 'phone' }, { x: -27, z: 13, rot: 1.2, kind: 'phone' },
+  ].map((s) => ({ y: 0.02, ...s })));
+  people.group.add(idle.group);
+  const walk = people.update;
+  people.update = (dt) => { walk(dt); idle.update(dt); };
 
   return { cars, people };
 }

@@ -70,7 +70,20 @@ export async function startPresentation(ctx) {
     n.rotation.y = side * 0;
     site.add(n);
   }
+  // Vida de calle frente al lote: bancas, materas, bolardos, canecas, paradero y paso de cebra.
+  {
+    const [wA] = road.userData.walks;
+    const place = (o, x, y, z, rot = 0) => { o.position.set(x, y, z); o.rotation.y = rot; site.add(o); return o; };
+    for (const sx of [-1, 1]) place(kit.bench(THREE, M), c.x + sx * (size.x / 2 + 3), 0.15, wA - 0.9);
+    for (const sx of [-1, 1]) place(kit.planter(THREE, M, r), c.x + sx * (size.x / 2 + 6.5), 0.15, wA - 0.9);
+    for (let x = -3; x <= 3; x += 2) place(kit.bollard(THREE, M), c.x + x, 0.15, wA + 1.3);
+    place(kit.trashBin(THREE, M), c.x + size.x / 2 + 1.4, 0.15, wA - 1);
+    place(kit.busStop(THREE, M), c.x - size.x / 2 - 14, 0.15, wA - 0.8);
+    site.add(kit.crosswalk(THREE, M, c.x + size.x / 2 + 9, streetZ));
+  }
   scene.add(site);
+  // Lo estático se fusiona por material: el recorrido y la órbita van fluidos aunque la escena sea grande.
+  kit.mergeStatic(THREE, site);
 
   const cars = kit.traffic(THREE, M, r, road.userData.lanes.map((z) => z), Math.max(260, radius * 10), 6);
   cars.group.position.x = c.x;
@@ -84,9 +97,21 @@ export async function startPresentation(ctx) {
     [[c.x - L, walkA], [c.x + L, walkA]], [[c.x + L, walkB], [c.x - L, walkB]], ring,
     [[c.x - 2, walkA], [c.x - 2, b.max.z + 2], [c.x + 2, b.max.z + 2], [c.x + 2, walkA]],
   ];
-  const people = kit.crowd(THREE, r, routes, 22);
+  const people = kit.crowd(THREE, r, routes, 22, road.userData.groundAt);
   people.group.visible = true;
   site.add(people.group);
+  // Personas en reposo: sentadas en las bancas, esperando el bus, conversando y con el celular.
+  const bx = size.x / 2;
+  const idle = kit.idlePeople(THREE, r, [
+    { x: c.x - bx - 3.3, z: walkA - 0.95, rot: 0, kind: 'sit' }, { x: c.x + bx + 2.7, z: walkA - 0.95, rot: 0, kind: 'sit' },
+    { x: c.x + bx + 3.4, z: walkA - 0.95, rot: 0, kind: 'sit' },
+    { x: c.x - bx - 14.4, z: walkA - 1.1, rot: 0, kind: 'sit' }, { x: c.x - bx - 12.6, z: walkA + 0.2, rot: -0.5, kind: 'phone' },
+    ...kit.chatSpots(r, c.x + bx + 5, b.max.z + 3, 3), ...kit.chatSpots(r, c.x - bx - 6, b.max.z + 2, 2),
+    { x: c.x + 1.5, z: walkA + 0.6, rot: 2.8, kind: 'phone' },
+  ].map((s) => ({ y: 0.15, ...s })));
+  people.group.add(idle.group);
+  const walkUpdate = people.update;
+  people.update = (dt) => { walkUpdate(dt); idle.update(dt); };
 
   // Ventanas del modelo encendidas al atardecer y de noche.
   const glass = mats.get('vidrio');
