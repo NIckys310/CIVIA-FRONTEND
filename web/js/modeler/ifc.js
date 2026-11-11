@@ -1,5 +1,6 @@
 // Exporta el modelo a IFC4 (el estándar abierto de BIM). Cada elemento conserva su clase IFC y su geometría
 // real como malla de triángulos, así que Revit, ArchiCAD o BIMcollab lo abren con la misma forma que en CIVIA.
+import { FURNITURE_IFC } from './furniture.js';
 
 const SLABS = ['slab', 'ribbed_slab', 'landing', 'balcony', 'cantilever'];
 const ENTITY = {
@@ -15,6 +16,7 @@ const ENTITY = {
   footing: 'IFCFOOTING', strip_footing: 'IFCFOOTING', pile_cap: 'IFCFOOTING',
 };
 SLABS.forEach((t) => { ENTITY[t] = 'IFCSLAB'; });
+Object.assign(ENTITY, FURNITURE_IFC); // IfcFurniture, IfcSanitaryTerminal, IfcLightFixture
 ENTITY.raft = 'IFCSLAB';
 const FOOTING_KIND = { footing: '.PAD_FOOTING.', strip_footing: '.STRIP_FOOTING.', pile_cap: '.PILE_CAP.' };
 

@@ -1,6 +1,8 @@
-// Intro de bienvenida tras iniciar sesión: el plano se dibuja, el edificio sube piso a piso y
-// aparece la marca mientras la aplicación carga detrás. Se salta con un clic, Esc o Enter, y se
-// puede desactivar en Perfil › Preferencias. Con «reducir movimiento» dura un instante.
+// Intro de bienvenida tras iniciar sesión, con lenguaje de estudio de arquitectura: una torre
+// contemporánea en axonometría se traza en líneas doradas como un plano, se materializa en vidrio con
+// un barrido de luz, sus ventanas se encienden piso a piso y la marca aparece letra por letra mientras
+// la aplicación carga detrás. Se salta con un clic, Esc o Enter, y se puede desactivar en
+// Perfil › Preferencias. Con «reducir movimiento» se muestra completa y quieta un instante.
 
 const KEY = 'civia-intro';
 
@@ -14,37 +16,88 @@ export function setIntroEnabled(on) {
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-function svg() {
-  const n = 24;
-  const top = 92;
-  const bottom = 440;
-  const h = (bottom - top) / n;
-  let floors = '';
-  for (let i = 0; i < n; i++) {
-    const y = bottom - (i + 1) * h;
-    const d = (1.3 + i * 0.055).toFixed(2);
-    floors += `<rect class="fl" x="336" y="${(y + 1).toFixed(1)}" width="168" height="${(h - 2).toFixed(1)}" fill="url(#ig${i % 6 === 5 ? 2 : 1})" style="animation-delay:${d}s"/>`
-      + `<line class="fl" x1="330" y1="${y.toFixed(1)}" x2="510" y2="${y.toFixed(1)}" stroke="#e9e6df" stroke-opacity=".7" style="animation-delay:${d}s"/>`;
+// Proyección axonométrica (isométrica): x hacia la derecha-abajo, z hacia la izquierda-abajo, y arriba.
+const S = 7.2; const CX = 450; const CY = 440;
+const COS = Math.cos(Math.PI / 6); const SIN = Math.sin(Math.PI / 6);
+const P = (x, y, z) => [CX + (x - z) * COS * S, CY - y * S + (x + z) * SIN * S];
+const pt = (p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
+const poly = (...ps) => ps.map(pt).join(' ');
+const line = (a, b, cls, delay, extra = '') => `<line class="${cls}" pathLength="1" x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" style="--d:${delay}s"${extra}/>`;
+
+/** Volumen prismático: caras visibles, aristas para trazar, franjas de losa y ventanas por piso. */
+function volume({ x0, x1, z0, z1, y0, y1, floors, bays, id, t0 }) {
+  const top = [P(x0, y1, z0), P(x1, y1, z0), P(x1, y1, z1), P(x0, y1, z1)];
+  const left = [P(x0, y0, z1), P(x1, y0, z1), P(x1, y1, z1), P(x0, y1, z1)]; // cara z = z1
+  const right = [P(x1, y0, z1), P(x1, y0, z0), P(x1, y1, z0), P(x1, y1, z1)]; // cara x = x1
+  let out = `<g class="vol">
+    <polygon class="face face-l" points="${poly(...left)}" fill="url(#gl-l)"/>
+    <polygon class="face face-r" points="${poly(...right)}" fill="url(#gl-r)"/>
+    <polygon class="face face-t" points="${poly(...top)}" fill="url(#gl-t)"/>`;
+  // Ventanas: rectángulos proyectados por piso y crujía en las dos caras visibles.
+  const fh = (y1 - y0) / floors;
+  let k = 0;
+  for (let f = 0; f < floors; f++) {
+    const ya = y0 + f * fh + fh * 0.22; const yb = y0 + (f + 1) * fh - fh * 0.12;
+    const delay = (t0 + 1.25 + f * 0.055).toFixed(3);
+    for (let b = 0; b < bays; b++) {
+      const lit = (f * 7 + b * 3 + id) % 9 < 2;
+      const xa = x0 + ((x1 - x0) / bays) * (b + 0.14); const xb = x0 + ((x1 - x0) / bays) * (b + 0.86);
+      out += `<polygon class="win${lit ? ' lit' : ''}" points="${poly(P(xa, ya, z1), P(xb, ya, z1), P(xb, yb, z1), P(xa, yb, z1))}" style="--d:${delay}s"/>`;
+      const za = z1 - ((z1 - z0) / bays) * (b + 0.14); const zb = z1 - ((z1 - z0) / bays) * (b + 0.86);
+      const lit2 = (f * 5 + b * 11 + id) % 11 < 2;
+      out += `<polygon class="win side${lit2 ? ' lit' : ''}" points="${poly(P(x1, ya, za), P(x1, ya, zb), P(x1, yb, zb), P(x1, yb, za))}" style="--d:${delay}s"/>`;
+      k++;
+    }
   }
-  let side = '';
-  for (let i = 0; i < 5; i++) side += `<rect class="fl" x="126" y="${440 - (i + 1) * 27 + 2}" width="98" height="23" fill="url(#ig1)" style="animation-delay:${(1.1 + i * 0.08).toFixed(2)}s"/>`;
-  for (let i = 0; i < 7; i++) side += `<rect class="fl" x="626" y="${440 - (i + 1) * 27 + 2}" width="68" height="23" fill="url(#ig1)" style="animation-delay:${(1.2 + i * 0.08).toFixed(2)}s"/>`;
-  return `<svg class="intro-art" viewBox="0 0 900 500" role="img" aria-label="Un edificio se dibuja en planos y se levanta piso a piso al amanecer">
+  // Franjas de losa en cada piso.
+  for (let f = 1; f < floors; f++) {
+    const y = y0 + f * fh;
+    out += `<polyline class="slab" points="${poly(P(x0, y, z1), P(x1, y, z1), P(x1, y, z0))}" style="--d:${(t0 + 0.9 + f * 0.03).toFixed(3)}s"/>`;
+  }
+  // Aristas que se trazan como en el plano.
+  const edges = [
+    [P(x0, y0, z1), P(x1, y0, z1)], [P(x1, y0, z1), P(x1, y0, z0)],
+    [P(x0, y0, z1), P(x0, y1, z1)], [P(x1, y0, z1), P(x1, y1, z1)], [P(x1, y0, z0), P(x1, y1, z0)],
+    [P(x0, y1, z1), P(x1, y1, z1)], [P(x1, y1, z1), P(x1, y1, z0)], [P(x1, y1, z0), P(x0, y1, z0)], [P(x0, y1, z0), P(x0, y1, z1)],
+  ];
+  edges.forEach(([a, b], i) => { out += line(a, b, 'edge', (t0 + i * 0.07).toFixed(2)); });
+  return `${out}</g>`;
+}
+
+function svg() {
+  const podium = volume({ x0: -14, x1: 10, z0: -10, z1: 12, y0: 0, y1: 7, floors: 2, bays: 6, id: 1, t0: 0.35 });
+  const tower = volume({ x0: -6, x1: 6, z0: -4, z1: 8, y0: 7, y1: 52, floors: 14, bays: 4, id: 3, t0: 0.6 });
+  const wing = volume({ x0: 13, x1: 22, z0: -8, z1: 4, y0: 0, y1: 22, floors: 6, bays: 3, id: 5, t0: 0.5 });
+  // Cotas: altura total junto a la torre y planta del basamento.
+  // Cota vertical a la izquierda de la torre (lado libre), con remates y rótulo alineado a la derecha.
+  const hA = P(-6, 0, 8); const hB = P(-6, 52, 8);
+  const dx = -64;
+  const xA = hA[0] + dx; const xB = hB[0] + dx;
+  const dim = `<g class="dims">
+    ${line([xA, hA[1]], [xB, hB[1]], 'dim', 1.6)}
+    ${line([xA - 5, hA[1]], [xA + 5, hA[1]], 'dim', 1.7)}
+    ${line([xB - 5, hB[1]], [xB + 5, hB[1]], 'dim', 1.7)}
+    <text class="note" x="${(xB - 12).toFixed(0)}" y="${(hB[1] + 4).toFixed(0)}" text-anchor="end" style="--d:2s">N +52,00</text>
+    <text class="note" x="${(xB - 12).toFixed(0)}" y="${((hA[1] + hB[1]) / 2).toFixed(0)}" text-anchor="end" style="--d:2.1s">16 NIVELES</text>
+    <text class="note" x="${(xA - 12).toFixed(0)}" y="${(hA[1] + 4).toFixed(0)}" text-anchor="end" style="--d:2.15s">± 0,00</text>
+    ${line(P(-14, 0, 15), P(10, 0, 15), 'dim', 1.8)}
+    <text class="note" x="${P(-2, 0, 17)[0].toFixed(0)}" y="${(P(-2, 0, 17)[1] + 16).toFixed(0)}" text-anchor="middle" style="--d:2.2s">24,00 m</text>
+  </g>`;
+  return `<svg class="intro-art" viewBox="0 0 900 600" role="img" aria-label="Una torre de vidrio se dibuja en planos, se materializa y enciende sus ventanas piso a piso">
     <defs>
-      <linearGradient id="ig1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8d4ea" stop-opacity=".55"/><stop offset="1" stop-color="#5b75a6" stop-opacity=".35"/></linearGradient>
-      <linearGradient id="ig2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2cf9f" stop-opacity=".5"/><stop offset="1" stop-color="#d6a46c" stop-opacity=".18"/></linearGradient>
-      <radialGradient id="isun"><stop offset="0" stop-color="#ffe2bb"/><stop offset=".45" stop-color="#d6a46c" stop-opacity=".55"/><stop offset="1" stop-color="#d6a46c" stop-opacity="0"/></radialGradient>
+      <linearGradient id="gl-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b3a55"/><stop offset=".55" stop-color="#1a2335"/><stop offset="1" stop-color="#3a2f2a"/></linearGradient>
+      <linearGradient id="gl-r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#46597a"/><stop offset=".6" stop-color="#28344b"/><stop offset="1" stop-color="#5a4433"/></linearGradient>
+      <linearGradient id="gl-t" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5e6f8c"/><stop offset="1" stop-color="#2c3850"/></linearGradient>
+      <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#ffe9cc" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <radialGradient id="pool" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#d6a46c" stop-opacity=".35"/><stop offset="1" stop-color="#d6a46c" stop-opacity="0"/></radialGradient>
+      <clipPath id="bldg"><polygon points="${poly(P(-14, 0, 12), P(10, 0, 12), P(10, 0, -10), P(10, 7, -10), P(6, 7, -4), P(6, 52, -4), P(-6, 52, -4), P(-6, 52, 8), P(-6, 7, 8), P(-14, 7, 12))}"/><polygon points="${poly(P(13, 0, 4), P(22, 0, 4), P(22, 0, -8), P(22, 22, -8), P(13, 22, -8), P(13, 22, 4))}"/></clipPath>
     </defs>
-    <g class="sun"><circle cx="745" cy="110" r="90" fill="url(#isun)"/><circle cx="745" cy="110" r="22" fill="#ffe8c7"/></g>
-    <polygon class="shadow" points="300,440 520,440 700,470 380,470" fill="#000" opacity=".5"/>
-    <line class="ln" pathLength="1" x1="40" y1="440" x2="860" y2="440" stroke="#d6a46c" stroke-width="1.4" style="animation-delay:.25s"/>
-    <path class="ln" pathLength="1" d="M120 440V300H230V440" stroke="#9fb2d3" style="animation-delay:.5s"/>
-    <path class="ln" pathLength="1" d="M620 440V250H700L740 280V440" stroke="#9fb2d3" style="animation-delay:.7s"/>
-    <path class="ln" pathLength="1" d="M330 440V90L420 50L510 90V440" stroke="#f2cf9f" stroke-width="1.6" style="animation-delay:.9s"/>
-    <path class="ln" pathLength="1" d="M420 50V20M405 28H435" stroke="#f2cf9f" stroke-width="1.2" style="animation-delay:1.7s"/>
-    <path class="ln" pathLength="1" d="M300 470V455M540 470V455M300 462H540" stroke="rgba(236,238,242,.5)" stroke-width=".8" style="animation-delay:1.9s"/>
-    ${floors}${side}
-    <text class="up" x="420" y="488" text-anchor="middle" style="animation-delay:2.1s">24 PISOS · 70,0 m</text>
+    <ellipse class="pool" cx="${P(0, 0, 4)[0].toFixed(0)}" cy="${(P(0, 0, 4)[1] + 10).toFixed(0)}" rx="330" ry="70" fill="url(#pool)"/>
+    ${line(P(-38, 0, 12), P(30, 0, 12), 'ground', 0.15)}
+    ${line(P(10, 0, -40), P(10, 0, 30), 'ground', 0.25)}
+    ${wing}${podium}${tower}
+    <g clip-path="url(#bldg)"><rect class="sweep" x="-260" y="0" width="220" height="600" fill="url(#sheen)" transform="skewX(-18)"/></g>
+    ${dim}
   </svg>`;
 }
 
@@ -56,29 +109,35 @@ export function playIntro(user) {
   if (!introEnabled()) return Promise.resolve();
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const first = (user?.fullName || '').trim().split(/\s+/)[0];
+  const letters = [...'CIVIA AI'].map((ch, i) => (ch === ' '
+    ? '<span class="sp"> </span>'
+    : `<span class="lt" style="--i:${i}"><span>${ch}</span></span>`)).join('');
   const el = document.createElement('div');
   el.className = 'intro';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
   el.setAttribute('aria-label', 'Bienvenida a CIVIA AI');
   el.innerHTML = `
+    <div class="intro-sky" aria-hidden="true"></div>
     <div class="intro-grid" aria-hidden="true"></div>
+    <div class="intro-grain" aria-hidden="true"></div>
     <div class="intro-top">
-      <div class="intro-meta up" style="animation-delay:.2s">PLANO 01 · ALZADO PRINCIPAL · ESC 1:200</div>
-      <button type="button" class="intro-skip" data-intro-close>Saltar intro</button>
+      <div class="intro-meta"><span class="dot"></span>CIVIA · ESTUDIO DE ARQUITECTURA E INGENIERÍA</div>
+      <button type="button" class="intro-skip" data-intro-close><span>Saltar</span><kbd>Esc</kbd></button>
     </div>
     <div class="intro-stage">${svg()}</div>
     <div class="intro-copy">
-      <div class="intro-logo">CIVIA AI</div>
-      <p class="up" style="animation-delay:3.2s">${first ? `Hola, ${esc(first)}.` : 'Hola.'} Estamos preparando tu estudio.</p>
-      <div class="intro-progress up" style="animation-delay:3.3s"><i></i></div>
+      <div class="intro-eyebrow"><span>Lámina 01</span><i></i><span>Axonometría</span></div>
+      <div class="intro-logo" aria-label="CIVIA AI">${letters}</div>
+      <p class="intro-hello">${first ? `Hola, ${esc(first)}.` : 'Hola.'} Estamos preparando tu estudio.</p>
+      <div class="intro-progress"><i></i></div>
       <ul class="intro-steps">
-        <li style="animation-delay:2s">Proyectos sincronizados</li>
-        <li style="animation-delay:2.9s">Modelos listos sin conexión</li>
-        <li style="animation-delay:3.8s">Biblioteca actualizada</li>
-        <li style="animation-delay:4.7s">Copilot conectado</li>
+        <li style="--d:2.4s"><b>01</b>Proyectos sincronizados</li>
+        <li style="--d:3.1s"><b>02</b>Modelos listos sin conexión</li>
+        <li style="--d:3.8s"><b>03</b>Biblioteca actualizada</li>
+        <li style="--d:4.5s"><b>04</b>Copilot conectado</li>
       </ul>
-      <button type="button" class="btn primary lg intro-go up" style="animation-delay:5s" data-intro-close>Entrar al estudio</button>
+      <button type="button" class="intro-go" data-intro-close><span>Entrar al estudio</span><i aria-hidden="true">→</i></button>
     </div>`;
   if (reduced) el.classList.add('reduced');
   document.body.appendChild(el);
@@ -93,10 +152,10 @@ export function playIntro(user) {
       document.removeEventListener('keydown', onKey);
       el.classList.add('out');
       document.documentElement.classList.remove('intro-open');
-      setTimeout(() => { el.remove(); resolve(); }, reduced ? 0 : 650);
+      setTimeout(() => { el.remove(); resolve(); }, reduced ? 0 : 700);
     };
     const onKey = (e) => { if (e.key === 'Escape' || e.key === 'Enter') close(); };
-    const timer = setTimeout(close, reduced ? 1200 : 6400);
+    const timer = setTimeout(close, reduced ? 1400 : 6800);
     document.addEventListener('keydown', onKey);
     el.querySelectorAll('[data-intro-close]').forEach((b) => { b.onclick = close; });
     el.querySelector('.intro-skip').focus({ preventScroll: true });

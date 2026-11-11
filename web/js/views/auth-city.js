@@ -23,8 +23,11 @@ export async function mountCity(hero) {
 
   const host = document.createElement('div');
   host.className = 'hero-city';
-  hero.append(host);
   const small = window.matchMedia('(max-width: 900px)').matches;
+  // En escritorio la escena ocupa toda la pantalla (también detrás del formulario) y se funde con un
+  // degradado: sin el corte donde terminaba el panel de la izquierda. En móvil vive en el encabezado.
+  const stage = !small && hero.parentElement ? hero.parentElement : hero;
+  if (stage === hero) hero.append(host); else stage.prepend(host);
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, small ? 1.5 : 1.75));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -54,11 +57,14 @@ export async function mountCity(hero) {
     renderer.setSize(w, h, false);
     composer.setPixelRatio(renderer.getPixelRatio());
     composer.setSize(w, h);
-    camera.aspect = w / h;
+    // El encuadre se compone sobre el panel de la izquierda (ref) y la imagen se extiende hacia la
+    // derecha, detrás del formulario, sin mover la composición.
+    const ref = stage === hero ? w : Math.max(1, hero.clientWidth || w);
+    camera.aspect = ref / h;
     // En paneles verticales (móvil) el encuadre se desplaza como un objetivo descentrable: el horizonte
     // baja, queda cielo detrás de la marca y no sobra suelo. Las verticales siguen rectas.
     const shift = small ? Math.min(0.24, Math.max(0.1, (1.3 - camera.aspect) * 0.3)) : 0;
-    if (shift > 0) camera.setViewOffset(w, h, 0, -shift * h, w, h); else camera.clearViewOffset();
+    if (shift > 0 || ref !== w) camera.setViewOffset(ref, h, 0, -shift * h, w, h); else camera.clearViewOffset();
     camera.updateProjectionMatrix();
   };
   const ro = new ResizeObserver(resize);
@@ -88,7 +94,7 @@ export async function mountCity(hero) {
     camera.lookAt(-7 + drift * 5, eyeY, target.z);
     if (!still) { cars.update(dt); people.update(dt); }
     composer.render();
-    if (!host.classList.contains('ready')) { host.classList.add('ready'); hero.classList.add('has-city'); }
+    if (!host.classList.contains('ready')) { host.classList.add('ready'); hero.classList.add('has-city'); stage.classList.add('has-city'); }
   };
   function dispose() {
     cancelAnimationFrame(raf);

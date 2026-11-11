@@ -1,6 +1,6 @@
 // Kit de escena arquitectónica: materiales, edificios inspirados en renders reales, calle, árboles,
 // autos y personas. Unidades en metros, eje Y hacia arriba y fachada principal mirando a +Z.
-import { mergeGeometries, mergeVertices } from '/vendor/three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries } from '/vendor/three/addons/utils/BufferGeometryUtils.js';
 
 /** Generador pseudoaleatorio con semilla: la misma escena siempre se ve igual. */
 export function seeded(seed = 7) {
@@ -46,6 +46,48 @@ function speckle(g, size, base, tones, count, min = 1, max = 3) {
     const w = min + Math.random() * (max - min);
     g.fillRect(Math.random() * size, Math.random() * size, w, w);
   }
+}
+
+/** Textura de follaje: decenas de hojas con nervadura y ramitas sobre fondo transparente (se recorta con alphaTest). */
+function leafTexture(THREE) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 512;
+  const g = c.getContext('2d');
+  const rnd = seeded(91);
+  g.strokeStyle = 'rgba(70,52,34,.8)';
+  g.lineWidth = 2;
+  for (let i = 0; i < 6; i++) { // ramitas
+    g.beginPath(); g.moveTo(256, 256);
+    g.quadraticCurveTo(256 + (rnd() - 0.5) * 200, 256 + (rnd() - 0.5) * 200, 256 + (rnd() - 0.5) * 420, 256 + (rnd() - 0.5) * 420);
+    g.stroke();
+  }
+  for (let i = 0; i < 220; i++) {
+    const ang = rnd() * Math.PI * 2; const rad = Math.sqrt(rnd()) * 215;
+    const x = 256 + Math.cos(ang) * rad; const y = 256 + Math.sin(ang) * rad;
+    const len = 24 + rnd() * 22; const wid = len * (0.36 + rnd() * 0.14);
+    const tone = rnd();
+    const [cr, cg, cb] = [42 + tone * 46, 84 + tone * 56, 30 + tone * 26];
+    g.save();
+    g.translate(x, y);
+    g.rotate(rnd() * Math.PI * 2);
+    const grd = g.createLinearGradient(-len / 2, -wid / 2, len / 2, wid / 2);
+    grd.addColorStop(0, `rgb(${(cr * 0.68) | 0},${(cg * 0.68) | 0},${(cb * 0.68) | 0})`);
+    grd.addColorStop(1, `rgb(${cr | 0},${cg | 0},${cb | 0})`);
+    g.fillStyle = grd;
+    g.beginPath();
+    g.moveTo(-len / 2, 0);
+    g.quadraticCurveTo(0, -wid, len / 2, 0);
+    g.quadraticCurveTo(0, wid, -len / 2, 0);
+    g.fill();
+    g.strokeStyle = 'rgba(22,36,16,.35)';
+    g.lineWidth = 1;
+    g.beginPath(); g.moveTo(-len / 2, 0); g.lineTo(len / 2, 0); g.stroke();
+    g.restore();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
 }
 
 /** Materiales compartidos. setGlow(g) ajusta las ventanas encendidas según la hora. */
@@ -126,6 +168,13 @@ export function kitMaterials(THREE) {
     grass: std(0xffffff, 1, 0, { map: grassMap }),
     hedge: std(0x35602f, 1),
     leaves: [std(0x35592c, 0.95), std(0x42683a, 0.95), std(0x557a40, 0.95), std(0x2c4a26, 0.95)],
+    ...(() => {
+      const map = leafTexture(THREE);
+      return {
+        foliage: std(0xffffff, 0.75, 0, { map, alphaTest: 0.5, side: THREE.DoubleSide, vertexColors: true }),
+        foliageDepth: new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map, alphaTest: 0.5, side: THREE.DoubleSide }),
+      };
+    })(),
     trunk: std(0x4a3a2a, 1),
     asphalt: std(0xffffff, 0.92, 0, { map: asphaltMap }),
     sidewalk: std(0xa9a69e, 0.95),
@@ -214,45 +263,82 @@ function plant(THREE, parent, M, r, x, y, z, s = 1) {
   }
 }
 
+/**
+ * Árbol con follaje de "tarjetas": tronco cónico con ramas principales y una copa hecha de muchas láminas
+ * con una textura de hojas recortada (alphaTest), como en la visualización arquitectónica en tiempo real.
+ * Las normales de las láminas apuntan hacia afuera de la copa, así que la luz la modela como un volumen
+ * (claro arriba y hacia el sol, más oscuro por dentro), y la sombra respeta los huecos entre hojas.
+ */
 export function tree(THREE, M, r, s = 1) {
   const g = new THREE.Group();
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.1 * s, 0.2 * s, 3.4 * s, 10), M.trunk);
-  trunk.position.y = 1.7 * s;
-  trunk.castShadow = true;
-  g.add(trunk);
-  for (const side of [-1, 1]) {
-    const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.05 * s, 0.08 * s, 1.6 * s, 6), M.trunk);
-    branch.position.set(side * 0.35 * s, 2.9 * s, 0);
-    branch.rotation.z = -side * 0.7;
-    g.add(branch);
+  const H = (2.8 + r() * 0.9) * s; // altura del fuste hasta la copa
+  const lean = new THREE.Vector3((r() - 0.5) * 0.25, 1, (r() - 0.5) * 0.25).normalize();
+  const limb = (a, b, r0, r1) => {
+    const len = a.distanceTo(b);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, len, 8, 1), M.trunk);
+    m.position.copy(a).add(b).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+    m.castShadow = true;
+    m.receiveShadow = true;
+    g.add(m);
+  };
+  const top = lean.clone().multiplyScalar(H);
+  limb(new THREE.Vector3(0, 0, 0), top, 0.2 * s, 0.11 * s);
+  const R = (1.8 + r() * 0.6) * s; const Ry = R * (0.78 + r() * 0.12);
+  const crown = top.clone().add(new THREE.Vector3(0, Ry * 0.72, 0));
+  // Ramas principales hacia el borde de la copa.
+  const branches = 5 + Math.floor(r() * 3);
+  for (let i = 0; i < branches; i++) {
+    const a = (i / branches) * Math.PI * 2 + r() * 0.6;
+    const from = lean.clone().multiplyScalar(H * (0.72 + r() * 0.26));
+    const to = crown.clone().add(new THREE.Vector3(Math.cos(a) * R * 0.72, (r() - 0.25) * Ry * 0.7, Math.sin(a) * R * 0.72));
+    limb(from, to, 0.075 * s, 0.025 * s);
   }
-  // Copa: varias esferas con la superficie irregular, para que se lea como follaje y no como un sólido.
-  // Muchos racimos pequeños repartidos en un elipsoide: la silueta queda irregular y con huecos de luz.
-  const clusters = 34 + Math.floor(r() * 12);
-  for (let i = 0; i < clusters; i++) {
-    // Vértices soldados: la deformación no abre grietas y las normales quedan suaves (follaje, no facetas).
-    const ico = new THREE.IcosahedronGeometry(1, 2);
-    ico.deleteAttribute('normal');
-    ico.deleteAttribute('uv');
-    const geo = mergeVertices(ico);
-    ico.dispose();
-    const pos = geo.attributes.position;
-    for (let k = 0; k < pos.count; k++) {
-      const f = 0.72 + r() * 0.4;
-      pos.setXYZ(k, pos.getX(k) * f, pos.getY(k) * f * 0.82, pos.getZ(k) * f);
+  // Copa: láminas de hojas repartidas hacia la superficie de un elipsoide irregular.
+  const cards = Math.round(240 + r() * 70);
+  const pos = []; const nor = []; const uv = []; const col = []; const idx = [];
+  const q = new THREE.Quaternion(); const e = new THREE.Euler();
+  const ax = new THREE.Vector3(); const ay = new THREE.Vector3(); const n = new THREE.Vector3(); const p = new THREE.Vector3(); const d = new THREE.Vector3();
+  // Bultos: la copa no es un elipsoide perfecto sino varias masas de follaje.
+  const lumps = Array.from({ length: 5 }, () => new THREE.Vector3((r() - 0.5) * R * 0.9, (r() - 0.35) * Ry * 0.8, (r() - 0.5) * R * 0.9));
+  for (let i = 0; i < cards; i++) {
+    const lump = lumps[i % lumps.length];
+    d.set(r() * 2 - 1, r() * 2 - 1, r() * 2 - 1).normalize();
+    const t = Math.pow(r(), 0.4);
+    const lr = 0.55 + r() * 0.25;
+    p.set(d.x * R * lr * t, d.y * Ry * lr * t, d.z * R * lr * t).add(lump).add(crown);
+    const size = (0.75 + r() * 0.65) * s;
+    e.set(r() * Math.PI, r() * Math.PI * 2, r() * Math.PI);
+    q.setFromEuler(e);
+    ax.set(1, 0, 0).applyQuaternion(q).multiplyScalar(size / 2);
+    ay.set(0, 1, 0).applyQuaternion(q).multiplyScalar(size / 2);
+    n.copy(p).sub(crown);
+    n.y += Ry * 0.15;
+    n.normalize();
+    // Oclusión: más oscuro hacia el centro y abajo; tono con algo de variación (hojas nuevas más claras).
+    const ao = 0.55 + 0.45 * t * (0.75 + 0.25 * Math.max(0, n.y + 0.4));
+    const tint = 0.88 + r() * 0.24; const warm = r() * 0.08;
+    const base = pos.length / 3;
+    for (const [sx, sy, u, v] of [[-1, -1, 0, 0], [1, -1, 1, 0], [1, 1, 1, 1], [-1, 1, 0, 1]]) {
+      pos.push(p.x + ax.x * sx + ay.x * sy, p.y + ax.y * sx + ay.y * sy, p.z + ax.z * sx + ay.z * sy);
+      nor.push(n.x, n.y, n.z);
+      uv.push(u, v);
+      col.push(ao * tint * (1 + warm), ao * tint, ao * tint * (1 - warm));
     }
-    geo.computeVertexNormals();
-    geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(pos.count * 2), 2));
-    const leaf = new THREE.Mesh(geo, M.leaves[Math.floor(r() * M.leaves.length)]);
-    const a = r() * Math.PI * 2;
-    const rad = Math.sqrt(r()) * 1.7;
-    const up = r();
-    leaf.position.set(Math.cos(a) * rad * s, (3.6 + up * 2.6 + (1.7 - rad) * 0.4) * s, Math.sin(a) * rad * s);
-    leaf.scale.setScalar((0.42 + r() * 0.36) * s);
-    leaf.castShadow = true;
-    leaf.receiveShadow = true;
-    g.add(leaf);
+    idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
   }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.setIndex(idx);
+  geo.computeBoundingSphere();
+  const leaves = new THREE.Mesh(geo, M.foliage);
+  leaves.customDepthMaterial = M.foliageDepth;
+  leaves.castShadow = true;
+  leaves.receiveShadow = true;
+  g.add(leaves);
   return g;
 }
 
@@ -376,12 +462,33 @@ export function modernHouse(THREE, M, r) {
 /** Cajas instanciadas: una sola llamada de dibujo para cientos de piezas iguales (montantes, franjas, ventanas). */
 export function instancedBoxes(THREE, parent, mat, items, { cast = true } = {}) {
   if (!items.length) return null;
-  const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), mat, items.length);
-  const m4 = new THREE.Matrix4(); const q = new THREE.Quaternion(); const p = new THREE.Vector3(); const sc = new THREE.Vector3();
-  items.forEach(([x, y, z, w, h, d], i) => { mesh.setMatrixAt(i, m4.compose(p.set(x, y + h / 2, z), q, sc.set(w, h, d))); });
+  // Geometría única con todas las cajas (no InstancedMesh): así mergeStatic la funde con el resto de la
+  // ciudad del mismo material y cientos de piezas se dibujan en una sola llamada.
+  const unit = new THREE.BoxGeometry(1, 1, 1);
+  const bp = unit.attributes.position.array; const bn = unit.attributes.normal.array; const bu = unit.attributes.uv.array; const bi = unit.index.array;
+  const nv = bp.length / 3;
+  const pos = new Float32Array(items.length * bp.length); const nor = new Float32Array(items.length * bn.length);
+  const uv = new Float32Array(items.length * bu.length); const idx = new Uint32Array(items.length * bi.length);
+  items.forEach(([x, y, z, w, h, d], k) => {
+    for (let v = 0; v < nv; v++) {
+      pos[(k * nv + v) * 3] = bp[v * 3] * w + x;
+      pos[(k * nv + v) * 3 + 1] = bp[v * 3 + 1] * h + y + h / 2;
+      pos[(k * nv + v) * 3 + 2] = bp[v * 3 + 2] * d + z;
+    }
+    nor.set(bn, k * bn.length);
+    uv.set(bu, k * bu.length);
+    for (let j = 0; j < bi.length; j++) idx[k * bi.length + j] = bi[j] + k * nv;
+  });
+  unit.dispose();
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.setIndex(new THREE.BufferAttribute(idx, 1));
+  const mesh = new THREE.Mesh(geo, mat);
   mesh.castShadow = cast;
   mesh.receiveShadow = true;
-  mesh.computeBoundingSphere();
+  geo.computeBoundingSphere();
   parent.add(mesh);
   return mesh;
 }
@@ -477,10 +584,11 @@ export function mergeStatic(THREE, root, skip = []) {
       geo.setAttribute('position', src.attributes.position.clone());
       if (src.attributes.normal) geo.setAttribute('normal', src.attributes.normal.clone());
       geo.setAttribute('uv', src.attributes.uv ? src.attributes.uv.clone() : new THREE.BufferAttribute(new Float32Array(src.attributes.position.count * 2), 2));
+      if (src.attributes.color) geo.setAttribute('color', src.attributes.color.clone()); // tonos del follaje
       if (src.index) geo.setIndex(src.index.clone());
       geo.applyMatrix4(inv.clone().multiply(o.matrixWorld));
-      const key = `${o.material.uuid}|${src.index ? 'i' : 'n'}|${src.attributes.normal ? 1 : 0}`;
-      if (!buckets.has(key)) buckets.set(key, { mat: o.material, geos: [], cast: false, receive: false });
+      const key = `${o.material.uuid}|${src.index ? 'i' : 'n'}|${src.attributes.normal ? 1 : 0}|${src.attributes.color ? 1 : 0}`;
+      if (!buckets.has(key)) buckets.set(key, { mat: o.material, depth: o.customDepthMaterial, geos: [], cast: false, receive: false });
       const b = buckets.get(key);
       b.geos.push(geo);
       b.cast ||= o.castShadow;
@@ -491,12 +599,13 @@ export function mergeStatic(THREE, root, skip = []) {
   };
   root.children.forEach(walk);
   for (const o of victims) { o.parent.remove(o); o.geometry.dispose(); }
-  for (const { mat, geos, cast, receive } of buckets.values()) {
+  for (const { mat, depth, geos, cast, receive } of buckets.values()) {
     const merged = mergeGeometries(geos, false);
     geos.forEach((x) => x.dispose());
     if (!merged) continue;
     merged.computeBoundingSphere();
     const mesh = new THREE.Mesh(merged, mat);
+    if (depth) mesh.customDepthMaterial = depth; // sombras recortadas por la máscara de las hojas
     mesh.castShadow = cast;
     mesh.receiveShadow = receive;
     root.add(mesh);
@@ -546,6 +655,8 @@ export function street(THREE, M, r, { length = 160, z = 0, trees = true, treeSid
   }
   g.userData.lanes = [z - 2, z + 2];
   g.userData.walks = [z - 5.7, z + 5.7];
+  // Altura del piso donde pisa una persona: andenes (0,15 m), zonas verdes y el resto a nivel.
+  g.userData.groundAt = (x, pz) => { const d = Math.abs(pz - z); return d >= 4.2 && d <= 7.2 ? 0.15 : d > 7.2 && d <= 8.8 ? 0.16 : 0.01; };
   return g;
 }
 
@@ -610,7 +721,7 @@ export function car(THREE, M, color) {
     box(THREE, g, 0.18, 0.03, 0.02, K.trim, -0.2, 0.86, z * 1.37);
     box(THREE, g, 0.18, 0.03, 0.02, K.trim, 0.65, 0.86, z * 1.37);
   }
-  return g;
+  return mergeStatic(THREE, g); // ~25 piezas → una malla por material
 }
 
 // ------------------------------------------------------------------ personas
@@ -646,27 +757,36 @@ function bodyGeometry(THREE) {
 }
 
 /** Persona a escala real (1,55–1,90 m) con rodillas, codos, manos y zapatos, que camina con balanceo natural. */
+const personMaterials = new WeakMap();
+/** Un solo material para todas las personas: el color de cada prenda va en los vértices. */
+function personMaterial(THREE) {
+  if (!personMaterials.has(THREE)) personMaterials.set(THREE, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82 }));
+  return personMaterials.get(THREE);
+}
+
+/**
+ * Persona a escala real (1,55–1,90 m) con rodillas, codos, manos y zapatos, que camina con balanceo
+ * natural. Es una sola malla con esqueleto (cada pieza sigue rígidamente a su hueso): una llamada de
+ * dibujo por persona en lugar de veinte, con la misma animación.
+ */
 export function person(THREE, r) {
   const G = bodyGeometry(THREE);
   const [shirt, pants] = OUTFITS[Math.floor(r() * OUTFITS.length)];
-  const mat = (color, roughness = 0.85) => new THREE.MeshStandardMaterial({ color, roughness });
-  const skin = mat(SKIN[Math.floor(r() * SKIN.length)], 0.7);
-  const top = mat(shirt);
-  const bottom = mat(pants, 0.9);
-  const hair = mat(HAIR[Math.floor(r() * HAIR.length)], 0.75);
-  const shoes = mat([0x151515, 0x3a2a1e, 0xe8e6e0, 0x222831][Math.floor(r() * 4)], 0.6);
+  const col = (hex) => new THREE.Color(hex);
+  const skin = col(SKIN[Math.floor(r() * SKIN.length)]);
+  const top = col(shirt);
+  const bottom = col(pants);
+  const hair = col(HAIR[Math.floor(r() * HAIR.length)]);
+  const shoes = col([0x151515, 0x3a2a1e, 0xe8e6e0, 0x222831][Math.floor(r() * 4)]);
   const feminine = r() < 0.5;
   const g = new THREE.Group();
-  const part = (geo, m, parent, x = 0, y = 0, z = 0) => {
-    const o = new THREE.Mesh(geo, m);
-    o.position.set(x, y, z);
-    o.castShadow = true;
-    parent.add(o);
-    return o;
-  };
-  const joint = (parent, x, y, z = 0) => { const p = new THREE.Group(); p.position.set(x, y, z); parent.add(p); return p; };
+  const bones = [];
+  const parts = [];
+  const part = (geo, color, bone, x = 0, y = 0, z = 0) => { parts.push({ geo, color, bone, x, y, z }); return bone; };
+  const joint = (parent, x, y, z = 0) => { const b = new THREE.Bone(); b.position.set(x, y, z); parent.add(b); bones.push(b); return b; };
+  const rig = new THREE.Group();
 
-  const hip = joint(g, 0, 0.92);
+  const hip = joint(rig, 0, 0.99); // muslo 0,49 + pierna y zapato 0,50: con la pierna recta el pie toca el suelo
   const legs = [-1, 1].map((side) => {
     const thigh = joint(hip, side * 0.085, 0);
     part(G.thigh, bottom, thigh);
@@ -679,7 +799,8 @@ export function person(THREE, r) {
   part(G.torso, top, chest, 0, -0.04);
   if (feminine && r() < 0.45) part(G.skirt, bottom, chest, 0, 0.08);
   part(G.neck, skin, chest, 0, 0.6);
-  const head = part(G.head, skin, chest, 0, 0.72);
+  const head = joint(chest, 0, 0.72);
+  part(G.head, skin, head);
   part(G.hairShort, hair, head, 0, 0.012, -0.004);
   if (feminine) part(G.hairLong, hair, head, 0, 0, 0);
   const arms = [-1, 1].map((side) => {
@@ -691,28 +812,211 @@ export function person(THREE, r) {
     part(G.hand, skin, elbow, 0, -0.34);
     return { shoulder, elbow };
   });
-  if (r() < 0.3) part(G.bag, mat([0x2a2420, 0x6b4a2e, 0x111111][Math.floor(r() * 3)], 0.6), arms[1].elbow, 0.06, -0.42);
+  if (r() < 0.3) part(G.bag, col([0x2a2420, 0x6b4a2e, 0x111111][Math.floor(r() * 3)]), arms[1].elbow, 0.06, -0.42);
+
+  // Malla única: cada pieza se lleva a la pose de reposo y se ata a su hueso con peso 1.
+  rig.updateMatrixWorld(true);
+  const m4 = new THREE.Matrix4();
+  const geos = parts.map(({ geo, color, bone, x, y, z }) => {
+    const pg = geo.clone();
+    pg.applyMatrix4(m4.makeTranslation(x, y, z));
+    pg.applyMatrix4(bone.matrixWorld);
+    const n = pg.attributes.position.count;
+    const colors = new Float32Array(n * 3); const si = new Uint16Array(n * 4); const sw = new Float32Array(n * 4);
+    const bi = bones.indexOf(bone);
+    for (let i = 0; i < n; i++) { colors.set([color.r, color.g, color.b], i * 3); si[i * 4] = bi; sw[i * 4] = 1; }
+    pg.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    pg.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4));
+    pg.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+    if (!pg.attributes.uv) pg.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(n * 2), 2));
+    return pg.index ? pg : pg.toNonIndexed();
+  });
+  const body = new THREE.SkinnedMesh(mergeGeometries(geos, false), personMaterial(THREE));
+  geos.forEach((x) => x.dispose());
+  body.add(hip);
+  body.updateMatrixWorld(true);
+  body.bind(new THREE.Skeleton(bones));
+  body.castShadow = true;
+  body.receiveShadow = true;
+  body.frustumCulled = false; // el volumen cambia al caminar; son pocas personas
+  g.add(body);
 
   g.scale.setScalar((feminine ? 0.93 : 1.0) * (0.95 + r() * 0.1));
   const phase = r() * Math.PI * 2;
+  // Marcha con los pies plantados: la frecuencia del paso sale de la longitud real de la zancada (así los
+  // pies no patinan) y la cadera se apoya sobre la pierna de apoyo (el pie siempre toca el suelo).
+  const THIGH = 0.49; const SHIN = 0.5; const SWING = 0.4;
+  const STRIDE = 4 * (THIGH + SHIN) * Math.sin(SWING); // metros por ciclo completo (dos pasos)
   g.userData.walk = (t, speed) => {
-    const w = t * 5.6 * speed + phase;
-    const s = Math.sin(w);
+    const w = (t * speed * Math.PI * 2) / STRIDE + phase;
+    const s = Math.sin(w); const c = Math.cos(w);
+    let hipY = 0;
     legs.forEach(({ thigh, knee }, i) => {
-      const k = i ? -s : s;
-      thigh.rotation.x = k * 0.42;
-      // La rodilla solo se dobla hacia atrás, sobre todo cuando la pierna avanza.
-      knee.rotation.x = Math.max(0, Math.sin(w + (i ? Math.PI : 0) + 1.2)) * 0.65;
+      const th = (i ? -s : s) * SWING;
+      // La rodilla se dobla en la fase de vuelo (cuando la pierna avanza) y casi nada en el apoyo.
+      const swing = i ? Math.max(0, c) : Math.max(0, -c);
+      const kn = swing * 0.75 + 0.04;
+      thigh.rotation.x = th;
+      knee.rotation.x = kn;
+      hipY = Math.max(hipY, THIGH * Math.cos(th) + SHIN * Math.cos(th + kn));
     });
     arms.forEach(({ shoulder, elbow }, i) => {
-      shoulder.rotation.x = (i ? s : -s) * 0.32;
-      elbow.rotation.x = -0.18 - Math.max(0, i ? -s : s) * 0.25;
+      shoulder.rotation.x = (i ? s : -s) * 0.3;
+      elbow.rotation.x = -0.2 - Math.max(0, i ? -s : s) * 0.3;
     });
-    hip.position.y = 0.92 + Math.abs(Math.cos(w)) * 0.025;
-    hip.rotation.y = s * 0.08;
-    chest.rotation.y = -s * 0.12;
+    hip.position.y = hipY - 0.004;
+    hip.rotation.y = s * 0.07;
+    hip.rotation.z = c * 0.025;
+    chest.rotation.y = -s * 0.11;
+    chest.rotation.x = 0.04;
   };
   g.userData.walk(0, 1);
+  g.userData.rig = { hip, chest, head, legs, arms };
+  return g;
+}
+
+/**
+ * Pone a una persona en reposo: de pie (con un leve balanceo y gestos), mirando el celular o sentada.
+ * Devuelve una función update(t) para la animación sutil de la postura.
+ */
+function poseIdle(THREE, p, kind, r) {
+  const { hip, chest, head, legs, arms } = p.userData.rig;
+  const phase = r() * 10;
+  legs.forEach(({ thigh, knee }) => { thigh.rotation.x = 0; knee.rotation.x = 0; });
+  arms.forEach(({ shoulder, elbow }) => { shoulder.rotation.x = 0; elbow.rotation.x = -0.12; });
+  hip.rotation.set(0, 0, 0);
+  chest.rotation.set(0, 0, 0);
+  if (kind === 'sit') {
+    hip.position.y = 0.5;
+    legs.forEach(({ thigh, knee }, i) => { thigh.rotation.x = -Math.PI / 2 + (i ? 0.05 : -0.05); knee.rotation.x = Math.PI / 2 - 0.1; });
+    arms.forEach(({ shoulder, elbow }) => { shoulder.rotation.x = -0.35; elbow.rotation.x = -0.9; });
+    chest.rotation.x = -0.08;
+    return (t) => { head.rotation.y = Math.sin(t * 0.3 + phase) * 0.35; };
+  }
+  hip.position.y = 0.99;
+  if (kind === 'phone') {
+    const { shoulder, elbow } = arms[1];
+    shoulder.rotation.x = -0.35;
+    elbow.rotation.x = -1.75;
+    const phone = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.15, 0.01), new THREE.MeshStandardMaterial({ color: 0x0c0d10, roughness: 0.25, emissive: 0x2a3a55, emissiveIntensity: 0.6 }));
+    phone.position.set(0, -0.38, 0.02);
+    phone.rotation.x = 0.9;
+    elbow.add(phone);
+    head.rotation.x = 0.35;
+    return (t) => { hip.rotation.y = Math.sin(t * 0.4 + phase) * 0.04; };
+  }
+  // De pie conversando: cambia el peso de pierna y gesticula de vez en cuando.
+  return (t) => {
+    const w = Math.sin(t * 0.5 + phase);
+    hip.rotation.z = w * 0.025;
+    chest.rotation.z = -w * 0.03;
+    head.rotation.y = Math.sin(t * 0.37 + phase * 2) * 0.25;
+    const talk = Math.max(0, Math.sin(t * 0.9 + phase * 3));
+    arms[0].elbow.rotation.x = -0.12 - talk * 1.1;
+    arms[0].shoulder.rotation.x = -talk * 0.35;
+  };
+}
+
+/**
+ * Personas en reposo: grupos que conversan, gente esperando o mirando el celular y personas sentadas
+ * en las bancas. spots: [{ x, z, rot, kind: 'stand' | 'phone' | 'sit', y }].
+ */
+export function idlePeople(THREE, r, spots) {
+  const group = new THREE.Group();
+  const anims = [];
+  for (const s of spots) {
+    const p = person(THREE, r);
+    p.position.set(s.x, s.y ?? 0.15, s.z);
+    p.rotation.y = s.rot || 0;
+    anims.push(poseIdle(THREE, p, s.kind || 'stand', r));
+    group.add(p);
+  }
+  let t = 0;
+  return { group, update: (dt) => { t += dt; anims.forEach((a) => a(t)); } };
+}
+
+/** Grupo de conversación: 2 a 4 personas mirándose en círculo alrededor de (x, z). */
+export function chatSpots(r, x, z, n = 3) {
+  const a0 = r() * Math.PI * 2;
+  return Array.from({ length: n }, (_, i) => {
+    const a = a0 + (i / n) * Math.PI * 2;
+    return { x: x + Math.cos(a) * 0.55, z: z + Math.sin(a) * 0.55, rot: Math.atan2(-Math.cos(a), -Math.sin(a)), kind: 'stand' };
+  });
+}
+
+// ------------------------------------------------------------------ mobiliario urbano
+
+/** Banca de parque: listones de madera sobre patas de fundición; mira hacia +Z. */
+export function bench(THREE, M) {
+  const g = new THREE.Group();
+  for (const x of [-0.75, 0.75]) {
+    box(THREE, g, 0.06, 0.42, 0.5, M.dark, x, 0, 0);
+    const back = box(THREE, g, 0.06, 0.5, 0.06, M.dark, x, 0.42, -0.24);
+    back.rotation.x = -0.18;
+  }
+  for (let i = 0; i < 4; i++) box(THREE, g, 1.8, 0.035, 0.1, M.wood, 0, 0.42, -0.18 + i * 0.12);
+  for (let i = 0; i < 3; i++) {
+    const s = box(THREE, g, 1.8, 0.09, 0.03, M.wood, 0, 0.55 + i * 0.13, -0.27 - i * 0.025);
+    s.rotation.x = -0.18;
+  }
+  return g;
+}
+
+/** Paradero de bus: cubierta de vidrio, panel publicitario iluminado y banca. Mira hacia +Z (la calle). */
+export function busStop(THREE, M) {
+  const g = new THREE.Group();
+  for (const x of [-1.9, 1.9]) box(THREE, g, 0.08, 2.5, 0.08, M.dark, x, 0, -0.6);
+  box(THREE, g, 4.2, 0.1, 1.7, M.dark, 0, 2.5, 0);
+  const roof = box(THREE, g, 4.1, 0.03, 1.6, M.railGlass, 0, 2.47, 0);
+  roof.castShadow = false;
+  const backG = box(THREE, g, 3.8, 2.1, 0.02, M.railGlass, 0, 0.25, -0.62);
+  backG.castShadow = false;
+  box(THREE, g, 0.06, 2.1, 1.2, M.railGlass, -1.9, 0.25, 0);
+  box(THREE, g, 1.3, 1.9, 0.12, M.dark, 1.5, 0.3, -0.2);
+  box(THREE, g, 1.15, 1.7, 0.02, M.lamps, 1.5, 0.4, -0.13);
+  const b = bench(THREE, M);
+  b.scale.set(0.9, 1, 0.8);
+  b.position.set(-0.4, 0, -0.3);
+  g.add(b);
+  return g;
+}
+
+/** Bolardo, caneca y matera: detalles de andén. */
+export function bollard(THREE, M) {
+  const g = new THREE.Group();
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.9, 14), M.dark);
+  m.position.y = 0.45; m.castShadow = true; g.add(m);
+  return g;
+}
+export function trashBin(THREE, M) {
+  const g = new THREE.Group();
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 0.85, 18, 1, true), M.dark);
+  m.position.y = 0.45; m.castShadow = true; g.add(m);
+  box(THREE, g, 0.06, 0.95, 0.06, M.dark, 0, 0, -0.27);
+  return g;
+}
+export function planter(THREE, M, r) {
+  const g = new THREE.Group();
+  box(THREE, g, 1.2, 0.5, 1.2, M.greyConcrete, 0, 0, 0);
+  for (let i = 0; i < 5; i++) {
+    const shrub = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28 + r() * 0.12, 1), M.leaves[i % M.leaves.length]);
+    shrub.position.set((r() - 0.5) * 0.7, 0.62 + r() * 0.15, (r() - 0.5) * 0.7);
+    shrub.castShadow = true;
+    g.add(shrub);
+  }
+  return g;
+}
+
+/** Paso de cebra a lo largo de Z, centrado en x, sobre una calle de ancho w. */
+export function crosswalk(THREE, M, x, z, w = 8) {
+  const g = new THREE.Group();
+  for (let i = 0; i < 8; i++) {
+    const s = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.45), M.marking);
+    s.rotation.x = -Math.PI / 2;
+    s.position.set(x, 0.021, z - w / 2 + 0.5 + i * ((w - 1) / 7));
+    s.receiveShadow = true;
+    g.add(s);
+  }
   return g;
 }
 
@@ -720,7 +1024,7 @@ export function person(THREE, r) {
  * Personas que recorren rutas en bucle. Cada ruta es una lista de puntos [x, z].
  * Devuelve { group, update(dt) }.
  */
-export function crowd(THREE, r, routes, count = 12) {
+export function crowd(THREE, r, routes, count = 12, groundAt = () => 0.15) {
   const group = new THREE.Group();
   const walkers = [];
   for (let i = 0; i < count; i++) {
@@ -729,7 +1033,7 @@ export function crowd(THREE, r, routes, count = 12) {
     const total = lengths.reduce((a, b) => a + b, 0);
     const p = person(THREE, r);
     group.add(p);
-    walkers.push({ p, route, lengths, total, d: r() * total, speed: 1.1 + r() * 0.5, dir: r() < 0.5 ? 1 : -1, t: 0 });
+    walkers.push({ p, route, lengths, total, d: r() * total, speed: 1.0 + r() * 0.4, dir: r() < 0.5 ? 1 : -1, t: 0 });
   }
   const update = (dt) => {
     for (const w of walkers) {
@@ -739,7 +1043,8 @@ export function crowd(THREE, r, routes, count = 12) {
       while (d > w.lengths[k]) { d -= w.lengths[k]; k = (k + 1) % w.route.length; }
       const a = w.route[k]; const b = w.route[(k + 1) % w.route.length];
       const f = w.lengths[k] ? d / w.lengths[k] : 0;
-      w.p.position.set(a[0] + (b[0] - a[0]) * f, 0.15, a[1] + (b[1] - a[1]) * f);
+      const px = a[0] + (b[0] - a[0]) * f; const pz = a[1] + (b[1] - a[1]) * f;
+      w.p.position.set(px, groundAt(px, pz), pz); // el pie apoya en el suelo real: andén, plaza o césped
       w.p.rotation.y = Math.atan2((b[0] - a[0]) * w.dir, (b[1] - a[1]) * w.dir);
       w.p.userData.walk(w.t, w.speed);
     }

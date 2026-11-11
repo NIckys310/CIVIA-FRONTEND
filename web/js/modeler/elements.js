@@ -1,9 +1,11 @@
 // Elementos paramétricos del modelador de CIVIA: definición (parámetros con unidades), materiales
 // PBR con texturas procedurales y la geometría de cada tipo. Unidades en metros; eje Y hacia arriba.
 // Esquema de un elemento: { id, type, material, params: {...}, position: [x, y, z], rotation: grados en Y }.
-import { CATEGORIES, OPENING_TYPES, STRUCTURE_TYPES, WALL_TYPES, WINDOW_TYPES, buildStructure, structureQuantity } from './structures.js';
+import { CATEGORIES as STRUCTURE_CATEGORIES, OPENING_TYPES, STRUCTURE_TYPES, WALL_TYPES, WINDOW_TYPES, buildStructure, structureQuantity } from './structures.js';
+import { FURNITURE_CATEGORIES, FURNITURE_TYPES, buildFurniture } from './furniture.js';
 
-export { CATEGORIES, OPENING_TYPES, WALL_TYPES };
+export const CATEGORIES = [...STRUCTURE_CATEGORIES, ...FURNITURE_CATEGORIES];
+export { OPENING_TYPES, WALL_TYPES };
 
 export const MATERIALS = {
   concreto: { label: 'Concreto', color: 0xb9b7b1 },
@@ -17,6 +19,11 @@ export const MATERIALS = {
   ceramica: { label: 'Cerámica', color: 0xd9d4ca },
   piedra: { label: 'Piedra natural', color: 0x9a948a },
   aluminio: { label: 'Aluminio', color: 0xc4c9cf },
+  // Acabados de mobiliario (no suman cantidades de obra).
+  laca: { label: 'Laca blanca', color: 0xf1efea },
+  marmol: { label: 'Mármol', color: 0xeeeae4 },
+  tela: { label: 'Tela', color: 0x8d8a84 },
+  cuero: { label: 'Cuero', color: 0x6b4630 },
 };
 
 const P = (label, unit, def, min, max, step = 0.01) => ({ label, unit, def, min, max, step });
@@ -62,6 +69,7 @@ export const TYPES = {
     params: { width: P('Ancho (X)', 'm', 8, 1, 60, 0.05), length: P('Largo (Z)', 'm', 10, 1, 80, 0.05), pitch: P('Pendiente', '°', 20, 0, 60, 1), thickness: P('Espesor', 'm', 0.12, 0.03, 0.5) },
   },
   ...STRUCTURE_TYPES,
+  ...FURNITURE_TYPES,
 };
 
 let seq = 0;
@@ -162,6 +170,29 @@ const TEXTURES = {
     }
   },
   pintura: (ctx, s) => noise(ctx, s, '#efece5', 255, 4000),
+  // Tela: trama fina de hilos cruzados.
+  tela: (ctx, s) => {
+    noise(ctx, s, '#8d8a84', 255, 6000);
+    for (let i = 0; i < s; i += 3) {
+      ctx.fillStyle = `rgba(255,255,255,${0.03 + Math.random() * 0.04})`;
+      ctx.fillRect(0, i, s, 1);
+      ctx.fillStyle = `rgba(0,0,0,${0.03 + Math.random() * 0.04})`;
+      ctx.fillRect(i, 0, 1, s);
+    }
+  },
+  // Mármol: fondo claro con vetas grises suaves.
+  marmol: (ctx, s) => {
+    noise(ctx, s, '#eeeae4', 255, 3000);
+    for (let i = 0; i < 9; i++) {
+      ctx.strokeStyle = `rgba(110,108,104,${0.12 + Math.random() * 0.18})`;
+      ctx.lineWidth = 0.6 + Math.random() * 2.2;
+      ctx.beginPath();
+      let x = Math.random() * s; let y = 0;
+      ctx.moveTo(x, y);
+      while (y < s) { x += (Math.random() - 0.5) * 30; y += 10 + Math.random() * 18; ctx.lineTo(x, y); }
+      ctx.stroke();
+    }
+  },
   ceramica: (ctx, s) => {
     noise(ctx, s, '#dcd7cd', 255, 3000);
     ctx.strokeStyle = 'rgba(120,112,100,.7)';
@@ -190,6 +221,10 @@ export function createMaterials(THREE) {
       return new THREE.MeshPhysicalMaterial({ color: def.color, metalness: 0, roughness: 0.04, transmission: 0.92, thickness: 0.02, ior: 1.5, transparent: true, opacity: 0.55, envMapIntensity: 1.4 });
     }
     if (key === 'acero' || key === 'aluminio') return new THREE.MeshStandardMaterial({ color: def.color, metalness: 0.92, roughness: key === 'acero' ? 0.32 : 0.42, envMapIntensity: 1.2 });
+    if (key === 'laca') return new THREE.MeshPhysicalMaterial({ color: def.color, roughness: 0.35, clearcoat: 0.6, clearcoatRoughness: 0.2 });
+    if (key === 'cuero') return new THREE.MeshPhysicalMaterial({ color: def.color, roughness: 0.55, sheen: 0.3, sheenColor: 0x8a5a3c });
+    if (key === 'marmol') return new THREE.MeshPhysicalMaterial({ map: canvasTexture(THREE, 512, TEXTURES.marmol), roughness: 0.22, clearcoat: 0.5, clearcoatRoughness: 0.1 });
+    if (key === 'tela') return new THREE.MeshPhysicalMaterial({ map: canvasTexture(THREE, 256, TEXTURES.tela, 3), roughness: 0.95, sheen: 0.6, sheenRoughness: 0.8, sheenColor: 0xbcb6ac });
     const map = TEXTURES[key] ? canvasTexture(THREE, 256, TEXTURES[key]) : null;
     return new THREE.MeshStandardMaterial({ color: map ? 0xffffff : def.color, map, metalness: 0, roughness: key === 'madera' ? 0.65 : 0.88 });
   };
@@ -332,7 +367,9 @@ export function buildElement(THREE, el, mats, openings = null) {
       }
       break;
     }
-    default: buildStructure(THREE, el, mats, mat, add, box, (key) => num(el, key)); break;
+    default:
+      if (!buildFurniture(THREE, el, mats, mat, add, box, (key) => num(el, key))) buildStructure(THREE, el, mats, mat, add, box, (key) => num(el, key));
+      break;
   }
   group.position.set(...(el.position || [0, 0, 0]));
   group.rotation.y = ((el.rotation || 0) * Math.PI) / 180;
@@ -351,7 +388,7 @@ export function quantities(elements) {
     else t.concrete += q;
   };
   for (const el of elements) {
-    if (!TYPES[el.type]) continue;
+    if (!TYPES[el.type] || FURNITURE_TYPES[el.type]) continue; // el mobiliario no es cantidad de obra
     const p = (k) => num(el, k);
     const extra = structureQuantity(el, p);
     if (extra) {
