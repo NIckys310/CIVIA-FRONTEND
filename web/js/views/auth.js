@@ -1,10 +1,11 @@
 // Inicio de sesión, registro y recuperación de contraseña (CIVIA Auth).
-import { afterLogin } from '../app.js';
+import { afterLogin, applyTheme } from '../app.js';
 import { api, login, logout, register, session } from '../api.js';
 import { $, busy, debounce, html, icon, mount, raw, toast } from '../ui.js';
-import { kinetic, stagger } from '../motion.js';
+import { circularReveal, kinetic, stagger } from '../motion.js';
 import { districtScene } from './auth-scene.js';
 import { live, passwordChecks, rules, validateAll } from '../validate.js';
+import { wipeSensitive } from '../privacy.js';
 
 function strength(pw) {
   if (!pw) return 0;
@@ -17,11 +18,11 @@ function strength(pw) {
 }
 
 /** Campo con ícono a la izquierda, estado (✓ / !) a la derecha y mensaje de validación debajo. */
-const textField = (id, label, { type = 'text', autocomplete = 'off', ic = 'user', placeholder = '', required = false, extra = '' } = {}) => html`
+const textField = (id, label, { type = 'text', autocomplete = 'off', ic = 'user', lead = ic, placeholder = '', required = false, extra = '', priv = false } = {}) => html`
   <div class="field" data-field="${id}">
-    <label for="${id}">${label}</label>
-    <div class="input-wrap">${icon(ic, 'lead')}
-      <input class="input" id="${id}" name="${id}" type="${type}" autocomplete="${autocomplete}" placeholder="${placeholder}" ${required ? 'required' : ''} aria-describedby="${id}-msg">
+    <label for="${id}">${icon(ic, 'lbl-ic')}<span>${label}</span></label>
+    <div class="input-wrap">${icon(lead, 'lead')}
+      <input class="input" id="${id}" name="${id}" type="${type}" autocomplete="${autocomplete}" placeholder="${placeholder}" ${required ? 'required' : ''} ${priv ? raw('data-private spellcheck="false" autocapitalize="off" autocorrect="off"') : ''} aria-describedby="${id}-msg">
       <span class="state" aria-hidden="true"></span>
     </div>
     <div class="field-msg" id="${id}-msg" aria-live="polite"></div>
@@ -30,9 +31,9 @@ const textField = (id, label, { type = 'text', autocomplete = 'off', ic = 'user'
 
 const passwordField = (id, label, autocomplete, hint) => html`
   <div class="field" data-field="${id}">
-    <label for="${id}">${label}</label>
-    <div class="input-wrap pw">${icon('lock', 'lead')}
-      <input class="input" id="${id}" name="${id}" type="password" autocomplete="${autocomplete}" required aria-describedby="${id}-msg">
+    <label for="${id}">${icon('lock', 'lbl-ic')}<span>${label}</span></label>
+    <div class="input-wrap pw">${icon('key', 'lead')}
+      <input class="input" id="${id}" name="${id}" type="password" autocomplete="${autocomplete}" required spellcheck="false" autocapitalize="off" autocorrect="off" data-private aria-describedby="${id}-msg">
       <span class="state" aria-hidden="true"></span>
       <button type="button" class="btn ghost icon sm" data-toggle="${id}" aria-label="Mostrar contraseña">${icon('eye')}</button>
     </div>
@@ -46,25 +47,62 @@ const strengthHint = () => html`
   <ul class="pw-checks" id="pw-checks">${passwordChecks('', 8).map((c) => html`<li data-check="${c.id}">${c.label}</li>`)}</ul>
   <div class="hint" id="pw-hint">Sin límite máximo: puedes usar una frase larga.</div>`;
 
-const footer = html`<div class="ruled eyebrow" style="margin-top:34px;font-size:9px">Protegido por CIVIA Auth</div>`;
+const footer = html`<div class="lx-trust">
+  <span>${icon('shield')}Protegido por Civia Auth</span><i aria-hidden="true"></i>
+  <span><b class="lx-dot" aria-hidden="true"></b>Seguro y confiable</span>
+</div>`;
 
-/** Estructura común de las pantallas de acceso: escena de arquitectura y panel con el formulario. */
-function layout(el, panel) {
+/** Sección bajo el pliegue: qué es CIVIA, para quien llega por primera vez. */
+const more = () => html`
+  <section class="lx-more" id="lx-more" aria-labelledby="lx-more-title">
+    <div class="lx-more-in">
+      <div class="lx-eyebrow"><span>Tu estudio, completo</span><i aria-hidden="true"></i></div>
+      <h2 id="lx-more-title" class="display">Todo el proyecto, <span class="fx-accent">en un solo lugar</span>.</h2>
+      <p class="lx-lead">Del primer croquis a la entrega de obra: planos, modelos, cálculos y un copiloto que conoce la normativa.</p>
+      <div class="lx-cards">
+        <article class="lx-card" style="--i:0">${icon('blueprint')}<h3>Planos revisados por IA</h3><p>Sube PDF, DWG o DXF y recibe la revisión de escala, cotas, ejes, accesibilidad y lo que falta, con citas.</p></article>
+        <article class="lx-card" style="--i:1">${icon('layers')}<h3>Modelado 3D sin límite de pisos</h3><p>Volumetría con IA, corte de sección, estudio solar y notas ancladas sobre GLB, OBJ, STL y glTF.</p></article>
+        <article class="lx-card" style="--i:2">${icon('sparkle')}<h3>CIVIA Copilot</h3><p>Responde en tiempo real como un experto en ingeniería civil, con el contexto de tu proyecto y fuentes citadas.</p></article>
+      </div>
+      <ul class="lx-facts" aria-label="Seguridad">
+        <li>${icon('lock')}<span><b>Canal cifrado</b> AES-256 de extremo a extremo</span></li>
+        <li>${icon('key')}<span><b>Argon2id</b> y verificación en dos pasos</span></li>
+        <li>${icon('shield')}<span><b>Sin datos</b> en la consola del navegador</span></li>
+      </ul>
+      <a class="btn primary lg lx-more-go" href="#/register">Crear mi estudio ${icon('arrow')}</a>
+    </div>
+  </section>`;
+
+/** Estructura común de las pantallas de acceso: ciudad al atardecer, barra superior y panel de cristal. */
+function layout(el, panel, { mode = 'login' } = {}) {
+  const isLight = document.documentElement.dataset.theme === 'light';
+  const top = mode === 'register'
+    ? html`<span class="lx-new">¿Ya tienes cuenta?</span><a class="lx-cta" href="#/login">Inicia sesión</a>`
+    : html`<span class="lx-new">¿Eres nuevo?</span><a class="lx-cta" href="#/register">Regístrate</a>`;
   mount(el, html`
-  <div class="auth">
-    <section class="hero" aria-hidden="true">
-      <div class="hero-grid"></div>
-      <div class="hero-glow"></div>
-      <div class="hero-brand"><img src="/assets/mark-96.png?v=2" alt="" width="40" height="40"><span class="chrome-text">Civia <b class="ai-text">AI</b></span></div>
-      ${raw(districtScene())}
+  <div class="auth lux">
+    <header class="lx-top">
+      <a class="lx-brand" href="#/login" aria-label="Civia AI, inicio"><img src="/assets/mark-96.png?v=2" alt="" width="44" height="44"><span class="chrome-text">Civia <b class="ai-text">AI</b></span></a>
+      <div class="lx-top-r">
+        <button type="button" class="lx-theme" id="lx-theme" aria-label="${isLight ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'}" aria-pressed="${isLight ? 'true' : 'false'}">${icon(isLight ? 'moon' : 'sun')}</button>
+        <i class="lx-sep" aria-hidden="true"></i>
+        ${top}
+      </div>
+    </header>
+    <section class="hero">
+      <div class="hero-grid" aria-hidden="true"></div>
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div aria-hidden="true">${raw(districtScene())}</div>
       <div class="hero-copy">
-        <div class="eyebrow gold">Arquitectura inteligente</div>
-        <h2 class="display">Del primer trazo a la obra, con un estudio que <span class="fx-accent">piensa contigo</span>.</h2>
+        <div class="eyebrow gold lx-eyebrow"><span>Arquitectura inteligente</span><i aria-hidden="true"></i></div>
+        <h2 class="display">Del primer trazo a la obra, con un estudio que <span class="fx-accent">piensa contigo.</span></h2>
+        <p class="lx-sub">Diseña, planifica y visualiza proyectos arquitectónicos con el poder de la IA.</p>
         <ul class="hero-points">
-          <li>${icon('blueprint')}<span>Planos revisados por IA</span></li>
-          <li>${icon('cube')}<span>Modelado 3D sin límite de pisos</span></li>
-          <li>${icon('shield')}<span>Tus proyectos, cifrados y sin conexión</span></li>
+          <li>${icon('cube')}<span>Planos revisados por IA</span></li>
+          <li>${icon('layers')}<span>Modelado 3D sin límite de pisos</span></li>
+          <li>${icon('flash')}<span>Tus proyectos, cifrados y sin conexión</span></li>
         </ul>
+        <button type="button" class="lx-scroll" data-scroll-more><span class="lx-mouse" aria-hidden="true"><i></i></span><span>Desliza para descubrir más</span><b aria-hidden="true"></b></button>
       </div>
       <div class="brand-mobile">
         <img src="/assets/mark-256.png?v=2" alt="" width="72" height="72">
@@ -73,7 +111,42 @@ function layout(el, panel) {
       </div>
     </section>
     <section class="panel">${panel}</section>
-  </div>`);
+  </div>
+  ${more()}`);
+
+  // Tema claro/oscuro desde la pantalla de acceso; la ciudad pasa de atardecer a día.
+  const themeBtn = $('#lx-theme', el);
+  themeBtn.onclick = () => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    circularReveal(themeBtn, () => {
+      applyTheme(next);
+      themeBtn.innerHTML = icon(next === 'light' ? 'moon' : 'sun').s;
+      themeBtn.setAttribute('aria-label', next === 'light' ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro');
+      themeBtn.setAttribute('aria-pressed', String(next === 'light'));
+    });
+  };
+
+  // «Desliza para descubrir más» lleva a la sección de abajo; las tarjetas aparecen al llegar.
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.querySelector('[data-scroll-more]').onclick = () => $('#lx-more', el).scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+  const moreEl = $('#lx-more', el);
+  if ('IntersectionObserver' in window && !reduced) {
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { moreEl.classList.add('in'); io.disconnect(); } }, { threshold: 0.18 });
+    io.observe(moreEl);
+  } else moreEl.classList.add('in');
+
+  // Brillo que sigue al puntero en el borde del panel (solo con ratón).
+  const card = el.querySelector('.panel .auth-card');
+  if (card && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    card.addEventListener('pointermove', (e) => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', `${((e.clientX - r.left) / r.width) * 100}%`);
+      card.style.setProperty('--my', `${((e.clientY - r.top) / r.height) * 100}%`);
+    });
+  }
+
+  // Al salir de la pantalla, los campos sensibles quedan vacíos (no viajan al historial ni a borradores).
+  window.addEventListener('hashchange', () => wipeSensitive(el), { once: true });
 
   // Manzana urbana en 3D detrás del formulario (si no hay WebGL queda la ilustración vectorial).
   import('./auth-city.js').then((m) => m.mountCity(el.querySelector('.auth .hero'))).catch(() => {});
@@ -180,8 +253,8 @@ function renderLogin(el, isLogin) {
   layout(el, html`
       <form id="auth-form" class="auth-card ${from !== lastMode ? (isLogin ? 'from-left' : 'from-right') : ''}" novalidate>
         <nav class="seg ${isLogin ? '' : 'on-right'}" aria-label="Acceso">
-          <a href="#/login" class="${isLogin ? 'active' : ''}" aria-current="${isLogin ? 'page' : 'false'}"><span>Iniciar sesión</span></a>
-          <a href="#/register" class="${isLogin ? '' : 'active'}" aria-current="${isLogin ? 'false' : 'page'}"><span>Crear cuenta</span></a>
+          <a href="#/login" class="${isLogin ? 'active' : ''}" aria-current="${isLogin ? 'page' : 'false'}"><span>${icon('user')}Iniciar sesión</span></a>
+          <a href="#/register" class="${isLogin ? '' : 'active'}" aria-current="${isLogin ? 'false' : 'page'}"><span><i class="lx-plus" aria-hidden="true">${icon('plus')}</i>Crear cuenta</span></a>
           <i class="seg-pill ${from === 'register' ? 'right' : ''}" aria-hidden="true"><b></b></i>
         </nav>
         <div class="eyebrow gold">${isLogin ? 'Bienvenido(a) de nuevo' : 'Crea tu estudio'}</div>
@@ -194,7 +267,7 @@ function renderLogin(el, isLogin) {
             ${textField('profession', 'Profesión', { autocomplete: 'organization-title', ic: 'ruler', placeholder: 'Ingeniera civil' })}
             ${textField('organization', 'Estudio / empresa', { autocomplete: 'organization', ic: 'building', placeholder: 'Opcional' })}
           </div>`}
-          ${textField('email', 'Correo electrónico', { type: 'email', autocomplete: 'email', ic: 'mail', placeholder: 'tu@correo.com', required: true })}
+          ${textField('email', 'Correo electrónico', { type: 'email', autocomplete: 'email', ic: 'mail', lead: 'user', placeholder: 'tu@correo.com', required: true, priv: true })}
           ${passwordField('password', 'Contraseña', isLogin ? 'current-password' : 'new-password',
             isLogin ? html`<a class="forgot" href="#/forgot">¿Olvidaste tu contraseña?</a>` : strengthHint())}
           ${isLogin ? '' : passwordField('confirm', 'Confirma la contraseña', 'new-password', '')}
@@ -210,9 +283,10 @@ function renderLogin(el, isLogin) {
           <div class="error-text" id="auth-error" role="alert"></div>
           <button class="btn primary lg block" type="submit" data-busy="${isLogin ? 'Entrando…' : 'Creando cuenta…'}">${isLogin ? 'Entrar' : 'Crear cuenta'} ${icon('arrow')}</button>
         </div>
+        <div class="lx-or" aria-hidden="true"><span>o</span></div>
         <div class="switch">${isLogin ? html`¿Aún no tienes cuenta? <a href="#/register">Regístrate</a>` : html`¿Ya tienes cuenta? <a href="#/login">Inicia sesión</a>`}</div>
         ${footer}
-      </form>`);
+      </form>`, { mode: isLogin ? 'login' : 'register' });
 
   const form = $('#auth-form', el);
   const errorBox = $('#auth-error', el);
@@ -259,9 +333,13 @@ function renderLogin(el, isLogin) {
             toast('Ingresa tu código de verificación en dos pasos.', 'info');
             return;
           }
+          form.reset();
+          wipeSensitive(form);
           afterLogin();
         } else {
           await register({ fullName: data.fullName, email: data.email, password: data.password, profession: data.profession, organization: data.organization });
+          form.reset();
+          wipeSensitive(form);
           toast('Cuenta creada. ¡Bienvenido(a) a CIVIA AI!');
           afterLogin();
         }
@@ -274,6 +352,8 @@ function renderLogin(el, isLogin) {
           $('#email', el).focus();
         } else {
           errorBox.textContent = err.message;
+          // Tras un intento fallido, el código de dos pasos ya no sirve: se borra.
+          $('#mfa', el).value = '';
         }
       }
     });

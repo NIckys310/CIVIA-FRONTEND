@@ -107,5 +107,5 @@ export function buildCity(THREE, kit, scene, sky, { small = false } = {}) {
   const walk = people.update;
   people.update = (dt) => { walk(dt); idle.update(dt); };
 
-  return { cars, people };
+  return { cars, people, setGlow: (g) => M.setGlow(g) };
 }

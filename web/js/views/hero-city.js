@@ -8,11 +8,8 @@ function rng(seed) {
   return () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; };
 }
 
-const sky = () => {
-  const h = new Date().getHours();
-  if (h >= 19 || h < 6) return 'night';
-  return h < 15 ? 'day' : 'dusk';
-};
+// Mismo entorno que el acceso: en tema oscuro, la hora dorada del atardecer; en tema claro, de día.
+const sky = () => (document.documentElement.dataset.theme === 'light' ? 'day' : 'dusk');
 
 /** Rejilla de ventanas; unas pocas se encienden y apagan para no recargar la animación. */
 function windows(r, x, y, cols, rows, cw, ch, gapX, gapY, lit) {
