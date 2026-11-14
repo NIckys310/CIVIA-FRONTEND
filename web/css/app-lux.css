@@ -172,3 +172,35 @@ table thead th { font-family: var(--mono); letter-spacing: 0.14em; font-size: 10
 .card.modal { background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), rgba(13, 16, 28, 0.9); border-radius: 26px; }
 :root[data-theme="light"] .card.modal { background: rgba(255, 255, 255, 0.96); }
 .card.modal::before { content: ""; position: absolute; top: -1px; left: 14%; right: 14%; height: 1px; pointer-events: none; background: linear-gradient(90deg, transparent, var(--lx-gold-a), transparent); }
+
+/* ==========================================================================
+   Rendimiento de la app (medido en gráfica integrada Intel UHD: el inicio iba a
+   36 FPS con 200+ animaciones infinitas repintando a la vez).
+   - Lo que repintaba sin parar se queda quieto: ventanas del fondo y del banner
+     (encendidas en distintos tonos), grano y rejilla del suelo.
+   - Las auroras siguen moviéndose, sin el desenfoque de 90 px que se recalculaba
+     en cada cuadro (ya son degradados radiales suaves).
+   - Los paneles no desenfocan lo que tienen detrás: el fondo cambia en cada cuadro
+     (partículas), así que cada panel se volvía a desenfocar continuamente.
+   - Se conservan grúa, autos, nubes, aves y humo del banner, y las partículas.
+   ========================================================================== */
+.bg-city-win rect { animation: none !important; opacity: 0.16; }
+.bg-city-win rect:nth-child(3n) { opacity: 0.42; }
+.bg-city-win rect:nth-child(7n) { opacity: 0.75; }
+.w.blink { animation: none !important; }
+.bg-floor-grid, .bg-grain { animation: none !important; }
+.bg-aurora i { filter: none !important; will-change: transform; }
+.brand img { animation-iteration-count: 2 !important; }
+.brand .name { animation-iteration-count: 1 !important; }
+
+.card, .sidebar, .topbar, .mobile-nav, .toast, .search {
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+:root:not([data-theme="light"]) .card { background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)), rgba(14, 17, 30, 0.86); }
+:root:not([data-theme="light"]) .sidebar { background: linear-gradient(180deg, rgba(236, 184, 109, 0.06), transparent 28%, transparent 72%, rgba(143, 180, 255, 0.05)), rgba(9, 11, 20, 0.9) !important; }
+:root:not([data-theme="light"]) .topbar { background: rgba(9, 11, 20, 0.78) !important; }
+:root:not([data-theme="light"]) .mobile-nav { background: rgba(9, 11, 20, 0.92) !important; }
+:root[data-theme="light"] .card { background: rgba(255, 255, 255, 0.94); }
+
+/* Modo calma (js/calm.js): los efectos decorativos en bucle se detienen donde estén. */
+[data-calm], [data-calm]::before, [data-calm]::after { animation-play-state: paused !important; }

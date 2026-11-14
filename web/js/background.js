@@ -65,6 +65,8 @@ function particles(canvas) {
   const draw = (t) => {
     raf = requestAnimationFrame(draw);
     if (t - last < 33) return; // ~30 fps
+    // Modo calma (ver calm.js): las partículas quedan quietas donde están.
+    if (document.documentElement.classList.contains('calm')) return;
     last = t;
     ctx.clearRect(0, 0, w, h);
     const link = Math.min(170, w / 7);
