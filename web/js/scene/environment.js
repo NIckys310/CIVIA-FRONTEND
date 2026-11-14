@@ -87,7 +87,7 @@ const SKY_SHADER = {
  * glow() es la intensidad que deben usar las ventanas iluminadas y ready se resuelve cuando el cielo
  * fotográfico ya está cargado y aplicado.
  */
-export function createEnvironment(THREE, _unused, renderer, scene, { mode = 'dusk', shadowSize = 60 } = {}) {
+export function createEnvironment(THREE, _unused, renderer, scene, { mode = 'dusk', shadowSize = 60, shadowMap = 4096 } = {}) {
   const uniforms = {
     map: { value: null }, hasMap: { value: 0 }, gain: { value: 1 },
     top: { value: new THREE.Color() }, mid: { value: new THREE.Color() }, bottom: { value: new THREE.Color() },
@@ -109,7 +109,8 @@ export function createEnvironment(THREE, _unused, renderer, scene, { mode = 'dus
   renderer.toneMapping = THREE.AgXToneMapping;
   const sun = new THREE.DirectionalLight(0xffffff, 2);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(4096, 4096);
+  // El modelador usa 4096 (render de presentación); el fondo del acceso pide menos (ver auth-city.js).
+  sun.shadow.mapSize.set(shadowMap, shadowMap);
   sun.shadow.radius = 2.5;
   sun.shadow.bias = -0.00025;
   sun.shadow.normalBias = 0.035;

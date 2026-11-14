@@ -2,8 +2,15 @@
 // casas contemporáneas frente a una avenida, con una ciudad real detrás (muros cortina, ladrillo, piedra)
 // que se pierde en la bruma del horizonte.
 
-/** Construye la manzana en la escena. Devuelve los autos y las personas para animarlos. */
-export function buildCity(THREE, kit, scene, sky, { small = false } = {}) {
+/** Cede el hilo principal al navegador entre fases largas (la página sigue respondiendo). */
+const yieldToBrowser = () => new Promise((r) => { if (globalThis.scheduler?.yield) globalThis.scheduler.yield().then(r); else setTimeout(r, 0); });
+
+/**
+ * Construye la manzana en la escena. Devuelve los autos y las personas para animarlos.
+ * Se construye por fases (ciudad, fusión de geometrías, tráfico y personas) cediendo el hilo entre
+ * ellas: en lugar de un bloqueo de más de un segundo hay varios pasos cortos.
+ */
+export async function buildCity(THREE, kit, scene, sky, { small = false } = {}) {
   const M = kit.kitMaterials(THREE);
   M.setGlow(sky.glow());
   // Perspectiva aérea: la bruma toma el color real del horizonte del cielo.
@@ -84,8 +91,10 @@ export function buildCity(THREE, kit, scene, sky, { small = false } = {}) {
   for (const x of [-14.2, 9.8, 26]) place(kit.trashBin(THREE, M), x, 0.15, 17.6);
   city.add(kit.crosswalk(THREE, M, 8, 24));
   scene.add(city);
+  await yieldToBrowser();
   // Todo lo estático se fusiona por material: la escena completa se dibuja en pocas llamadas.
   kit.mergeStatic(THREE, city);
+  await yieldToBrowser();
 
   const cars = kit.traffic(THREE, M, r, road.userData.lanes, 260, small ? 6 : 9);
   scene.add(cars.group);
