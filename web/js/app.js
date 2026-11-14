@@ -1,4 +1,6 @@
 // CIVIA AI — arranque, sesión, enrutador y estructura de la aplicación.
+// Primero: la consola queda en silencio antes de que cargue cualquier otro módulo.
+import './privacy.js';
 import { api, hasSessionHint, logout, refresh, server, session, wakeServer } from './api.js';
 import { mountBackground } from './background.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
@@ -324,7 +326,6 @@ async function route() {
       enhanceView(target);
     }
   } catch (e) {
-    console.error(e);
     mount(target, html`<div class="empty">${icon('alert', 'big')}<h3>No se pudo cargar esta sección</h3><p>${e.message || ''}</p>
       <button class="btn" id="retry-view">Reintentar</button></div>`);
     $('#retry-view', target)?.addEventListener('click', route);
@@ -407,11 +408,11 @@ function showUpdate(reg) {
   };
 }
 
-/** Guarda lo escrito en formularios abiertos para recuperarlo tras recargar. */
+/** Guarda lo escrito en formularios abiertos para recuperarlo tras recargar (nunca correos, contraseñas ni códigos). */
 function saveDrafts() {
   try {
     const drafts = {};
-    document.querySelectorAll('textarea[id], input[id]:not([type=password]):not([type=hidden]):not([type=file])').forEach((i) => {
+    document.querySelectorAll('textarea[id]:not([data-private]), input[id]:not([type=password]):not([type=hidden]):not([type=file]):not([type=email]):not([data-private]):not([autocomplete="one-time-code"])').forEach((i) => {
       if (i.value && i.closest('form')) drafts[i.id] = i.value;
     });
     sessionStorage.setItem('civia-drafts', JSON.stringify({ hash: location.hash, drafts }));
