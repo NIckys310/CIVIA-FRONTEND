@@ -1,7 +1,8 @@
-// Intro de bienvenida tras iniciar sesión, con lenguaje de estudio de arquitectura: una torre
-// contemporánea en axonometría se traza en líneas doradas como un plano, se materializa en vidrio con
-// un barrido de luz, sus ventanas se encienden piso a piso y la marca aparece letra por letra mientras
-// la aplicación carga detrás. Se salta con un clic, Esc o Enter, y se puede desactivar en
+// Intro de bienvenida tras iniciar sesión, en el mismo entorno que la pantalla de acceso: la ciudad a
+// la hora dorada. El cielo pasa de azul profundo a ámbar con el sol bajo, el perfil de la ciudad
+// enciende sus ventanas, una torre contemporánea en axonometría se traza en líneas doradas como un
+// plano, se materializa en vidrio con un barrido de luz y la bienvenida aparece abajo a la izquierda
+// mientras la aplicación carga detrás. Se salta con un clic, Esc o Enter, y se puede desactivar en
 // Perfil › Preferencias. Con «reducir movimiento» se muestra completa y quieta un instante.
 
 const KEY = 'civia-intro';
@@ -101,6 +102,49 @@ function svg() {
   </svg>`;
 }
 
+/** Generador pseudoaleatorio con semilla: el perfil de la ciudad es siempre el mismo. */
+function seeded(seed) {
+  let t = seed >>> 0;
+  return () => { t += 0x6d2b79f5; let r = Math.imul(t ^ (t >>> 15), 1 | t); r ^= r + Math.imul(r ^ (r >>> 7), 61 | r); return ((r ^ (r >>> 14)) >>> 0) / 4294967296; };
+}
+
+/**
+ * Perfil de la ciudad al atardecer en dos planos: el lejano, en la bruma cálida, y el cercano, en
+ * contraluz, con ventanas que se encienden una a una.
+ */
+function skyline() {
+  const r = seeded(2026);
+  const W = 1600; const H = 420; const G = 404;
+  let far = ''; let near = ''; let wins = '';
+  for (let x = -20; x < W; x += 34 + r() * 46) {
+    const w = 40 + r() * 60; const h = 70 + r() * 150 + (r() < 0.15 ? 90 : 0);
+    far += `<rect x="${x.toFixed(0)}" y="${(G - h).toFixed(0)}" width="${w.toFixed(0)}" height="${h.toFixed(0)}"/>`;
+  }
+  for (let x = -30; x < W; x += 46 + r() * 50) {
+    // El centro queda más bajo: ahí se levanta la torre de la intro.
+    const mid = Math.abs(x + 40 - W / 2) < 260;
+    const w = 44 + r() * 64; const h = mid ? 40 + r() * 60 : 70 + r() * 170 + (r() < 0.18 ? 80 : 0);
+    const y = G - h;
+    near += `<rect x="${x.toFixed(0)}" y="${y.toFixed(0)}" width="${w.toFixed(0)}" height="${h.toFixed(0)}"/>`;
+    for (let wy = y + 10; wy < G - 12; wy += 14) {
+      for (let wx = x + 7; wx < x + w - 9; wx += 11) {
+        if (r() < 0.24) wins += `<rect x="${wx.toFixed(0)}" y="${wy.toFixed(0)}" width="5" height="7" style="--d:${(0.9 + r() * 2.6).toFixed(2)}s"/>`;
+      }
+    }
+  }
+  return `<svg class="ix-city" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs><linearGradient id="ix-near" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1b2c"/><stop offset="1" stop-color="#07080e"/></linearGradient></defs>
+    <g class="ix-far">${far}</g><g class="ix-near" fill="url(#ix-near)">${near}</g><g class="ix-win">${wins}</g>
+    <rect class="ix-ground" x="0" y="${G}" width="${W}" height="${H - G}"/>
+  </svg>`;
+}
+
+/** Polvo dorado flotando en la luz del atardecer (decoración, se detiene con «reducir movimiento»). */
+function motes() {
+  const r = seeded(7);
+  return Array.from({ length: 18 }, () => `<i style="left:${(r() * 100).toFixed(1)}%;top:${(30 + r() * 55).toFixed(1)}%;--s:${(1 + r() * 2.2).toFixed(1)}px;--t:${(7 + r() * 7).toFixed(1)}s;--d:${(-r() * 8).toFixed(1)}s"></i>`).join('');
+}
+
 /**
  * Muestra la intro sobre la aplicación y se resuelve al terminar (o al saltarla).
  * La aplicación sigue cargando detrás, así que al cerrar ya está lista.
@@ -109,35 +153,49 @@ export function playIntro(user) {
   if (!introEnabled()) return Promise.resolve();
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const first = (user?.fullName || '').trim().split(/\s+/)[0];
-  const letters = [...'CIVIA AI'].map((ch, i) => (ch === ' '
+  const word = (text, from) => [...text].map((ch, i) => (ch === ' '
     ? '<span class="sp"> </span>'
-    : `<span class="lt" style="--i:${i}"><span>${ch}</span></span>`)).join('');
+    : `<span class="lt" style="--i:${from + i}"><span>${esc(ch)}</span></span>`)).join('');
+  const hello = first ? `Hola, ${first}.` : 'Hola.';
+  const steps = [
+    ['projects', 'Proyectos sincronizados'],
+    ['cube', 'Modelos listos sin conexión'],
+    ['book', 'Biblioteca actualizada'],
+    ['sparkle', 'Copilot conectado'],
+  ];
+  const ICON = {
+    projects: '<path d="M3 7h7l2 2h9v11H3z"/><path d="M3 7V4h6l2 3"/>',
+    cube: '<path d="m12 2 9 5v10l-9 5-9-5V7z"/><path d="m3 7 9 5 9-5M12 12v10"/>',
+    book: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>',
+    sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
+  };
+  const svgIcon = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
+
   const el = document.createElement('div');
-  el.className = 'intro';
+  el.className = 'intro lux';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
   el.setAttribute('aria-label', 'Bienvenida a CIVIA AI');
   el.innerHTML = `
-    <div class="intro-sky" aria-hidden="true"></div>
-    <div class="intro-grid" aria-hidden="true"></div>
-    <div class="intro-grain" aria-hidden="true"></div>
-    <div class="intro-top">
-      <div class="intro-meta"><span class="dot"></span>CIVIA · ESTUDIO DE ARQUITECTURA E INGENIERÍA</div>
-      <button type="button" class="intro-skip" data-intro-close><span>Saltar</span><kbd>Esc</kbd></button>
+    <div class="ix-sky" aria-hidden="true"><i class="ix-sun"></i><i class="ix-rays"></i></div>
+    <div class="ix-stars" aria-hidden="true"></div>
+    <div class="ix-motes" aria-hidden="true">${motes()}</div>
+    ${skyline()}
+    <div class="intro-stage" aria-hidden="true">${svg()}</div>
+    <div class="ix-shade" aria-hidden="true"></div>
+    <header class="ix-top">
+      <div class="ix-brand"><img src="/assets/mark-96.png?v=2" alt="" width="40" height="40"><span>Civia <b>AI</b></span></div>
+      <button type="button" class="ix-skip" data-intro-close><span>Saltar</span><kbd>Esc</kbd></button>
+    </header>
+    <div class="ix-copy">
+      <div class="ix-eyebrow"><span>Bienvenido(a) a tu estudio</span><i></i></div>
+      <h2 class="ix-title"><span class="ix-line">${word(hello, 0)}</span><span class="ix-line">${word('Tu estudio ', 12)}<span class="ix-gold">${word('está listo.', 23)}</span></span></h2>
+      <p class="ix-sub">Del primer trazo a la obra: preparamos tus proyectos, planos y modelos mientras entras.</p>
+      <ul class="ix-steps">${steps.map(([ic, t], i) => `<li style="--n:${i}">${svgIcon(ic)}<span>${t}</span><b class="ix-ok" aria-hidden="true"></b></li>`).join('')}</ul>
     </div>
-    <div class="intro-stage">${svg()}</div>
-    <div class="intro-copy">
-      <div class="intro-eyebrow"><span>Lámina 01</span><i></i><span>Axonometría</span></div>
-      <div class="intro-logo" aria-label="CIVIA AI">${letters}</div>
-      <p class="intro-hello">${first ? `Hola, ${esc(first)}.` : 'Hola.'} Estamos preparando tu estudio.</p>
-      <div class="intro-progress"><i></i></div>
-      <ul class="intro-steps">
-        <li style="--d:2.4s"><b>01</b>Proyectos sincronizados</li>
-        <li style="--d:3.1s"><b>02</b>Modelos listos sin conexión</li>
-        <li style="--d:3.8s"><b>03</b>Biblioteca actualizada</li>
-        <li style="--d:4.5s"><b>04</b>Copilot conectado</li>
-      </ul>
-      <button type="button" class="intro-go" data-intro-close><span>Entrar al estudio</span><i aria-hidden="true">→</i></button>
+    <div class="ix-end">
+      <div class="ix-progress" aria-hidden="true"><i></i></div>
+      <button type="button" class="ix-go" data-intro-close><span>Entrar al estudio</span><i aria-hidden="true">→</i></button>
     </div>`;
   if (reduced) el.classList.add('reduced');
   document.body.appendChild(el);
@@ -152,12 +210,12 @@ export function playIntro(user) {
       document.removeEventListener('keydown', onKey);
       el.classList.add('out');
       document.documentElement.classList.remove('intro-open');
-      setTimeout(() => { el.remove(); resolve(); }, reduced ? 0 : 700);
+      setTimeout(() => { el.remove(); resolve(); }, reduced ? 0 : 450);
     };
     const onKey = (e) => { if (e.key === 'Escape' || e.key === 'Enter') close(); };
-    const timer = setTimeout(close, reduced ? 1400 : 6800);
+    const timer = setTimeout(close, reduced ? 1400 : 7200);
     document.addEventListener('keydown', onKey);
     el.querySelectorAll('[data-intro-close]').forEach((b) => { b.onclick = close; });
-    el.querySelector('.intro-skip').focus({ preventScroll: true });
+    el.querySelector('.ix-skip').focus({ preventScroll: true });
   });
 }

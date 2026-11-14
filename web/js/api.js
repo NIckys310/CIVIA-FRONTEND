@@ -2,8 +2,10 @@
 // el refresh token es una cookie HttpOnly que JavaScript no puede leer.
 
 import { clearFiles, offlineFile } from './offline.js';
+import { channel, resetChannel, seal, unseal } from './seal.js';
 
 const BASE = '/api/v1';
+const SEAL_HEADER = 'X-Civia-Seal';
 let accessToken = null;
 let refreshing = null;
 const listeners = new Set();
@@ -35,9 +37,14 @@ export class ApiError extends Error {
   }
 }
 
-async function parse(res) {
+/** `sealed` = { ch, method, url } de la petición: si la respuesta viene cifrada, se descifra aquí. */
+async function parse(res, sealed = null) {
   const type = res.headers.get('content-type') || '';
-  const data = type.includes('application/json') ? await res.json().catch(() => null) : await res.text();
+  let data = type.includes('application/json') ? await res.json().catch(() => null) : await res.text();
+  if (data && sealed?.ch && res.headers.get('X-Civia-Sealed') === '1') {
+    data = await unseal(sealed.ch, sealed.method, sealed.url, data).catch(() => null);
+    if (data === null) throw new ApiError('No se pudo leer la respuesta segura del servidor.', res.status);
+  }
   if (!res.ok) {
     const msg = (data && data.message) || (res.status === 413 ? 'El archivo es demasiado grande.' : `Error ${res.status}`);
     throw new ApiError(msg, res.status, data);
@@ -111,14 +118,38 @@ async function send(run, signal) {
   throw new ApiError('Sin conexión con el servidor. Intenta de nuevo en un momento.', 0);
 }
 
+/**
+ * Petición por el canal sellado: el cuerpo JSON se cifra y la respuesta JSON llega cifrada. Si el
+ * servidor ya no reconoce el canal (428, por ejemplo tras reiniciarse), se negocia otro y se repite.
+ * Devuelve { res, sealed } para que parse() descifre la respuesta.
+ */
+async function sealedFetch(method, path, { body, signal, headers = {} } = {}) {
+  const url = BASE + path;
+  const isJson = body !== undefined && !(body instanceof FormData);
+  const attempt = async () => {
+    const ch = await channel();
+    const h = { ...headers };
+    let payload = body === undefined ? undefined : isJson ? JSON.stringify(body) : body;
+    if (isJson) h['Content-Type'] = 'application/json';
+    if (ch) {
+      h[SEAL_HEADER] = ch.id;
+      if (isJson) payload = await seal(ch, method, url, payload);
+    }
+    const res = await send(() => fetch(url, { method, signal, credentials: 'same-origin', headers: h, body: payload }), signal);
+    return { res, sealed: ch ? { ch, method, url } : null };
+  };
+  let out = await attempt();
+  if (out.res.status === 428 && out.sealed) {
+    resetChannel();
+    out = await attempt();
+  }
+  return out;
+}
+
 /** Renueva el access token con la cookie de refresco (una sola petición aunque la pidan varios). */
 export function refresh() {
-  refreshing ||= send(() => fetch(`${BASE}/auth/token`, {
-    method: 'POST',
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ grant_type: 'refresh_token' }),
-  })).then(parse).then((r) => { setSession(r.access_token, r.user); return true; })
+  refreshing ||= sealedFetch('POST', '/auth/token', { body: { grant_type: 'refresh_token' } })
+    .then(({ res, sealed }) => parse(res, sealed)).then((r) => { setSession(r.access_token, r.user); return true; })
     .catch((e) => {
       // Solo una respuesta de la API que rechaza la cookie cierra la sesión. Un fallo de red o de
       // la pasarela (API dormida) no debe borrarla: al despertar, la sesión sigue siendo válida.
@@ -130,28 +161,21 @@ export function refresh() {
 }
 
 export async function request(method, path, { body, signal, blob = false } = {}) {
-  const run = () => fetch(BASE + path, {
-    method,
-    signal,
-    credentials: 'same-origin',
-    headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...(body !== undefined && !(body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
+  const run = () => sealedFetch(method, path, {
+    body, signal, headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
   });
-  let res = await send(run, signal);
+  let { res, sealed } = await run();
   if (res.status === 401 && !path.startsWith('/auth/token') && (await refresh())) {
-    res = await run();
+    ({ res, sealed } = await run());
   }
   if (res.status === 401 && !path.startsWith('/auth/')) {
     setSession(null, null);
   }
   if (blob) {
-    if (!res.ok) await parse(res);
+    if (!res.ok) await parse(res, sealed);
     return res.blob();
   }
-  return parse(res);
+  return parse(res, sealed);
 }
 
 export const api = {
@@ -169,20 +193,14 @@ export const api = {
  * Se usa fetch (no EventSource) porque hace falta POST y la cabecera Authorization.
  */
 export async function stream(path, body, { onEvent, signal } = {}) {
-  const run = () => fetch(BASE + path, {
-    method: 'POST',
-    signal,
-    credentials: 'same-origin',
-    headers: {
-      Accept: 'text/event-stream',
-      'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-    body: JSON.stringify(body ?? {}),
+  // La pregunta viaja cifrada; la respuesta en vivo (SSE) va por TLS, porque se entrega por partes.
+  const run = () => sealedFetch('POST', path, {
+    body: body ?? {}, signal,
+    headers: { Accept: 'text/event-stream', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
   });
-  let res = await send(run, signal);
-  if (res.status === 401 && (await refresh())) res = await run();
-  if (!res.ok || !res.body) return parse(res);
+  let { res, sealed } = await run();
+  if (res.status === 401 && (await refresh())) ({ res, sealed } = await run());
+  if (!res.ok || !res.body) return parse(res, sealed);
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
@@ -249,25 +267,35 @@ export function adoptTokens(r) {
 
 /** Sube un archivo con progreso. `fields` son parámetros adicionales del formulario. */
 export function upload(path, file, fields = {}, onProgress) {
-  const send = () => new Promise((resolve, reject) => {
+  const send = async () => {
+    // El archivo va por TLS (multipart); la respuesta con sus datos llega cifrada por el canal.
+    const ch = await channel();
+    return new Promise((resolve, reject) => {
     const form = new FormData();
     form.append('file', file, file.name);
     Object.entries(fields).forEach(([k, v]) => { if (v != null && v !== '') form.append(k, v); });
     const xhr = new XMLHttpRequest();
     xhr.open('POST', BASE + path);
     if (accessToken) xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+    if (ch) xhr.setRequestHeader(SEAL_HEADER, ch.id);
     xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress?.(e.loaded / e.total); };
-    xhr.onload = () => {
+    xhr.onload = async () => {
       let data = null;
       try { data = JSON.parse(xhr.responseText); } catch { /* respuesta vacía */ }
+      if (data && ch && xhr.getResponseHeader('X-Civia-Sealed') === '1') {
+        data = await unseal(ch, 'POST', BASE + path, data).catch(() => null);
+      }
+      if (xhr.status === 428) resetChannel();
       if (xhr.status >= 200 && xhr.status < 300) resolve(data);
       else reject(new ApiError((data && data.message) || `Error ${xhr.status}`, xhr.status, data));
     };
     xhr.onerror = () => reject(new ApiError('Sin conexión con el servidor.', 0));
     xhr.send(form);
-  });
+    });
+  };
   return send().catch(async (e) => {
     if (e.status === 401 && (await refresh())) return send();
+    if (e.status === 428) return send();
     // API dormida (pasarela o sin conexión): se espera a que despierte y se sube de nuevo.
     if ((e.status === 0 || GATEWAY.has(e.status)) && (await wakeServer())) return send();
     throw e;
