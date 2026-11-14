@@ -700,3 +700,108 @@
    toda la pantalla en cada cuadro. */
 .ix-rays { mix-blend-mode: normal; opacity: 0.1; will-change: transform; }
 .ix-motes i { will-change: transform, opacity; }
+
+/* ==========================================================================
+   Escena de la ciudad a la hora dorada (js/scene-lux.js + assets/scene/*.svg)
+   Compartida por la pantalla de carga y el acceso. Aparece al instante: son
+   capas SVG livianas sobre un cielo en CSS. Solo se animan capas completas con
+   transform/opacity/translate (la GPU las mueve sin repintar).
+   Las capas comparten viewBox (1920×640, suelo en y=560) y se anclan abajo.
+   ========================================================================== */
+.lx-scene { --px: 0; --py: 0; position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; background: #0b1230; }
+.auth.lux > .lx-scene { position: fixed; }
+#splash .lx-scene { position: absolute; }
+
+/* Cielo: azul profundo arriba, violeta, rosa y ámbar en el horizonte (≈86 % de la altura). */
+.lx-sky { position: absolute; inset: 0;
+  background: linear-gradient(180deg, #0a1030 0%, #151c46 20%, #2c2b5c 38%, #5a3f6c 54%, #9a5a6c 66%, #d9824f 77%, #f3a85e 84%, #f8c27a 88%, #e89a58 92%, #2a1b22 100%); }
+.lx-stars { position: absolute; inset: 0 0 55% 0; opacity: 0.7;
+  background-image: radial-gradient(1px 1px at 8% 14%, #fff, transparent), radial-gradient(1px 1px at 19% 6%, #fff, transparent), radial-gradient(1.3px 1.3px at 33% 18%, #fff, transparent),
+    radial-gradient(1px 1px at 47% 9%, #fff, transparent), radial-gradient(1px 1px at 58% 22%, #fff, transparent), radial-gradient(1.3px 1.3px at 71% 7%, #fff, transparent),
+    radial-gradient(1px 1px at 84% 16%, #fff, transparent), radial-gradient(1px 1px at 93% 5%, #fff, transparent), radial-gradient(1px 1px at 27% 31%, #fff, transparent), radial-gradient(1px 1px at 66% 34%, #fff, transparent);
+  -webkit-mask: linear-gradient(#000, transparent); mask: linear-gradient(#000, transparent); }
+/* Sol bajo detrás de la ciudad, en el hueco que dejan los edificios (x ≈ 61 %). */
+.lx-sun { position: absolute; left: 61.5%; bottom: 10vh; width: min(70vmin, 760px); aspect-ratio: 1; transform: translate(-50%, 50%); border-radius: 50%;
+  background: radial-gradient(circle, #fff7e2 0 4%, #ffe1a6 8%, rgba(255, 190, 110, 0.85) 16%, rgba(255, 150, 80, 0.4) 32%, rgba(255, 130, 70, 0.12) 52%, transparent 70%);
+  animation: lx-sun-in 1.4s cubic-bezier(.16, 1, .3, 1) both, lx-sun-breathe 7s ease-in-out 1.4s infinite; }
+@keyframes lx-sun-in { from { opacity: 0; translate: 0 6%; } }
+@keyframes lx-sun-breathe { 50% { opacity: 0.86; } }
+/* Nubes: bandas suaves iluminadas por debajo, que derivan muy despacio. */
+.lx-cloud { position: absolute; height: 46px; border-radius: 50%; opacity: 0.55; will-change: transform;
+  background: radial-gradient(50% 50% at 50% 60%, rgba(255, 196, 150, 0.55), rgba(170, 110, 140, 0.25) 55%, transparent 72%); filter: none; }
+.lx-cloud.c1 { left: 6%; top: 34%; width: 38vw; animation: lx-drift 60s linear infinite alternate; }
+.lx-cloud.c2 { left: 52%; top: 26%; width: 30vw; height: 34px; opacity: 0.4; animation: lx-drift 75s linear -20s infinite alternate-reverse; }
+.lx-cloud.c3 { left: 70%; top: 46%; width: 26vw; height: 30px; opacity: 0.45; animation: lx-drift 52s linear -8s infinite alternate; }
+@keyframes lx-drift { from { transform: translateX(-4vw); } to { transform: translateX(4vw); } }
+
+/* Planos de la ciudad: entran levantándose por profundidad; el paralaje usa transform. */
+.lx-layer { position: absolute; left: -3%; bottom: 0; width: 106%; height: 76vh; object-fit: cover; object-position: 50% 100%; user-select: none;
+  transform: translate3d(calc(var(--px) * var(--d, 0px)), calc(var(--py) * var(--d, 0px) * 0.35), 0); will-change: transform;
+  animation: lx-rise 900ms cubic-bezier(.16, 1, .3, 1) both; }
+.lx-layer.far { --d: -8px; animation-delay: 0ms; }
+.lx-layer.mid { --d: -18px; animation-delay: 120ms; }
+.lx-layer.near { --d: -34px; animation-delay: 240ms; }
+.lx-layer.lights { --d: -34px; animation: lx-lights-on 1.2s ease 700ms both, lx-lights 6s ease-in-out 2s infinite; }
+@keyframes lx-rise { from { opacity: 0; translate: 0 5%; } to { opacity: 1; translate: 0 0; } }
+@keyframes lx-lights-on { 0% { opacity: 0; } 35% { opacity: 0.6; } 50% { opacity: 0.35; } 100% { opacity: 1; } }
+@keyframes lx-lights { 50% { opacity: 0.84; } }
+/* Luces de autos por la avenida (al pie de la ciudad). */
+.lx-car { position: absolute; left: 0; bottom: calc(76vh * 0.098); width: 34px; height: 3px; border-radius: 3px; will-change: transform; opacity: 0; }
+.lx-car.a { background: linear-gradient(90deg, transparent, #fff1d6); box-shadow: 0 0 10px 2px rgba(255, 236, 200, 0.45); animation: lx-car-r 16s linear 1.4s infinite; }
+.lx-car.b { background: linear-gradient(270deg, transparent, #ff6a55); box-shadow: 0 0 10px 2px rgba(255, 90, 70, 0.4); bottom: calc(76vh * 0.098 + 4px); animation: lx-car-l 21s linear 3s infinite; }
+.lx-car.c { background: linear-gradient(90deg, transparent, #fff1d6); box-shadow: 0 0 10px 2px rgba(255, 236, 200, 0.4); animation: lx-car-r 19s linear 9s infinite; }
+@keyframes lx-car-r { 0% { opacity: 1; transform: translateX(-60px); } 100% { opacity: 1; transform: translateX(calc(100vw + 60px)); } }
+@keyframes lx-car-l { 0% { opacity: 1; transform: translateX(calc(100vw + 60px)); } 100% { opacity: 1; transform: translateX(-60px); } }
+
+/* Sombreado para leer el texto: cielo libre arriba, suelo oscuro abajo y algo más oscuro tras el panel. */
+.lx-shade { position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, rgba(6, 8, 15, 0.42) 0%, rgba(6, 8, 15, 0.04) 15%, transparent 42%, rgba(6, 8, 15, 0.18) 60%, rgba(6, 8, 15, 0.72) 80%, rgba(5, 7, 13, 0.94) 100%),
+    linear-gradient(90deg, rgba(6, 8, 15, 0.4) 0%, transparent 32%, transparent 58%, rgba(8, 10, 22, 0.3) 80%, rgba(8, 10, 22, 0.48) 100%); }
+#splash .lx-shade { background: radial-gradient(60% 46% at 50% 40%, rgba(6, 8, 15, 0.38), transparent 75%), linear-gradient(180deg, rgba(6, 8, 15, 0.35), transparent 20%, transparent 70%, rgba(5, 7, 13, 0.6)); }
+
+/* Acceso en una columna: la escena vive en el encabezado y termina en el azul noche del panel. */
+@media (max-width: 900px) {
+  .auth.lux .hero > .lx-scene { position: absolute; }
+  .auth.lux .hero > .lx-scene .lx-layer { height: 100%; }
+  .auth.lux .hero > .lx-scene .lx-car { display: none; }
+  .auth.lux .hero > .lx-scene .lx-sun { bottom: 16%; width: 120vw; }
+  .auth.lux .hero > .lx-scene .lx-shade { background: linear-gradient(180deg, rgba(6, 8, 15, 0.5) 0%, rgba(6, 8, 15, 0.1) 26%, transparent 46%, rgba(11, 13, 24, 0.45) 72%, rgba(11, 13, 24, 0.9) 88%, #0b0d18 96%); }
+}
+@media (max-width: 640px) {
+  .lx-layer { height: 62vh; }
+  .lx-cloud.c1 { width: 70vw; } .lx-cloud.c2 { width: 56vw; } .lx-cloud.c3 { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lx-sun, .lx-cloud, .lx-layer, .lx-car { animation: none !important; }
+  .lx-car { display: none; }
+}
+/* Composición: sol a la izquierda sobre el título (≈40 %), ciudad más baja y resplandor visible. */
+.lx-sky { background: linear-gradient(180deg, #0a1030 0%, #151c46 16%, #2c2b5c 30%, #5a3f6c 44%, #9a5a6c 56%, #d27e55 66%, #f0a35e 73%, #f9c47e 78%, #f2ad66 83%, #b56a50 90%, #2a1b22 100%); }
+.lx-layer { height: 58vh; }
+.lx-sun { left: 40%; bottom: calc(58vh * 0.19); width: min(78vmin, 860px); }
+.lx-car { bottom: calc(58vh * 0.098); }
+.lx-car.b { bottom: calc(58vh * 0.098 + 4px); }
+.lx-shade { background:
+    linear-gradient(180deg, rgba(6, 8, 15, 0.4) 0%, rgba(6, 8, 15, 0.04) 14%, transparent 40%, transparent 62%, rgba(6, 8, 15, 0.28) 76%, rgba(6, 8, 15, 0.7) 90%, rgba(5, 7, 13, 0.9) 100%),
+    linear-gradient(90deg, rgba(6, 8, 15, 0.3) 0%, transparent 28%, transparent 60%, rgba(8, 10, 22, 0.26) 80%, rgba(8, 10, 22, 0.42) 100%); }
+/* La ciudad ocupa la franja media (como la referencia): edificios contra el cielo encendido y el texto
+   de portada sobre la base oscura de la calle. */
+.lx-layer { height: 72vh; }
+.lx-sun { bottom: calc(72vh * 0.2); }
+.lx-car { bottom: calc(72vh * 0.098); }
+.lx-car.b { bottom: calc(72vh * 0.098 + 4px); }
+.lx-sky { background: linear-gradient(180deg, #0a1030 0%, #151c46 14%, #2c2b5c 26%, #5a3f6c 38%, #9a5a6c 48%, #d27e55 58%, #f0a35e 66%, #f9c47e 72%, #f2ad66 78%, #b56a50 86%, #2a1b22 100%); }
+.lx-sun { background: radial-gradient(circle, #fffaf0 0 3%, #ffe7b4 6%, #ffc77e 11%, rgba(255, 170, 90, 0.75) 19%, rgba(255, 140, 70, 0.34) 34%, rgba(255, 120, 70, 0.1) 54%, transparent 70%); }
+/* Pantalla de carga sobre la escena: marca como la barra del acceso, lema legible, logo sobre el cielo. */
+#splash { background: #0b1230; }
+#splash .sp-word { gap: 0.01em; font: 600 40px/1 var(--display); letter-spacing: -0.015em; text-shadow: none; }
+#splash .sp-word .sp-gap { width: 0.26em; }
+#splash .sp-word span { filter: drop-shadow(0 2px 14px rgba(0, 0, 0, 0.45)); }
+#splash .sp-tag { margin-top: 14px; font-size: 10.5px; letter-spacing: 0.46em; color: #f2c88a; opacity: 1; }
+#splash .sp-center { position: relative; z-index: 2; transform: translateY(-9vh); }
+#splash .sp-status { color: rgba(250, 244, 234, 0.85); }
+/* Entrada: los edificios se levantan ya opacos (sin verse unos a través de otros); la bruma aparece. */
+@keyframes lx-rise-solid { from { translate: 0 6%; } to { translate: 0 0; } }
+.lx-layer.mid, .lx-layer.near { animation-name: lx-rise-solid; }
+.lx-layer.far { animation-name: lx-rise; }
