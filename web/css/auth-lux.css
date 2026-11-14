@@ -590,3 +590,62 @@
   :root:not([data-theme="light"]) #splash .sp-bg::before { bottom: 3.5%; width: 110vw; }
   :root:not([data-theme="light"]) #splash .sp-city { height: 26vh; }
 }
+
+/* ==========================================================================
+   Una sola columna (tableta y teléfono): transición continua escena → panel.
+   La escena se funde en el mismo azul noche del fondo del panel, y el resplandor
+   cálido del atardecer baja suavemente detrás del panel: sin corte de color.
+   ========================================================================== */
+@media (max-width: 960px) {
+  :root:not([data-theme="light"]) .auth.lux {
+    --lx-night: #0b0d18;
+    background:
+      radial-gradient(90% 36% at 50% 0%, rgba(236, 150, 80, 0.16), rgba(140, 80, 110, 0.08) 45%, transparent 75%),
+      radial-gradient(70% 30% at 50% 100%, rgba(70, 92, 170, 0.12), transparent 70%),
+      var(--lx-night);
+  }
+  /* La escena termina en el color exacto del fondo del panel, con un tramo largo de mezcla. */
+  :root:not([data-theme="light"]) .auth.lux .hero-city::after {
+    background:
+      radial-gradient(70% 34% at 50% 15%, rgba(7, 8, 11, 0.5), transparent 75%),
+      linear-gradient(180deg, rgba(7, 8, 11, 0.55) 0%, rgba(7, 8, 11, 0.12) 24%, transparent 40%, transparent 58%, rgba(11, 13, 24, 0.55) 74%, rgba(11, 13, 24, 0.9) 88%, #0b0d18 100%) !important;
+  }
+  :root:not([data-theme="light"]) .auth.lux .hero.has-city,
+  :root:not([data-theme="light"]) .auth.lux .hero { background: transparent !important; }
+  /* Mientras carga la ciudad: el mismo cielo, que también se funde en el azul noche. */
+  :root:not([data-theme="light"]) .auth.lux .hero:not(.has-city) {
+    background: radial-gradient(60% 40% at 50% 66%, rgba(255, 168, 78, 0.45), transparent 72%), linear-gradient(180deg, #0f1636 0%, #2a2a58 30%, #6a4466 50%, #c97a56 64%, #e9a463 69%, #3a2a2c 74%, #0b0d18 100%) !important;
+  }
+  /* El panel se monta un poco sobre el final de la escena: une las dos partes. */
+  .auth.lux .panel { position: relative; z-index: 2; margin-top: -56px; background: transparent !important; }
+  .auth.lux .auth-card { box-shadow: 0 -30px 80px -40px rgba(236, 160, 90, 0.35), 0 50px 120px -40px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+  .lx-more { background: linear-gradient(180deg, #0b0d18, var(--bg) 30%); border-top: 0; }
+}
+:root[data-theme="light"] .auth.lux { background: var(--bg); }
+@media (max-width: 960px) {
+  :root[data-theme="light"] .auth.lux .hero-city::after { background: linear-gradient(180deg, rgba(7, 8, 11, 0.35) 0%, transparent 30%, transparent 60%, var(--bg) 100%) !important; }
+}
+/* Unión exacta: la escena termina en #0b0d18 y el fondo empieza en #0b0d18 (sin tinte en la unión);
+   el resplandor cálido lo lleva el propio panel. */
+@media (max-width: 960px) {
+  :root:not([data-theme="light"]) .auth.lux { background: radial-gradient(80% 26% at 50% 100%, rgba(70, 92, 170, 0.1), transparent 70%), #0b0d18; }
+  :root:not([data-theme="light"]) .auth.lux .panel::before {
+    content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; height: 320px; pointer-events: none;
+    background: radial-gradient(60% 70% at 50% 0%, rgba(236, 160, 90, 0.14), rgba(160, 90, 110, 0.05) 50%, transparent 75%);
+  }
+}
+@media (max-width: 960px) {
+  :root:not([data-theme="light"]) .auth.lux .hero-city::after {
+    background:
+      radial-gradient(70% 34% at 50% 15%, rgba(7, 8, 11, 0.5), transparent 75%),
+      linear-gradient(180deg, rgba(7, 8, 11, 0.55) 0%, rgba(7, 8, 11, 0.12) 24%, transparent 40%, transparent 56%, rgba(11, 13, 24, 0.5) 68%, rgba(11, 13, 24, 0.88) 80%, #0b0d18 90%, #0b0d18 100%) !important;
+  }
+}
+/* La capa de tinte del diseño anterior terminaba justo en la unión y marcaba una línea. */
+.auth.lux .hero::before, .auth.lux .hero::after { display: none !important; }
+/* Borde de subpíxel (pantallas al 125 %, 150 %…): el lienzo 3D se desvanece antes del borde y el
+   contenedor tiene el mismo azul noche, así la última fila de píxeles nunca deja ver la escena. */
+@media (max-width: 960px) {
+  :root:not([data-theme="light"]) .auth.lux .hero-city { background: #0b0d18; }
+  .auth.lux .hero-city > canvas { -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 94%); mask-image: linear-gradient(180deg, #000 78%, transparent 94%); }
+}
