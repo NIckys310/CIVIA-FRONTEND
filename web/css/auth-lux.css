@@ -243,7 +243,7 @@
   .auth.lux { grid-template-columns: minmax(0, 1fr) minmax(420px, 42%); }
   .auth.lux .hero-points li { max-width: 210px; padding: 12px 14px; }
 }
-@media (max-width: 960px) {
+@media (max-width: 900px) {
   .auth.lux { grid-template-columns: 1fr; }
   .lx-top { padding: 18px 16px 0; }
   .lx-brand { display: none; }
@@ -317,7 +317,7 @@
 }
 
 /* Pantallas bajas (portátiles de 720–820 px de alto): el panel cabe sin desplazar. */
-@media (min-width: 961px) and (max-height: 860px) {
+@media (min-width: 901px) and (max-height: 860px) {
   .auth.lux .panel { padding-top: 92px; padding-bottom: 24px; }
   .auth.lux .auth-card { padding: 24px 30px 18px; }
   .auth.lux .seg { margin-bottom: 20px; }
@@ -509,7 +509,7 @@
 
 /* Encuadre: el panel y el texto de portada comparten la misma línea base inferior y el mismo margen
    lateral que la barra superior (como en la referencia). */
-@media (min-width: 961px) {
+@media (min-width: 901px) {
   .auth.lux { --lx-edge: clamp(24px, 3.4vw, 60px); --lx-bottom: clamp(28px, 5vh, 56px); }
   .auth.lux .panel { align-items: end; place-items: end center; padding-right: var(--lx-edge); padding-bottom: var(--lx-bottom); }
   .auth.lux .hero-copy { left: var(--lx-edge); bottom: var(--lx-bottom); }
@@ -572,7 +572,7 @@
     linear-gradient(180deg, #0f1636 0%, #2a2a58 24%, #6a4466 42%, #c97a56 56%, #e9a463 61%, #3a2a2c 64%, #10121c 78%, #07080d 100%);
 }
 :root[data-theme="light"] .auth.lux { background: linear-gradient(180deg, #4d74a8 0%, #8fb0d4 40%, #dfe7ef 62%, #2e3a2c 64%, #121510 100%); }
-@media (max-width: 960px) {
+@media (max-width: 900px) {
   :root:not([data-theme="light"]) .auth.lux .hero { background: radial-gradient(60% 40% at 50% 66%, rgba(255, 168, 78, 0.5), transparent 72%), linear-gradient(180deg, #0f1636 0%, #2a2a58 30%, #6a4466 50%, #c97a56 64%, #e9a463 70%, #10121c 74%, #07080d 100%) !important; }
   .auth.lux .hero { min-height: 420px; }
   .auth.lux .hero.has-city { background: var(--bg) !important; }
@@ -596,7 +596,7 @@
    La escena se funde en el mismo azul noche del fondo del panel, y el resplandor
    cálido del atardecer baja suavemente detrás del panel: sin corte de color.
    ========================================================================== */
-@media (max-width: 960px) {
+@media (max-width: 900px) {
   :root:not([data-theme="light"]) .auth.lux {
     --lx-night: #0b0d18;
     background:
@@ -622,19 +622,19 @@
   .lx-more { background: linear-gradient(180deg, #0b0d18, var(--bg) 30%); border-top: 0; }
 }
 :root[data-theme="light"] .auth.lux { background: var(--bg); }
-@media (max-width: 960px) {
+@media (max-width: 900px) {
   :root[data-theme="light"] .auth.lux .hero-city::after { background: linear-gradient(180deg, rgba(7, 8, 11, 0.35) 0%, transparent 30%, transparent 60%, var(--bg) 100%) !important; }
 }
 /* Unión exacta: la escena termina en #0b0d18 y el fondo empieza en #0b0d18 (sin tinte en la unión);
    el resplandor cálido lo lleva el propio panel. */
-@media (max-width: 960px) {
+@media (max-width: 900px) {
   :root:not([data-theme="light"]) .auth.lux { background: radial-gradient(80% 26% at 50% 100%, rgba(70, 92, 170, 0.1), transparent 70%), #0b0d18; }
   :root:not([data-theme="light"]) .auth.lux .panel::before {
     content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; height: 320px; pointer-events: none;
     background: radial-gradient(60% 70% at 50% 0%, rgba(236, 160, 90, 0.14), rgba(160, 90, 110, 0.05) 50%, transparent 75%);
   }
 }
-@media (max-width: 960px) {
+@media (max-width: 900px) {
   :root:not([data-theme="light"]) .auth.lux .hero-city::after {
     background:
       radial-gradient(70% 34% at 50% 15%, rgba(7, 8, 11, 0.5), transparent 75%),
@@ -645,7 +645,35 @@
 .auth.lux .hero::before, .auth.lux .hero::after { display: none !important; }
 /* Borde de subpíxel (pantallas al 125 %, 150 %…): el lienzo 3D se desvanece antes del borde y el
    contenedor tiene el mismo azul noche, así la última fila de píxeles nunca deja ver la escena. */
-@media (max-width: 960px) {
+@media (max-width: 900px) {
   :root:not([data-theme="light"]) .auth.lux .hero-city { background: #0b0d18; }
   .auth.lux .hero-city > canvas { -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 94%); mask-image: linear-gradient(180deg, #000 78%, transparent 94%); }
 }
+
+/* ==========================================================================
+   Un solo corte entre escritorio y móvil: 900 px (el mismo que usa la escena 3D
+   para encuadrarse). Entre 901 y 960 px app.css apilaba el contenido como en el
+   teléfono mientras la ciudad seguía encuadrada como en escritorio, y quedaba a la
+   vista el borde del suelo 3D junto al panel. Aquí ese rango vuelve a dos columnas.
+   ========================================================================== */
+@media (min-width: 901px) and (max-width: 960px) {
+  .auth.lux { grid-template-columns: minmax(0, 1fr) minmax(400px, 46%); }
+  .auth.lux .hero { min-height: 0; padding: 0; background: transparent; }
+  .auth.lux .hero-copy { display: block; }
+  .auth.lux .brand-mobile { display: none; }
+  .auth.lux .panel { align-items: end; padding-left: 8px; }
+  .auth.lux .auth-card { margin: 0 0 0 auto; padding: 24px 22px 18px; border-radius: 26px; }
+  .lx-brand, .lx-new, .lx-sep { display: inline-flex; }
+}
+/* Escritorio estrecho (901–1100 px): la portada se ajusta a su columna, sin montarse con el panel. */
+@media (min-width: 901px) and (max-width: 1100px) {
+  .auth.lux .hero-copy h2 { font-size: clamp(28px, 3.1vw, 36px); }
+  .lx-sub { font-size: 14.5px; }
+  .auth.lux .hero-points { gap: 8px; }
+  .auth.lux .hero-points li { max-width: 190px; padding: 10px 12px; gap: 10px; font-size: 12.5px; }
+  .auth.lux .hero-points svg { width: 22px; height: 22px; }
+  .lx-eyebrow { letter-spacing: 0.3em; font-size: 11px; }
+}
+/* La etiqueta de portada nunca se parte en dos líneas: la línea dorada cede el espacio. */
+.lx-eyebrow span { white-space: nowrap; }
+.lx-eyebrow i { flex: 1 1 auto; width: auto; max-width: clamp(80px, 22vw, 360px); min-width: 24px; }
