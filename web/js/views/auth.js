@@ -3,7 +3,7 @@ import { afterLogin, applyTheme } from '../app.js';
 import { api, login, logout, register, session } from '../api.js';
 import { $, busy, debounce, html, icon, mount, raw, toast } from '../ui.js';
 import { circularReveal, kinetic, stagger } from '../motion.js';
-import { districtScene } from './auth-scene.js';
+import { parallax, sceneMarkup } from '../scene-lux.js';
 import { live, passwordChecks, rules, validateAll } from '../validate.js';
 import { wipeSensitive } from '../privacy.js';
 
@@ -90,9 +90,6 @@ function layout(el, panel, { mode = 'login' } = {}) {
       </div>
     </header>
     <section class="hero">
-      <div class="hero-grid" aria-hidden="true"></div>
-      <div class="hero-glow" aria-hidden="true"></div>
-      <div aria-hidden="true">${raw(districtScene())}</div>
       <div class="hero-copy">
         <div class="eyebrow gold lx-eyebrow"><span>Arquitectura inteligente</span><i aria-hidden="true"></i></div>
         <h2 class="display">Del primer trazo a la obra, con un estudio que <span class="fx-accent">piensa contigo.</span></h2>
@@ -148,8 +145,18 @@ function layout(el, panel, { mode = 'login' } = {}) {
   // Al salir de la pantalla, los campos sensibles quedan vacíos (no viajan al historial ni a borradores).
   window.addEventListener('hashchange', () => wipeSensitive(el), { once: true });
 
-  // Manzana urbana en 3D detrás del formulario (si no hay WebGL queda la ilustración vectorial).
-  import('./auth-city.js').then((m) => m.mountCity(el.querySelector('.auth .hero'))).catch(() => {});
+  // Ciudad a la hora dorada en capas SVG + CSS: aparece al instante (sin WebGL). En escritorio ocupa
+  // toda la pantalla detrás del panel; en una columna vive en el encabezado.
+  const authEl = el.querySelector('.auth');
+  const heroEl = el.querySelector('.auth .hero');
+  const holder = document.createElement('div');
+  holder.innerHTML = sceneMarkup();
+  const scene = holder.firstElementChild;
+  if (window.matchMedia('(max-width: 900px)').matches) heroEl.prepend(scene); else authEl.prepend(scene);
+  authEl.classList.add('has-city');
+  heroEl.classList.add('has-city');
+  const stopParallax = parallax(scene);
+  window.addEventListener('hashchange', stopParallax, { once: true });
   // Títulos y etiquetas: las letras entran una a una y la palabra destacada brilla en dorado.
   el.querySelectorAll('.auth-card h1, .auth-card > .eyebrow, .hero-copy h2, .hero-copy .eyebrow').forEach(kinetic);
 

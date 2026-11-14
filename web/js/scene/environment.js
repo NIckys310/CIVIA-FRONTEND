@@ -109,7 +109,7 @@ export function createEnvironment(THREE, _unused, renderer, scene, { mode = 'dus
   renderer.toneMapping = THREE.AgXToneMapping;
   const sun = new THREE.DirectionalLight(0xffffff, 2);
   sun.castShadow = true;
-  // El modelador usa 4096 (render de presentación); el fondo del acceso pide menos (ver auth-city.js).
+  // 4096 por defecto (render de presentación del modelador); se puede pedir menos con shadowMap.
   sun.shadow.mapSize.set(shadowMap, shadowMap);
   sun.shadow.radius = 2.5;
   sun.shadow.bias = -0.00025;
