@@ -3,6 +3,7 @@
 import './privacy.js';
 import { api, hasSessionHint, logout, refresh, server, session, wakeServer } from './api.js';
 import { mountBackground } from './background.js';
+import { wake } from './calm.js';
 import { $, $$, avatar, esc, html, icon, mount, on, raw, relTime, toast } from './ui.js';
 import { autoStagger, circularReveal, dragToDismiss, drawIcons, elevateOnScroll, enableImageFade, enableNavHaptics, enableRipples, enableSpotlight, enhanceView, kinetic, leave, moveMobilePill, moveNavPill, navGlide, prepareNavIcons, resetReveals, routeBarDone, routeBarStart } from './motion.js';
 
@@ -323,6 +324,7 @@ async function route() {
     if (target === $('#view') || match.isPublic) {
       cleanup = await mod.render(target, match.params, { refreshNotifications, aiStatus: () => aiStatus });
       restoreDrafts(target);
+      wake();
       enhanceView(target);
     }
   } catch (e) {
