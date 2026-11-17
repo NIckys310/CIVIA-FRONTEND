@@ -119,6 +119,7 @@ export function mountBackground(host = document.body) {
     <div class="bg-aurora"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
     <div class="bg-floor"><div class="bg-floor-grid"></div></div>
     <div class="bg-horizon"></div>
+    <div class="bg-horizon-glint" data-live><i></i></div>
     <div class="bg-city-wrap">${skylineSvg()}</div>
     <canvas class="bg-particles"></canvas>
     <div class="bg-vignette"></div>

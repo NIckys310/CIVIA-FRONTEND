@@ -204,3 +204,89 @@ table thead th { font-family: var(--mono); letter-spacing: 0.14em; font-size: 10
 
 /* Modo calma (js/calm.js): los efectos decorativos en bucle se detienen donde estén. */
 [data-calm], [data-calm]::before, [data-calm]::after { animation-play-state: paused !important; }
+
+/* Destello del banner del inicio: un cometa de luz que recorre el borde.
+   - Borde neutro: el dorado es solo el del destello, que enciende la línea al pasar.
+   - Cometa: capas sobre el mismo contorno redondeado (mismo radio que el banner). Todas comparten el
+     frente (la cabeza) y tienen largos distintos: estela larga y tenue, luego más corta y dorada, un
+     halo suave y una cabeza corta casi blanca. Avanzan juntas con stroke-dashoffset, así la luz sigue
+     las esquinas sin cortes. --l es el largo del tramo (sobre pathLength = 1000).
+   - data-live: el modo calma no lo detiene. */
+.lx-trace { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.lx-trace rect { x: 0.75px; y: 0.75px; width: calc(100% - 1.5px); height: calc(100% - 1.5px); fill: none; stroke-linecap: round; }
+/* Borde neutro y discreto (mismo tono que el resto de tarjetas): el dorado lo pone solo el destello. */
+.lx-trace .edge { stroke: rgba(255, 255, 255, 0.07); stroke-width: 1; }
+.lx-trace rect:not(.edge) {
+  --lead: 180; /* largo del tramo más largo: todos alinean su cabeza con el frente de este */
+  stroke-dasharray: calc(var(--l) * 1px) calc((1000 - var(--l)) * 1px);
+  animation: lx-comet 14s linear infinite;
+}
+.lx-trace .tail { stroke: rgb(247, 205, 140); stroke-opacity: 0.1; stroke-width: 1.4; }
+.lx-trace .halo { stroke: rgba(255, 214, 150, 0.2); stroke-width: 6; }
+.lx-trace .head { stroke: #fff8ea; stroke-width: 1.8; }
+/* Desplazamiento inicial de cada capa = (lead − l): así todas tienen la cabeza en el mismo punto. */
+@keyframes lx-comet {
+  from { stroke-dashoffset: calc((var(--l) - var(--lead)) * 1px); }
+  to { stroke-dashoffset: calc((var(--l) - var(--lead) - 1000) * 1px); }
+}
+@media (prefers-reduced-motion: reduce) { .lx-trace rect:not(.edge) { animation: none; opacity: 0; } }
+/* Capa propia para el trazo: al redibujarlo no se repinta el banner que tiene debajo. */
+.lx-trace { will-change: transform; contain: strict; }
+
+/* Destello que recorre la línea del horizonte del fondo: una luz dorada con cabeza brillante y estela
+   que se desvanece cruza la pantalla de izquierda a derecha y descansa antes de la siguiente pasada.
+   Capa propia y solo transform (la GPU la mueve sin repintar). data-live: el modo calma no la detiene. */
+.bg-horizon-glint { position: absolute; left: 0; right: 0; bottom: 61%; height: 1px; overflow: visible; pointer-events: none; }
+.bg-horizon-glint i { position: absolute; left: 0; top: 0; width: 26vw; height: 1px; border-radius: 1px; will-change: transform;
+  background: linear-gradient(90deg, transparent, rgba(236, 170, 90, 0.12) 35%, rgba(247, 205, 140, 0.45) 75%, #ffe9c2 94%, #fffaf0 98%, transparent);
+  box-shadow: 0 0 10px 1px rgba(247, 200, 130, 0.35);
+  transform: translateX(-30vw); animation: bg-glint 11s cubic-bezier(.45, 0, .55, 1) 1.2s infinite; }
+@keyframes bg-glint { 0% { transform: translateX(-30vw); } 72%, 100% { transform: translateX(110vw); } }
+:root[data-theme="light"] .bg-horizon-glint { display: none; }
+@media (prefers-reduced-motion: reduce) { .bg-horizon-glint { display: none; } }
+
+/* Cápsula del menú lateral: al cambiar de sección se veía estirada mientras se deslizaba.
+   - La altura ya no se anima (si quedaba una altura vieja, se veía estirada durante la transición):
+     solo se desliza con transform.
+   - Sin el rebote vertical (scale 0.97 × 1.18): la propiedad scale se combina con el translateY del
+     transform y multiplicaba también el desplazamiento. Al llegar hace un breve brillo, sin cambiar
+     de tamaño.
+   - Tope de seguridad: nunca más alta que una opción del menú. */
+.nav-pill { transition: transform 240ms var(--lx-ease), opacity 140ms ease !important; max-height: 52px; }
+.nav-pill.moving { animation: lx-pill-arrive 420ms ease-out !important; }
+@keyframes lx-pill-arrive { 0% { box-shadow: inset 0 0 0 1px rgba(247, 219, 163, 0.5), 0 10px 28px -14px rgba(236, 184, 109, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.1); } 45% { box-shadow: inset 0 0 0 1px rgba(255, 236, 200, 0.95), 0 10px 34px -10px rgba(236, 184, 109, 1), inset 0 1px 0 rgba(255, 255, 255, 0.2); } 100% { box-shadow: inset 0 0 0 1px rgba(247, 219, 163, 0.5), 0 10px 28px -14px rgba(236, 184, 109, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.1); } }
+@media (prefers-reduced-motion: reduce) { .nav-pill.moving { animation: none !important; } }
+
+/* ==========================================================================
+   Encuadre: nada se sale de su caja.
+   ========================================================================== */
+/* Etiquetas en mayúsculas: el espaciado amplio (0,36 em) queda solo en las cabeceras de página. Dentro
+   de tarjetas era tan ancho que «PROYECTADA» o «CONVERSACIONES» no cabían y empujaban íconos y botones. */
+.content .card .eyebrow, .content .card .eyebrow.gold { letter-spacing: 0.2em; }
+.page-head .eyebrow, .content .page-head .eyebrow.gold { letter-spacing: 0.3em; }
+.kpi2-top { min-width: 0; }
+.kpi2-top .eyebrow { min-width: 0; letter-spacing: 0.16em; line-height: 1.35; overflow-wrap: anywhere; }
+.kpi2-top > :last-child { flex: none; }
+/* Cabeceras de tarjeta: el título se ajusta (puntos suspensivos) y las acciones nunca se encogen. */
+.card-head { min-width: 0; }
+.card-head > :first-child { min-width: 0; }
+.card-head > :first-child :is(h2, h3, .eyebrow), .card-head > :is(h2, h3) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-head :is(.btn, button, a.btn) { flex: none; }
+/* Escudo de la verificación en dos pasos: marca de agua recortada dentro de su tarjeta. */
+.mfa-card, .card.glow { overflow: hidden; }
+/* Cabecera de Perfil (tarjeta con borde): la línea de cota bajo el nombre va dentro, no sobre el borde. */
+.profile-head.ph2 { padding-bottom: 34px; }
+.profile-head.ph2::after { bottom: 14px; }
+/* El brillo que recorre la cápsula del menú queda dentro de ella (antes se veía pasar por fuera). */
+.nav-pill { overflow: hidden; }
+.nav-pill::before { left: 0; }
+/* El espaciado entre letras deja un hueco tras la última letra: se compensa para que la etiqueta no
+   pida más ancho del que se ve. */
+.content .card-head .eyebrow { margin-right: -0.2em; }
+/* Teléfono: la cabecera de tarjeta pasa a dos líneas (título arriba, acciones debajo) en vez de
+   recortar el título con puntos suspensivos. */
+@media (max-width: 640px) {
+  .card-head { flex-wrap: wrap; row-gap: 10px; }
+  .card-head > :first-child :is(h2, h3, .eyebrow), .card-head > :is(h2, h3) { white-space: normal; overflow: visible; text-overflow: clip; }
+  .content .card-head .eyebrow { margin-right: 0; }
+}
