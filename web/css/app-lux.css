@@ -232,3 +232,15 @@ table thead th { font-family: var(--mono); letter-spacing: 0.14em; font-size: 10
 @media (prefers-reduced-motion: reduce) { .lx-trace rect:not(.edge) { animation: none; opacity: 0; } }
 /* Capa propia para el trazo: al redibujarlo no se repinta el banner que tiene debajo. */
 .lx-trace { will-change: transform; contain: strict; }
+
+/* Destello que recorre la línea del horizonte del fondo: una luz dorada con cabeza brillante y estela
+   que se desvanece cruza la pantalla de izquierda a derecha y descansa antes de la siguiente pasada.
+   Capa propia y solo transform (la GPU la mueve sin repintar). data-live: el modo calma no la detiene. */
+.bg-horizon-glint { position: absolute; left: 0; right: 0; bottom: 61%; height: 1px; overflow: visible; pointer-events: none; }
+.bg-horizon-glint i { position: absolute; left: 0; top: 0; width: 26vw; height: 1px; border-radius: 1px; will-change: transform;
+  background: linear-gradient(90deg, transparent, rgba(236, 170, 90, 0.12) 35%, rgba(247, 205, 140, 0.45) 75%, #ffe9c2 94%, #fffaf0 98%, transparent);
+  box-shadow: 0 0 10px 1px rgba(247, 200, 130, 0.35);
+  transform: translateX(-30vw); animation: bg-glint 11s cubic-bezier(.45, 0, .55, 1) 1.2s infinite; }
+@keyframes bg-glint { 0% { transform: translateX(-30vw); } 72%, 100% { transform: translateX(110vw); } }
+:root[data-theme="light"] .bg-horizon-glint { display: none; }
+@media (prefers-reduced-motion: reduce) { .bg-horizon-glint { display: none; } }
