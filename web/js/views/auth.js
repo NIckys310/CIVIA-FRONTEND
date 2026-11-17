@@ -134,6 +134,9 @@ function layout(el, panel, { mode = 'login' } = {}) {
 
   // Brillo que sigue al puntero en el borde del panel (solo con ratón).
   const card = el.querySelector('.panel .auth-card');
+  // Destello dorado que recorre el borde del panel: un anillo fijo (máscara) con un degradado que
+  // gira con transform, así lo mueve la GPU sin repintar. data-live: el modo calma no lo detiene.
+  card?.insertAdjacentHTML('afterbegin', '<i class="lx-orbit" aria-hidden="true" data-live><b></b></i>');
   if (card && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
     card.addEventListener('pointermove', (e) => {
       const r = card.getBoundingClientRect();
