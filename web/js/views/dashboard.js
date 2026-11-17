@@ -24,15 +24,14 @@ function summaryChips(d) {
 
 /**
  * Destello del borde del banner: cometa de luz sobre el contorno redondeado (ver .lx-trace en app-lux.css).
+ * El borde queda neutro: el dorado es solo el del destello, que lo enciende al pasar.
  * La estela son muchos tramos muy tenues de largos escalonados que comparten la cabeza: cerca de ella
  * se suman muchos (brilla) y hacia atrás cada vez menos, así se desvanece de forma continua.
  */
-const COMET_TAIL = [10, 16, 24, 34, 46, 60, 78, 100, 126, 158, 196, 240];
+const COMET_TAIL = [8, 12, 18, 26, 36, 48, 62, 80, 100, 124, 150, 180];
 function cometTrace() {
   const rect = (cls, l) => `<rect class="${cls}" pathLength="1000" rx="26" ry="26"${l ? ` style="--l:${l}"` : ''}/>`;
-  return `<svg class="lx-trace" aria-hidden="true" data-live><defs><linearGradient id="lx-edge" x1="0" y1="0" x2="1" y2="1">`
-    + '<stop offset="0" stop-color="#f7dba3" stop-opacity=".5"/><stop offset=".35" stop-color="#ffffff" stop-opacity=".05"/>'
-    + '<stop offset=".7" stop-color="#8fb4ff" stop-opacity=".1"/><stop offset="1" stop-color="#8fb4ff" stop-opacity=".4"/></linearGradient></defs>'
+  return '<svg class="lx-trace" aria-hidden="true" data-live>'
     + rect('edge') + COMET_TAIL.map((l) => rect('tail', l)).join('') + rect('halo', 40) + rect('head', 8) + '</svg>';
 }
 
