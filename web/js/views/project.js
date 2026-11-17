@@ -28,7 +28,11 @@ export async function render(el, { id, tab, query }) {
   // Volver a pedir la misma pestaña es una recarga (p. ej. tras editar el proyecto): se pinta todo.
   if (head && to >= 0 && from !== to) {
     links.forEach((a, i) => a.classList.toggle('active', i === to));
-    const pane = $('#tab', el);
+    // Contenedor nuevo para cada pestaña: las pestañas registran sus clics en él, y reutilizar el mismo
+    // nodo acumulaba detectores (un clic en «Nueva tarea» abría un diálogo por cada visita anterior).
+    const old = $('#tab', el);
+    const pane = old.cloneNode(false);
+    old.replaceWith(pane);
     const refreshed = await api.get(`/projects/${id}`);
     pane.dataset.dir = to >= from ? 'next' : 'prev';
     pane.style.animation = 'none';
