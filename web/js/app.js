@@ -142,7 +142,8 @@ function renderShell() {
   $('#notif-btn').onclick = toggleNotifications;
   document.querySelectorAll('.sidebar .nav-section span, .brand .tag').forEach(kinetic);
   shellReady = true;
-  autoStagger($('#view'));
+  // Se vigila el contenedor de #view: #view se reemplaza en cada sección (ver route()).
+  autoStagger($('#view').parentElement);
   elevateOnScroll($('.topbar'));
   loadEngine();
   refreshNotifications();
@@ -297,6 +298,14 @@ async function route() {
       if (seq !== navSeq) return;
     } else renderShell();
     target = $('#view');
+    // Cada sección recibe un #view nuevo: las vistas registran sus clics en él y, al reutilizar el mismo
+    // nodo, los detectores se acumulaban (un clic en «Nuevo proyecto» abría un formulario por cada visita
+    // anterior). Dentro de un proyecto (stay) se conserva: allí solo cambia la pestaña.
+    if (!stay) {
+      const fresh = target.cloneNode(false);
+      target.replaceWith(fresh);
+      target = fresh;
+    }
     target.classList.remove('leaving');
     $$('[data-nav]').forEach((a) => a.classList.toggle('active', new RegExp(a.dataset.nav).test(hash)));
     moveNavPill($('.sidebar .nav'));
