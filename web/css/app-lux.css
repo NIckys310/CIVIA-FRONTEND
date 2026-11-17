@@ -205,16 +205,29 @@ table thead th { font-family: var(--mono); letter-spacing: 0.14em; font-size: 10
 /* Modo calma (js/calm.js): los efectos decorativos en bucle se detienen donde estén. */
 [data-calm], [data-calm]::before, [data-calm]::after { animation-play-state: paused !important; }
 
-/* Destello dorado que recorre el borde del banner del inicio (como el del panel de acceso).
-   Es un trazo sobre el mismo contorno redondeado del banner (rect SVG con rx = radio del borde): un
-   tramo de luz avanza por la línea con stroke-dashoffset y sigue las esquinas sin cortes. Solo se
-   redibuja una línea fina. data-live: el modo calma no lo detiene. */
+/* Destello del banner del inicio: un cometa de luz que recorre el borde.
+   - Borde fijo con degradado dorado → acero (como el panel de acceso).
+   - Cometa: capas sobre el mismo contorno redondeado (mismo radio que el banner). Todas comparten el
+     frente (la cabeza) y tienen largos distintos: estela larga y tenue, luego más corta y dorada, un
+     halo suave y una cabeza corta casi blanca. Avanzan juntas con stroke-dashoffset, así la luz sigue
+     las esquinas sin cortes. --l es el largo del tramo (sobre pathLength = 1000).
+   - data-live: el modo calma no lo detiene. */
 .lx-trace { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.lx-trace rect { x: 0.75px; y: 0.75px; width: calc(100% - 1.5px); height: calc(100% - 1.5px); fill: none;
-  stroke-dasharray: 110 890; stroke-linecap: round; animation: lx-trace-run 10s linear infinite; }
-.lx-trace .line { stroke: #ffe3b0; stroke-width: 1.5; }
-.lx-trace .glow { stroke: rgba(247, 196, 120, 0.35); stroke-width: 5; }
-@keyframes lx-trace-run { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -1000; } }
-@media (prefers-reduced-motion: reduce) { .lx-trace { display: none; } }
+.lx-trace rect { x: 0.75px; y: 0.75px; width: calc(100% - 1.5px); height: calc(100% - 1.5px); fill: none; stroke-linecap: round; }
+.lx-trace .edge { stroke: url(#lx-edge); stroke-width: 1; }
+.lx-trace rect:not(.edge) {
+  --lead: 240; /* largo del tramo más largo: todos alinean su cabeza con el frente de este */
+  stroke-dasharray: calc(var(--l) * 1px) calc((1000 - var(--l)) * 1px);
+  animation: lx-comet 14s linear infinite;
+}
+.lx-trace .tail { stroke: rgb(247, 205, 140); stroke-opacity: 0.085; stroke-width: 1.4; }
+.lx-trace .halo { stroke: rgba(255, 214, 150, 0.2); stroke-width: 6; }
+.lx-trace .head { stroke: #fff8ea; stroke-width: 1.8; }
+/* Desplazamiento inicial de cada capa = (lead − l): así todas tienen la cabeza en el mismo punto. */
+@keyframes lx-comet {
+  from { stroke-dashoffset: calc((var(--l) - var(--lead)) * 1px); }
+  to { stroke-dashoffset: calc((var(--l) - var(--lead) - 1000) * 1px); }
+}
+@media (prefers-reduced-motion: reduce) { .lx-trace rect:not(.edge) { animation: none; opacity: 0; } }
 /* Capa propia para el trazo: al redibujarlo no se repinta el banner que tiene debajo. */
 .lx-trace { will-change: transform; contain: strict; }
