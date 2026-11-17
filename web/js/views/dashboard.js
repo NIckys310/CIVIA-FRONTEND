@@ -28,6 +28,7 @@ export async function render(el, _params, ctx = {}) {
     <section class="hero-banner hb2">
       <div class="hero-banner-grid" aria-hidden="true"></div>
       <div class="hb-aurora" aria-hidden="true"><i></i><i></i></div>
+      <svg class="lx-trace" aria-hidden="true" data-live><rect class="glow" pathLength="1000" rx="26" ry="26"/><rect class="line" pathLength="1000" rx="26" ry="26"/></svg>
       ${raw(cityScene())}
       <div class="hero-banner-copy">
         <div class="eyebrow gold hb-date">${today()}</div>
