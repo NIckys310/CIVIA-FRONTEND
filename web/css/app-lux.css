@@ -244,3 +244,49 @@ table thead th { font-family: var(--mono); letter-spacing: 0.14em; font-size: 10
 @keyframes bg-glint { 0% { transform: translateX(-30vw); } 72%, 100% { transform: translateX(110vw); } }
 :root[data-theme="light"] .bg-horizon-glint { display: none; }
 @media (prefers-reduced-motion: reduce) { .bg-horizon-glint { display: none; } }
+
+/* Cápsula del menú lateral: al cambiar de sección se veía estirada mientras se deslizaba.
+   - La altura ya no se anima (si quedaba una altura vieja, se veía estirada durante la transición):
+     solo se desliza con transform.
+   - Sin el rebote vertical (scale 0.97 × 1.18): la propiedad scale se combina con el translateY del
+     transform y multiplicaba también el desplazamiento. Al llegar hace un breve brillo, sin cambiar
+     de tamaño.
+   - Tope de seguridad: nunca más alta que una opción del menú. */
+.nav-pill { transition: transform 240ms var(--lx-ease), opacity 140ms ease !important; max-height: 52px; }
+.nav-pill.moving { animation: lx-pill-arrive 420ms ease-out !important; }
+@keyframes lx-pill-arrive { 0% { box-shadow: inset 0 0 0 1px rgba(247, 219, 163, 0.5), 0 10px 28px -14px rgba(236, 184, 109, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.1); } 45% { box-shadow: inset 0 0 0 1px rgba(255, 236, 200, 0.95), 0 10px 34px -10px rgba(236, 184, 109, 1), inset 0 1px 0 rgba(255, 255, 255, 0.2); } 100% { box-shadow: inset 0 0 0 1px rgba(247, 219, 163, 0.5), 0 10px 28px -14px rgba(236, 184, 109, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.1); } }
+@media (prefers-reduced-motion: reduce) { .nav-pill.moving { animation: none !important; } }
+
+/* ==========================================================================
+   Encuadre: nada se sale de su caja.
+   ========================================================================== */
+/* Etiquetas en mayúsculas: el espaciado amplio (0,36 em) queda solo en las cabeceras de página. Dentro
+   de tarjetas era tan ancho que «PROYECTADA» o «CONVERSACIONES» no cabían y empujaban íconos y botones. */
+.content .card .eyebrow, .content .card .eyebrow.gold { letter-spacing: 0.2em; }
+.page-head .eyebrow, .content .page-head .eyebrow.gold { letter-spacing: 0.3em; }
+.kpi2-top { min-width: 0; }
+.kpi2-top .eyebrow { min-width: 0; letter-spacing: 0.16em; line-height: 1.35; overflow-wrap: anywhere; }
+.kpi2-top > :last-child { flex: none; }
+/* Cabeceras de tarjeta: el título se ajusta (puntos suspensivos) y las acciones nunca se encogen. */
+.card-head { min-width: 0; }
+.card-head > :first-child { min-width: 0; }
+.card-head > :first-child :is(h2, h3, .eyebrow), .card-head > :is(h2, h3) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-head :is(.btn, button, a.btn) { flex: none; }
+/* Escudo de la verificación en dos pasos: marca de agua recortada dentro de su tarjeta. */
+.mfa-card, .card.glow { overflow: hidden; }
+/* Cabecera de Perfil (tarjeta con borde): la línea de cota bajo el nombre va dentro, no sobre el borde. */
+.profile-head.ph2 { padding-bottom: 34px; }
+.profile-head.ph2::after { bottom: 14px; }
+/* El brillo que recorre la cápsula del menú queda dentro de ella (antes se veía pasar por fuera). */
+.nav-pill { overflow: hidden; }
+.nav-pill::before { left: 0; }
+/* El espaciado entre letras deja un hueco tras la última letra: se compensa para que la etiqueta no
+   pida más ancho del que se ve. */
+.content .card-head .eyebrow { margin-right: -0.2em; }
+/* Teléfono: la cabecera de tarjeta pasa a dos líneas (título arriba, acciones debajo) en vez de
+   recortar el título con puntos suspensivos. */
+@media (max-width: 640px) {
+  .card-head { flex-wrap: wrap; row-gap: 10px; }
+  .card-head > :first-child :is(h2, h3, .eyebrow), .card-head > :is(h2, h3) { white-space: normal; overflow: visible; text-overflow: clip; }
+  .content .card-head .eyebrow { margin-right: 0; }
+}
