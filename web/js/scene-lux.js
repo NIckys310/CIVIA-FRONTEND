@@ -1,5 +1,5 @@
 // Escena de la ciudad a la hora dorada para el acceso (la misma que la pantalla de carga de index.html).
-// Son capas SVG livianas (≈36 KB en total, generadas con tools/generate-scene.py) más cielo, sol y nubes
+// Son capas SVG livianas (≈36 KB en total, generadas con tools/GenerateScene.java) más cielo, sol y nubes
 // en CSS: aparece al instante, sin WebGL ni tiempo de carga. Todo el movimiento es de capas completas
 // (transform/opacity), que la GPU anima sin repintar:
 // - Entrada: la ciudad se levanta por planos y las ventanas se encienden.
